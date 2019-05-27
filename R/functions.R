@@ -1,11 +1,97 @@
 library(cluster)
 library(fda.usc)
 
+# split value -------------------------------------------------------------
+
+#' Find Split Value
+#'
+#' Computes optimal split value
+#'
+#' @param y response variable
+#' @param x selected covariate
+#'
+#' @export
+#'
+#' @examples
+#' add_numbers(1, 2) ## returns 3
+#'
+split.opt <- function(y, x, split.type = "coeff", rnd = T){
+
+  if(dist.type == "default"){
+    switch(class(x),
+           factor     = {
+
+             lev <- levels(x[drop = TRUE])
+             if (length(lev) == 2) {
+               splitpoint <- lev[1]
+             } else{
+               comb <- do.call("c", lapply(1:(length(lev) - 1), ### TBC: isn't this just floor(length(lev)/2) ??
+                                           function(x)
+                                             combn(lev,
+                                                   x,
+                                                   simplify = FALSE)))
+               xlogp <- sapply(comb, function(q)
+                 mychisqtest(x %in% q, y))
+               splitpoint <- comb[[which.min(xlogp)]]
+             }
+
+             # split into two groups (setting groups that do not occur
+             # to NA)
+             splitindex <- !(levels(data[[xselect]]) %in% splitpoint)
+             splitindex[!(levels(data[[xselect]]) %in% lev)] <- NA_integer_
+             splitindex <- splitindex - min(splitindex, na.rm = TRUE) + 1L
+             },
+
+           numeric    = dist(x[case.weights]),  # TBC: controlla se si possono accorpare condizioni sullo switch
+           integer    = dist(x[case.weights]),
+           data.frame = dist(x[case.weights]),
+           matrix     = dist(x[case.weights]),
+           fdata      = {
+
+           }
+  }
+  else{
+    if(!is.list(x)) stop("if distance function is arbitrary, argument x must be provided as a list")
+    dist.type(x[case.weights]) # TBC: mettilo in modo che restituisca matrice di distanze
+  }
+}
+
+
+
+s.opt <- function(y, X, rnd = T) {
+  # find the split minimizing variance
+  s  <- sort(X)
+  obj <- c()
+  for (i in 1:length(s)) {
+    data1  <- y[which(X < s[i])]
+    data2  <- y[which(X >= s[i])]
+    v1 = var(data1)
+    v2 = var(data2)
+    n1 = length(data1)
+    n2 = length(data2)
+    n = n1 + n2
+
+    obj[i] = (n1 * v1 + n2 * v2) / n
+  }
+
+  if (all(is.na(obj)))
+  {
+    splitindex <- length(obj)
+  }
+  else {
+    splitindex <- s[which.min(obj)]
+  }
+
+  return(splitindex)
+}
+
+
+
 
 # distances ---------------------------------------------------------------
 # CHECK
 compute.dissimilarity <- function(x, dist.type = "default", lp = 2, case.weights){
-  
+
   if(dist.type == "default"){
     switch(class(x),
            factor     = daisy(as.data.frame(x[case.weights,])),
@@ -17,7 +103,7 @@ compute.dissimilarity <- function(x, dist.type = "default", lp = 2, case.weights
   }
   else{
     if(!is.list(x)) stop("if distance function is arbitrary, argument x must be provided as a list")
-    dist.type(x[case.weights]) # TBC: mettilo in modo che restituisca matrice di distanze 
+    dist.type(x[case.weights]) # TBC: mettilo in modo che restituisca matrice di distanze
   }
 }
 
@@ -26,9 +112,9 @@ compute.dissimilarity <- function(x, dist.type = "default", lp = 2, case.weights
 # Test --------------------------------------------------------------------
 # CHECK
 mytestREG <- function(x, y, R = 1000, dist.types = c("default", "default"), lp = c(2,2), case.weights) {
-  
-  d1 = compute.dissimilarity(x, dist.type = dist.types[1], lp = lp[1], case.weights = case.weights) 
-  d2 = compute.dissimilarity(y, dist.type = dist.types[2], lp = lp[2], case.weights = case.weights) 
+
+  d1 = compute.dissimilarity(x, dist.type = dist.types[1], lp = lp[1], case.weights = case.weights)
+  d2 = compute.dissimilarity(y, dist.type = dist.types[2], lp = lp[2], case.weights = case.weights)
 
   ct <- energy::dcor.test(d1, d2, R = R)
   if (!is.na(ct$statistic)) {
@@ -47,41 +133,41 @@ findsplit <- function(response,
                       alpha,
                       R,
                       rnd.sel,
-                      rnd.splt, 
+                      rnd.splt,
                       dist.types = rep("default",2),
                       lp = rep(2,2)) {
-  
+
   if(!is.list(covariates)) stop("Argument 'covariates' must be provided as a list")
 
   n.var = length(covariates) #TBC: switch for type of covariates?
-  
+
   # selects one covariate and performs an independece test
   p = sapply(covariates, function(sel.cov) mytestREG(x = sel.cov,
                                                      y = response,
-                                                     R = R, 
-                                                     dist.types = dist.types, 
-                                                     lp = lp, 
+                                                     R = R,
+                                                     dist.types = dist.types,
+                                                     lp = lp,
                                                      case.weights = case.weights))
-  
+
    rownames(p) <- c("statistic", "p-value")
-   
-   
+
+
    # Bonferroni correction
    if (all(is.na(p[2,]))) return(NULL)
-   
+
    minp <- min(p[2,], na.rm = TRUE)
    minp <- 1 - (1 - minp) ^ sum(!is.na(p[2,]))
    if (minp > alpha) return(NULL)
- 
+
    if (length(which(p[2,] == min(p[2,], na.rm = T))) > 1) {
      xselect <- which.max(p[1,])    # in case of multiple minima, take that with the highest test statistic
    } else{
      xselect <- which.min(p[2,])
    }
-   
+
    x <-  covariates[[xselect]]
 
-   
+
    switch(class(x),
           factor     = ,
           numeric    = dist(x[case.weights]),  # TBC: controlla se si possono accorpare condizioni sullo switch
@@ -89,13 +175,13 @@ findsplit <- function(response,
           data.frame = dist(x[case.weights]),
           matrix     = dist(x[case.weights]),
           fdata      = metric.lp(x[case.weights], lp=lp))
-   
-   
+
+
 }
-  
+
   # split into two groups minimizing entropy
-## TBC: check if this must be done 
-  if (is.factor(x)&&is.factor(y)) {
+## TBC: check if this must be done
+  if (is.factor(x)) {
     # setup all possible splits in two kid nodes
     lev <- levels(x[drop = TRUE])
     if (length(lev) == 2) {
@@ -103,15 +189,15 @@ findsplit <- function(response,
     } else{
       comb <- do.call("c", lapply(1:(length(lev) - 1), ### TBC: isn't this just floor(length(lev)/2) ??
                                   function(x)
-                                    combn(lev, 
-                                          x, 
+                                    combn(lev,
+                                          x,
                                           simplify = FALSE)))
       xlogp <- sapply(comb, function(q)
         mychisqtest(x %in% q, y))
       splitpoint <- comb[[which.min(xlogp)]]
     }
-    
-    # split into two groups (setting groups that do not occur 
+
+    # split into two groups (setting groups that do not occur
     # to NA)
     splitindex <- !(levels(data[[xselect]]) %in% splitpoint)
     splitindex[!(levels(data[[xselect]]) %in% lev)] <- NA_integer_
@@ -133,13 +219,13 @@ findsplit <- function(response,
       } else{
         bselect <- which.min(p1[2,])
       }
-      
+
       splitindex <- s.opt(y = y, X = x1[, bselect], rnd.splt)
     }
   }
 
 
-  
+
   # return split as partysplit object
   if (is.numeric(x)) {
     return(partysplit(
@@ -197,21 +283,21 @@ mytree <- function(Y,  # nome della variabile risposta
                    rnd.sel = T,
                    rnd.splt = TRUE,
                    nb = 5) {
-  
+
   # change with checks if response is in the right format
   response <- data[[which(names(data) == Y)]]
-  
+
   if (is.null(weights))
     weights <- rep(1L, length(response))
-  
+
   # length data
   n.var <- which(names(data) != Y)
-  
+
   # change with switch?
   if (class(data) == "list") {
     datanew <- list("response" = response)
     for (j in n.var) {
-      
+
       if (class(data[[j]]) == "fdata") {
         foo <- min.basis(data[[j]], numbasis = nb)
         fd3 <-
@@ -225,7 +311,7 @@ mytree <- function(Y,  # nome della variabile risposta
                class(data[[j]][[1]]) == "igraph") {
         datanew[[j]] <- graph.to.shellness.distr.df(data[[j]])
       }
-      
+
       # if persistence diagram
       else if (class(data[[j]]) == "data.frame") {
         datanew[[j]] = data[[j]]
@@ -237,7 +323,7 @@ mytree <- function(Y,  # nome della variabile risposta
     datanew = data
     colnames(datanew)[colnames(datanew) == "Y"] <- "response"
   }
-  
+
   nodes <-
     growtree(
       id = 1L,
@@ -251,18 +337,18 @@ mytree <- function(Y,  # nome della variabile risposta
       rnd.splt = rnd.splt,
       n.var = n.var
     )
-  
+
   # compute terminal node number for each observation
   response <- response
   response <- data.frame(response)
   y = response
   m.data <- c()
-  
+
   for (j in n.var) {
     if (class(data[[j]]) == "fdata") {
       foo <- datanew[[j]]$coef
       colnames(foo) <-
-        paste(names(data)[j], colnames(datanew[[j]]$coef), 
+        paste(names(data)[j], colnames(datanew[[j]]$coef),
               sep = ".")
     }
     else if (class(data[[j]]) == "data.frame" |
@@ -272,7 +358,7 @@ mytree <- function(Y,  # nome della variabile risposta
       colnames(foo) <-
         paste(names(data)[j], colnames(datanew[[j]]), sep = ".")
     }
-    
+
     # fill in m.data or initialize it
     if (!is.null(m.data)) {
       m.data <- cbind(m.data, foo)
@@ -281,14 +367,14 @@ mytree <- function(Y,  # nome della variabile risposta
       m.data <- foo
     }
   }
-  
+
   data1 = cbind(response, m.data)
   m.data = m.data
   data1 = data1
-  
+
   fitted <- fitted_node(nodes, data = data.frame(m.data))
   formula = response ~ .
-  
+
   # return rich constparty object
   ret <- party(
     nodes,
@@ -301,6 +387,6 @@ mytree <- function(Y,  # nome della variabile risposta
     ),
     terms = terms(formula, data = data1)
   )
-  
+
   as.constparty(ret)
 }
