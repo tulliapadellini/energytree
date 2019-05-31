@@ -88,6 +88,7 @@ compute.dissimilarity <- function(x, dist.type = "default", lp = 2, case.weights
 
   if(dist.type == "default"){
     switch(class(x),
+           logical    = dist((x[case.weights])),
            factor     = daisy(as.data.frame(x[case.weights,])),
            numeric    = dist(x[case.weights]),  # TBC: controlla se si possono accorpare condizioni sullo switch
            integer    = dist(x[case.weights]),
@@ -110,6 +111,8 @@ mytestREG <- function(x, y, R = 1000, dist.types = c("default", "default"), lp =
   d1 = compute.dissimilarity(x, dist.type = dist.types[1], lp = lp[1], case.weights = case.weights)
   d2 = compute.dissimilarity(y, dist.type = dist.types[2], lp = lp[2], case.weights = case.weights)
 
+  print(d1)
+  print(d2)
   ct <- energy::dcor.test(d1, d2, R = R)
   if (!is.na(ct$statistic)) {
     return(c(ct$statistic, ct$p.value))
