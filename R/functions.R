@@ -201,7 +201,7 @@ findsplit <- function(response,
 
 }
 
-             
+
 # mytree ------------------------------------------------------------------
 
 # implement a conditional tree -- switches between different kind of covariates
@@ -296,7 +296,10 @@ mytree <- function(response,
     terms = terms(response ~ ., data = data1))
   as.constparty(ret)
   }
-  
+
+  return(ret)
+}
+
 
 # growtree ----------------------------------------------------------------
 
@@ -313,7 +316,7 @@ growtree <- function(id = 1L,
   # for less than <minbucket> observations stop here
   if (sum(case.weights) < minbucket)
     return(partynode(id = id))
-  
+
   # find best split
   res_splt <- findsplit(
     response,
@@ -326,20 +329,20 @@ growtree <- function(id = 1L,
     dist.types = rep("default", 2),
     lp = rep(2, 2)
   )
-  
+
   # no split found, stop here
   if (is.null(res))
     return(partynode(id = id))
-  
+
   # separately saving res_splt outputs
   sp <- res_splt$sp
   varselect <- res_splt$varselect
-  
-  
+
+
   #kidids_split suppressed since data may be arbirarily complex
   ### isn't it possible to use kidids_split anyway?
   kidids <- c()
-  
+
   if (class(covariates[[varselect]]) == "fdata") {
     # observations before the split point are assigned to node 1
     kidids[which(covariates[[varselect]]$coef[, sp$varid] <= sp$breaks)] <-
@@ -347,19 +350,19 @@ growtree <- function(id = 1L,
     # observations before the split point are assigned to node 2
     kidids[which(covariates[[varselect]]$coef[, sp$varid] > sp$breaks)] <-
       2
-    
+
     # number of observations assigned to node 1
     sum1 <-
       length(which(covariates[[varselect]]$coef[which(case.weights == 1), sp$varid] <= sp$breaks))
     # number of observations assigned to node 2
     sum2 <-
       length(which(covariates[[varselect]]$coef[which(case.weights == 1), sp$varid] > sp$breaks))
-    
+
     # vector containing the optimal number of basis for each covariate
     nb = sapply(1:x, function(i)
       covariates[[i]]$numbasis.opt)
     ###partiva da 0! dove viene utilizzato?
-    
+
     # shift the varid of the tree based on the quantity of the
     # previous features/basis
     # Ex: if variable 3 is selected for splitting (variable 1
@@ -384,7 +387,7 @@ growtree <- function(id = 1L,
       1
     kidids[(which(covariates[[varselect]][, sp$varid] > sp$breaks))] <-
       2
-    
+
     sum1 <-
       length(which(covariates[[varselect]][, sp$varid][which(case.weights == 1)] <= sp$breaks))
     sum2 <-
@@ -393,39 +396,39 @@ growtree <- function(id = 1L,
   else if (class(covariates[[varselect]]) == "numeric") {
     kidids[(which(covariates[[varselect]] <= sp$breaks))] <- 1
     kidids[(which(covariates[[varselect]] > sp$breaks))] <- 2
-    
+
     sum1 <-
       length(which(covariates[[varselect]][which(case.weights == 1)] <= sp$breaks))
     sum2 <-
       length(which(covariates[[varselect]][which(case.weights == 1)] > sp$breaks))
   }
-  
+
   # if all the observations belong to the same node, no split is done
   if (all(kidids == 1) | all(kidids == 2))
     return(partynode(id = id))
-  
+
   if ((sum1 == 0 |
        sum2 == 0)) {
     ###differenza col precedente if?
     return(partynode(id = id))
   }
-  
+
   # setup all daugther nodes
   kids <-
     vector(mode = "list", length = max(kidids, na.rm = TRUE))
-  
+
   for (kidid in 1:length(kids)) {
     # select observations for current node
     w <- case.weights
     w[kidids != kidid] <- 0
-    
+
     # get next node id
     if (kidid > 1) {
       myid <- max(nodeids(kids[[kidid - 1]]))
     } else{
       myid <- id
     }
-    
+
     # start recursion on this daugther node
     kids[[kidid]] <-
       growtree(
@@ -441,7 +444,7 @@ growtree <- function(id = 1L,
         n.var = n.var
       )
   }
-  
+
   # return nodes
   return(partynode(
     id = as.integer(id),
