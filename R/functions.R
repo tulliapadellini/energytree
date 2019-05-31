@@ -80,8 +80,6 @@ split.opt <- function(y, x, split.type = "coeff"){
 }
 
 
-
-
 # distances ---------------------------------------------------------------
 # CHECK
 compute.dissimilarity <- function(x, dist.type = "default", lp = 2, case.weights){
