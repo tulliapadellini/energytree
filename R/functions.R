@@ -44,14 +44,14 @@ split.opt <- function(y, x, split.type = "coeff", rnd = T){
            numeric    = {
              s  <- sort(x)
              comb = sapply(s, function(j) x<j)
-             xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y)$p.value)
+             xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y)[2])
              splitindex <- s[which.min((xp.value))]
              },
 
            integer    = {
              s  <- sort(x)
              comb = sapply(s, function(j) x<j)
-             xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y)$p.value)
+             xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y)[2])
              splitindex <- s[which.min((xp.value))]
            },
            fdata      = {
@@ -71,7 +71,7 @@ split.opt <- function(y, x, split.type = "coeff", rnd = T){
                  sel.coeff = x1[,bselect]
                  s  <- sort(sel.coeff)
                  comb = sapply(s, function(j) sel.coeff<j)
-                 xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y)$p.value)
+                 xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y)[2])
                  splitindex <- s[which.min((xp.value))]
              }
 
@@ -111,8 +111,6 @@ mytestREG <- function(x, y, R = 1000, dist.types = c("default", "default"), lp =
   d1 = compute.dissimilarity(x, dist.type = dist.types[1], lp = lp[1], case.weights = case.weights)
   d2 = compute.dissimilarity(y, dist.type = dist.types[2], lp = lp[2], case.weights = case.weights)
 
-  print(d1)
-  print(d2)
   ct <- energy::dcor.test(d1, d2, R = R)
   if (!is.na(ct$statistic)) {
     return(c(ct$statistic, ct$p.value))
@@ -164,62 +162,7 @@ findsplit <- function(response,
 
    x <-  covariates[[xselect]]
 
-
-   switch(class(x),
-          factor     = ,
-          numeric    = dist(x[case.weights]),  # TBC: controlla se si possono accorpare condizioni sullo switch
-          integer    = dist(x[case.weights]),
-          data.frame = dist(x[case.weights]),
-          matrix     = dist(x[case.weights]),
-          fdata      = metric.lp(x[case.weights], lp=lp))
-
-
-}
-
-  # split into two groups minimizing entropy
-## TBC: check if this must be done
-  if (is.factor(x)) {
-    # setup all possible splits in two kid nodes
-    lev <- levels(x[drop = TRUE])
-    if (length(lev) == 2) {
-      splitpoint <- lev[1]
-    } else{
-      comb <- do.call("c", lapply(1:(length(lev) - 1), ### TBC: isn't this just floor(length(lev)/2) ??
-                                  function(x)
-                                    combn(lev,
-                                          x,
-                                          simplify = FALSE)))
-      xlogp <- sapply(comb, function(q)
-        mychisqtest(x %in% q, y))
-      splitpoint <- comb[[which.min(xlogp)]]
-    }
-
-    # split into two groups (setting groups that do not occur
-    # to NA)
-    splitindex <- !(levels(data[[xselect]]) %in% splitpoint)
-    splitindex[!(levels(data[[xselect]]) %in% lev)] <- NA_integer_
-    splitindex <- splitindex - min(splitindex, na.rm = TRUE) + 1L
-  }
-  if (is.numeric(x)) {
-    splitindex <- s.opt(response, x[which(weights == 1)], rnd.splt)
-  }
-  if (is.list(x)) {
-    if (is.fdata(x$fdata.est)) {
-      bselect <- 1:dim(x1)[2]
-      p1 <- c()
-      p1        <-
-        sapply(bselect, function(i)
-          mytestREG(x1[, i], y, R = R))
-      colnames(p1) <- colnames(x1)
-      if (length(which(p1[2,] == min(p1[2,], na.rm = T))) > 1) {
-        bselect <- which.max(p1[1,])
-      } else{
-        bselect <- which.min(p1[2,])
-      }
-
-      splitindex <- s.opt(y = y, X = x1[, bselect], rnd.splt)
-    }
-  }
+   splitindex = split.opt(y = y, x = x, split.type = "coeff")
 
 
 
