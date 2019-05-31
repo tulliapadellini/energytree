@@ -1,4 +1,4 @@
-### Test each function 
+### Test each function
 
 # compute.dissimilarity ---------------------------------------------------
 
@@ -11,6 +11,8 @@ data(phoneme)
 mlearn<-phoneme$learn[1:4,1:150]
 
 compute.dissimilarity(mlearn, dist.type = "default", lp = 4, case.weights = c(3,2))
+
+
 
 foo = function(x)
 
@@ -38,9 +40,9 @@ findsplit(response = 1:4, covariates= xxx, case.weights=1:4,
                       alpha=1,
                       R=1000,
                       rnd.sel=1,
-                      rnd.splt=1, 
+                      rnd.splt=1,
                       dist.types = rep("default",2),
-                      lp = rep(2,2)) 
+                      lp = rep(2,2))
 
 
 foo.x = as.factor(letters[sample(1:5, 10, replace =T)])
