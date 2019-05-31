@@ -15,7 +15,7 @@ library(fda.usc)
 #' @examples
 #' add_numbers(1, 2) ## returns 3
 #'
-split.opt <- function(y, x, split.type = "coeff", rnd = T){
+split.opt <- function(y, x, split.type = "coeff"){
 
       switch(class(x),
            factor     = { #com'era prima ma overall na mezza merda
@@ -166,25 +166,29 @@ findsplit <- function(response,
 
    switch(class(x),
           numeric = {
-            return(partysplit(
+            return(list(
+              sp = partysplit(
               varid = as.integer(xselect),
               breaks = splitindex,
               info = list(p.value = 1 - (1 - p) ^ sum(!is.na(p)))
-            ))
+            ),
+              varselect = xselect))
           },
           integer = {
-            return(partysplit(
-              varid = as.integer(xselect),
-              breaks = splitindex,
-              info = list(p.value = 1 - (1 - p) ^ sum(!is.na(p)))
-            ))
+            return(list(
+              sp = partysplit(
+                varid = as.integer(xselect),
+                breaks = splitindex,
+                info = list(p.value = 1 - (1 - p) ^ sum(!is.na(p)))),
+              varselect = xselect))
           },
           factor = {
-            return(partysplit(
-            varid = as.integer(xselect),
-            index = splitindex,
-            info = list(p.value = 1 - (1 - p) ^ sum(!is.na(p)))
-          ))
+            return(list(
+              sp = partysplit(
+               varid = as.integer(xselect),
+               index = splitindex,
+               info = list(p.value = 1 - (1 - p) ^ sum(!is.na(p)))),
+              varselect = xselect))
           },
           fdata = {
             return(list(
