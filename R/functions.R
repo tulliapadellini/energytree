@@ -44,7 +44,7 @@ split.opt <- function(y, x, split.type = "coeff", rnd = T){
            numeric    = {
              s  <- sort(x)
              comb = sapply(s, function(j) x<j)
-             xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y, case.weights = rep(1, length(y)))$p.value)
+             xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y)$p.value)
              splitindex <- s[which.min((xp.value))]
              },
 
