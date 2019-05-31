@@ -164,47 +164,41 @@ findsplit <- function(response,
 
    splitindex = split.opt(y = y, x = x, split.type = "coeff")
 
+   switch(class(x),
+          numeric = {
+            return(partysplit(
+              varid = as.integer(xselect),
+              breaks = splitindex,
+              info = list(p.value = 1 - (1 - p) ^ sum(!is.na(p)))
+            ))
+          },
+          integer = {
+            return(partysplit(
+              varid = as.integer(xselect),
+              breaks = splitindex,
+              info = list(p.value = 1 - (1 - p) ^ sum(!is.na(p)))
+            ))
+          },
+          factor = {
+            return(partysplit(
+            varid = as.integer(xselect),
+            index = splitindex,
+            info = list(p.value = 1 - (1 - p) ^ sum(!is.na(p)))
+          ))
+          },
+          fdata = {
+            return(list(
+              sp = partysplit(
+                varid = as.integer(bselect),
+                breaks = splitindex,
+                info = list(p.value = 1 - (1 - p[2,]) ^
+                              sum(!is.na(p[2,])))),
+                varselect = xselect
+            ))
+            }
 
+   )
 
-  # return split as partysplit object
-  if (is.numeric(x)) {
-    return(partysplit(
-      varid = as.integer(xselect),
-      breaks = splitindex,
-      info = list(p.value = 1 - (1 - p) ^ sum(!is.na(p)))
-    ))
-  }
-  if (is.data.frame(x)) {
-    temp = list (
-      sp = partysplit(
-        varid = as.integer(cselect),
-        breaks = splitindex,
-        info = list(p.value = 1 - (1 - p) ^ sum(!is.na(p)))
-      ),
-      varselect = xselect
-    )
-    return(temp)
-  }
-  if (is.factor(x)) {
-    return(partysplit(
-      varid = as.integer(xselect),
-      index = splitindex,
-      info = list(p.value = 1 - (1 - p) ^ sum(!is.na(p)))
-    ))
-  }
-  if (is.list(x)) {
-    if (is.fdata(x$fdata.est)) {
-      return(list(
-        sp = partysplit(
-          varid = as.integer(bselect),
-          breaks = splitindex,
-          info = list(p.value = 1 - (1 - p[2,]) ^
-                        sum(!is.na(p[2,])))
-        ),
-        varselect = xselect
-      ))
-    }
-  }
 }
 
 
