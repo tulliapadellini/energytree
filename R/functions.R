@@ -17,9 +17,7 @@ library(fda.usc)
 #'
 split.opt <- function(y, x, split.type = "coeff", rnd = T){
 
-
-  if(dist.type == "default"){
-    switch(class(x),
+      switch(class(x),
            factor     = { #com'era prima ma overall na mezza merda
 
              lev <- levels(x[drop = TRUE])
@@ -44,36 +42,43 @@ split.opt <- function(y, x, split.type = "coeff", rnd = T){
              },
 
            numeric    = {
-
              s  <- sort(x)
              comb = sapply(s, function(j) x<j)
              xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y, case.weights = rep(1, length(y)))$p.value)
-             splitpoint <- s[which.min((xp.value))]
-             splitindex <- splitpoint + 1
-
+             splitindex <- s[which.min((xp.value))]
              },
 
            integer    = {
-
              s  <- sort(x)
              comb = sapply(s, function(j) x<j)
              xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y)$p.value)
-             splitpoint <- s[which.min((xp.value))]
-             splitindex <- splitpoint + 1
-
+             splitindex <- s[which.min((xp.value))]
            },
            fdata      = {
              if(split.type == "coeff"){
 
+                 x1 = x$coef
+                 bselect <- 1:dim(x1)[2]
+                 p1 <- c()
+                 p1 <- sapply(bselect, function(i) mytestREG(x1[, i], y, R = R))
+                 colnames(p1) <- colnames(x1)
+                 if (length(which(p1[2,] == min(p1[2,], na.rm = T))) > 1) {
+                   bselect <- which.max(p1[1,])
+                 } else{
+                   bselect <- which.min(p1[2,])
+                 }
+
+                 sel.coeff = x1[,bselect]
+                 s  <- sort(sel.coeff)
+                 comb = sapply(s, function(j) sel.coeff<j)
+                 xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y)$p.value)
+                 splitindex <- s[which.min((xp.value))]
              }
 
-           }
-  }
-  else{
-    if(!is.list(x)) stop("if distance function is arbitrary, argument x must be provided as a list")
-    dist.type(x[case.weights]) # TBC: mettilo in modo che restituisca matrice di distanze
-  }
+           })
+  return(splitindex)
 }
+
 
 
 
