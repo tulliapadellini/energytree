@@ -121,7 +121,7 @@ mytestREG <- function(x, y, R = 1000, dist.types = c("default", "default"), lp =
 
 
 # Find split --------------------------------------------------------------
-
+#CHECK
 findsplit <- function(response,
                       covariates,
                       case.weights,
@@ -162,7 +162,7 @@ findsplit <- function(response,
 
    x <-  covariates[[xselect]]
 
-   splitindex = split.opt(y = y, x = x, split.type = "coeff")
+   splitindex = split.opt(y = response, x = x, split.type = "coeff")
 
    switch(class(x),
           numeric = {
