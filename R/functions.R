@@ -17,9 +17,10 @@ library(fda.usc)
 #'
 split.opt <- function(y, x, split.type = "coeff", rnd = T){
 
+
   if(dist.type == "default"){
     switch(class(x),
-           factor     = {
+           factor     = { #com'era prima ma overall na mezza merda
 
              lev <- levels(x[drop = TRUE])
              if (length(lev) == 2) {
@@ -37,16 +38,34 @@ split.opt <- function(y, x, split.type = "coeff", rnd = T){
 
              # split into two groups (setting groups that do not occur
              # to NA)
-             splitindex <- !(levels(data[[xselect]]) %in% splitpoint)
-             splitindex[!(levels(data[[xselect]]) %in% lev)] <- NA_integer_
+             splitindex <- !(levels(x) %in% splitpoint)
+             splitindex[!(levels(x) %in% lev)] <- NA_integer_
              splitindex <- splitindex - min(splitindex, na.rm = TRUE) + 1L
              },
 
-           numeric    = dist(x[case.weights]),  # TBC: controlla se si possono accorpare condizioni sullo switch
-           integer    = dist(x[case.weights]),
-           data.frame = dist(x[case.weights]),
-           matrix     = dist(x[case.weights]),
+           numeric    = {
+
+             s  <- sort(x)
+             comb = sapply(s, function(j) x<j)
+             xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y, case.weights = rep(1, length(y)))$p.value)
+             splitpoint <- s[which.min((xp.value))]
+             splitindex <- splitpoint + 1
+
+             },
+
+           integer    = {
+
+             s  <- sort(x)
+             comb = sapply(s, function(j) x<j)
+             xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y)$p.value)
+             splitpoint <- s[which.min((xp.value))]
+             splitindex <- splitpoint + 1
+
+           },
            fdata      = {
+             if(split.type == "coeff"){
+
+             }
 
            }
   }
