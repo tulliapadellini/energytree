@@ -201,16 +201,14 @@ findsplit <- function(response,
 
 }
 
+             
+# mytree ------------------------------------------------------------------
 
+# implement a conditional tree -- switches between different kind of covariates
 
-
-
-
-#implement a conditional tree -- switches between different kind of covariates
-
-mytree <- function(Y,  # nome della variabile risposta
-                   data, # lista contentente risposta e covariate
-                   weights = NULL,
+mytree <- function(response,
+                   covariates,
+                   case.weights = NULL,
                    minbucket = 1,
                    alpha = 0.05,
                    R = 1000,
@@ -218,52 +216,43 @@ mytree <- function(Y,  # nome della variabile risposta
                    rnd.splt = TRUE,
                    nb = 5) {
 
-  # change with checks if response is in the right format
-  response <- data[[which(names(data) == Y)]]
+  if(!is.list(covariates)) stop("Argument 'covariates' must be provided as a list")
 
-  if (is.null(weights))
-    weights <- rep(1L, length(response))
+  # number of covariates
+  n.var = length(covariates) #TBC: switch for type of covariates?
 
-  # length data
-  n.var <- which(names(data) != Y)
+  # if the case weights are not provided, they are all initialized as 1
+  if (is.null(case.weights))
+    case.weights <- rep(1L, length(response))
 
-  # change with switch?
-  if (class(data) == "list") {
-    datanew <- list("response" = response)
-    for (j in n.var) {
+  # new list of covariates (initialization)
+  newcovariates=list()
 
-      if (class(data[[j]]) == "fdata") {
-        foo <- min.basis(data[[j]], numbasis = nb)
-        fd3 <-
-          fdata2fd(foo$fdata.est,
-                   type.basis = "bspline",
-                   nbasis = foo$numbasis.opt)
-        foo$coef <- t(fd3$coefs)
-        datanew[[j]] <- foo
-      }
-      else if (class(data[[j]]) == "list" &
-               class(data[[j]][[1]]) == "igraph") {
-        datanew[[j]] <- graph.to.shellness.distr.df(data[[j]])
-      }
-
-      # if persistence diagram
-      else if (class(data[[j]]) == "data.frame") {
-        datanew[[j]] = data[[j]]
-      }
+  # trasformations based on the variables' nature
+  for (j in 1:n.var) {
+    if(class(covariates[[j]]) == 'fdata'){
+      foo <- fda.usc::min.basis(covariates[[j]], numbasis = nb)
+      fd3 <- fda.usc::fdata2fd(foo$fdata.est,
+                               type.basis = "bspline",
+                               nbasis = foo$numbasis.opt)
+      foo$coef <- t(fd3$coefs)
+      newcovariates[[j]] <- foo
     }
-    names(datanew)[-1] <- names(data)[-1]
-  }
-  else if (class(data) == "data.frame") {
-    datanew = data
-    colnames(datanew)[colnames(datanew) == "Y"] <- "response"
-  }
+    else if(class(covariates[[j]]) == 'list' &
+             all(sapply(covariates[[j]], class) == 'igraph')){
+      newcovariates[[j]] <- graph.to.shellness.distr.df(covariates[[j]])
+    }
+    # TBC: another elseif for persistence diagrams
+    else{
+      newcovariates[[j]]=covariates[[j]]
+    }
 
   nodes <-
     growtree(
       id = 1L,
-      response = datanew$response,
-      data = datanew,
-      weights,
+      response = response,
+      covariates = newcovariates,
+      case.weights = case.weights,
       minbucket = minbucket,
       alpha = alpha,
       R = R,
@@ -273,24 +262,18 @@ mytree <- function(Y,  # nome della variabile risposta
     )
 
   # compute terminal node number for each observation
-  response <- response
-  response <- data.frame(response)
-  y = response
   m.data <- c()
 
-  for (j in n.var) {
-    if (class(data[[j]]) == "fdata") {
-      foo <- datanew[[j]]$coef
-      colnames(foo) <-
-        paste(names(data)[j], colnames(datanew[[j]]$coef),
-              sep = ".")
+  for (j in 1:n.var) {
+    if (class(covariates[[j]]) == "fdata") {
+      foo <- newcovariates[[j]]$coef
+      colnames(foo) <- paste(names(covariates)[j], colnames(newcovariates[[j]]$coef),sep = ".")
     }
-    else if (class(data[[j]]) == "data.frame" |
-             (class(data[[j]]) == "list" &
-              class(data[[j]][[1]]) == "igraph")) {
-      foo <- datanew[[j]]
-      colnames(foo) <-
-        paste(names(data)[j], colnames(datanew[[j]]), sep = ".")
+    else if (class(covariates[[j]]) == "data.frame" |
+             (class(covariates[[j]]) == "list" &
+              all(sapply(covariates[[j]], class) == 'igraph'))) {
+      foo <- newcovariates[[j]]
+      colnames(foo) <- paste(names(covariates)[j], colnames(newcovariates[[j]]), sep = ".")
     }
 
     # fill in m.data or initialize it
@@ -301,26 +284,169 @@ mytree <- function(Y,  # nome della variabile risposta
       m.data <- foo
     }
   }
-
-  data1 = cbind(response, m.data)
-  m.data = m.data
-  data1 = data1
-
   fitted <- fitted_node(nodes, data = data.frame(m.data))
-  formula = response ~ .
 
   # return rich constparty object
-  ret <- party(
-    nodes,
-    data = data.frame(m.data),
-    fitted = data.frame(
-      "(fitted)" = fitted,
-      "(response)" = data1$response,
-      "(weights)" = weights,
-      check.names = FALSE
-    ),
-    terms = terms(formula, data = data1)
-  )
-
+  data1 = cbind(response, m.data)
+  ret <- party(nodes, data = data.frame(m.data),
+    fitted = data.frame("(fitted)" = fitted,
+                        "(response)" = response,
+                        "(case.weights)" = case.weights,
+                        check.names = FALSE),
+    terms = terms(response ~ ., data = data1))
   as.constparty(ret)
+  }
+  
+
+# growtree ----------------------------------------------------------------
+
+growtree <- function(id = 1L,
+                     response,
+                     covariates,
+                     case.weights,
+                     minbucket,
+                     alpha,
+                     R,
+                     rnd.sel,
+                     rnd.splt,
+                     n.var) {
+  # for less than <minbucket> observations stop here
+  if (sum(case.weights) < minbucket)
+    return(partynode(id = id))
+  
+  # find best split
+  res_splt <- findsplit(
+    response,
+    covariates,
+    case.weights,
+    alpha,
+    R,
+    rnd.sel,
+    rnd.splt,
+    dist.types = rep("default", 2),
+    lp = rep(2, 2)
+  )
+  
+  # no split found, stop here
+  if (is.null(res))
+    return(partynode(id = id))
+  
+  # separately saving res_splt outputs
+  sp <- res_splt$sp
+  varselect <- res_splt$varselect
+  
+  
+  #kidids_split suppressed since data may be arbirarily complex
+  ### isn't it possible to use kidids_split anyway?
+  kidids <- c()
+  
+  if (class(covariates[[varselect]]) == "fdata") {
+    # observations before the split point are assigned to node 1
+    kidids[which(covariates[[varselect]]$coef[, sp$varid] <= sp$breaks)] <-
+      1
+    # observations before the split point are assigned to node 2
+    kidids[which(covariates[[varselect]]$coef[, sp$varid] > sp$breaks)] <-
+      2
+    
+    # number of observations assigned to node 1
+    sum1 <-
+      length(which(covariates[[varselect]]$coef[which(case.weights == 1), sp$varid] <= sp$breaks))
+    # number of observations assigned to node 2
+    sum2 <-
+      length(which(covariates[[varselect]]$coef[which(case.weights == 1), sp$varid] > sp$breaks))
+    
+    # vector containing the optimal number of basis for each covariate
+    nb = sapply(1:x, function(i)
+      covariates[[i]]$numbasis.opt)
+    ###partiva da 0! dove viene utilizzato?
+    
+    # shift the varid of the tree based on the quantity of the
+    # previous features/basis
+    # Ex: if variable 3 is selected for splitting (variable 1
+    # is the response, it's ignored), then shift varid by the
+    # number of basis of variable 2 (if it's functional) or the
+    # maximum k_core found in the graphs (if it's a graph)
+    total_features <- c()
+    lapply(2:n.var, function(v) {
+      if (class(covariates[[v]]) == 'fdata')
+        total_features[[v]] <<- covariates[[v]]$numbasis.opt
+      if (class(covariates[[v]]) == 'data.frame')
+        total_features[[v]] <<- ncol(covariates[[v]])
+      if (class(covariates[[v]]) == 'numeric')
+        total_features[[v]] <<- 1
+    })
+    step <-
+      sum(total_features[2:n.var[which(2:n.var < varselect)]], na.rm = T)
+    sp$varid = sp$varid + as.integer(step)
+  }
+  else if (class(covariates[[varselect]]) == "data.frame") {
+    kidids[(which(covariates[[varselect]][, sp$varid] <= sp$breaks))] <-
+      1
+    kidids[(which(covariates[[varselect]][, sp$varid] > sp$breaks))] <-
+      2
+    
+    sum1 <-
+      length(which(covariates[[varselect]][, sp$varid][which(case.weights == 1)] <= sp$breaks))
+    sum2 <-
+      length(which(covariates[[varselect]][, sp$varid][which(case.weights == 1)] > sp$breaks))
+  }
+  else if (class(covariates[[varselect]]) == "numeric") {
+    kidids[(which(covariates[[varselect]] <= sp$breaks))] <- 1
+    kidids[(which(covariates[[varselect]] > sp$breaks))] <- 2
+    
+    sum1 <-
+      length(which(covariates[[varselect]][which(case.weights == 1)] <= sp$breaks))
+    sum2 <-
+      length(which(covariates[[varselect]][which(case.weights == 1)] > sp$breaks))
+  }
+  
+  # if all the observations belong to the same node, no split is done
+  if (all(kidids == 1) | all(kidids == 2))
+    return(partynode(id = id))
+  
+  if ((sum1 == 0 |
+       sum2 == 0)) {
+    ###differenza col precedente if?
+    return(partynode(id = id))
+  }
+  
+  # setup all daugther nodes
+  kids <-
+    vector(mode = "list", length = max(kidids, na.rm = TRUE))
+  
+  for (kidid in 1:length(kids)) {
+    # select observations for current node
+    w <- case.weights
+    w[kidids != kidid] <- 0
+    
+    # get next node id
+    if (kidid > 1) {
+      myid <- max(nodeids(kids[[kidid - 1]]))
+    } else{
+      myid <- id
+    }
+    
+    # start recursion on this daugther node
+    kids[[kidid]] <-
+      growtree(
+        id = as.integer(myid + 1),
+        response,
+        covariates,
+        w,
+        minbucket,
+        alpha,
+        R,
+        rnd.sel,
+        rnd.splt ,
+        n.var = n.var
+      )
+  }
+  
+  # return nodes
+  return(partynode(
+    id = as.integer(id),
+    split = sp,
+    kids = kids,
+    info = list(p.value = min(info_split(sp)$p.value, na.rm = TRUE))
+  ))
 }
