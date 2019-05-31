@@ -82,36 +82,6 @@ split.opt <- function(y, x, split.type = "coeff", rnd = T){
 
 
 
-s.opt <- function(y, X, rnd = T) {
-  # find the split minimizing variance
-  s  <- sort(X)
-  obj <- c()
-  for (i in 1:length(s)) {
-    data1  <- y[which(X < s[i])]
-    data2  <- y[which(X >= s[i])]
-    v1 = var(data1)
-    v2 = var(data2)
-    n1 = length(data1)
-    n2 = length(data2)
-    n = n1 + n2
-
-    obj[i] = (n1 * v1 + n2 * v2) / n
-  }
-
-  if (all(is.na(obj)))
-  {
-    splitindex <- length(obj)
-  }
-  else {
-    splitindex <- s[which.min(obj)]
-  }
-
-  return(splitindex)
-}
-
-
-
-
 # distances ---------------------------------------------------------------
 # CHECK
 compute.dissimilarity <- function(x, dist.type = "default", lp = 2, case.weights){
