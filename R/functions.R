@@ -231,52 +231,70 @@ mytree <- function(response,
   newcovariates=list()
 
   # trasformations based on the variables' nature
-  for (j in 1:n.var) {
-    if(class(covariates[[j]]) == 'fdata'){
-      foo <- fda.usc::min.basis(covariates[[j]], numbasis = nb)
-      fd3 <- fda.usc::fdata2fd(foo$fdata.est,
-                               type.basis = "bspline",
-                               nbasis = foo$numbasis.opt)
-      foo$coef <- t(fd3$coefs)
-      newcovariates[[j]] <- foo
-    }
-    else if(class(covariates[[j]]) == 'list' &
-             all(sapply(covariates[[j]], class) == 'igraph')){
-      newcovariates[[j]] <- graph.to.shellness.distr.df(covariates[[j]])
-    }
-    # TBC: another elseif for persistence diagrams
-    else{
-      newcovariates[[j]]=covariates[[j]]
-    }
-
-  nodes <-
-    growtree(
-      id = 1L,
-      response = response,
-      covariates = newcovariates,
-      case.weights = case.weights,
-      minbucket = minbucket,
-      alpha = alpha,
-      R = R,
-      rnd.sel = rnd.sel,
-      rnd.splt = rnd.splt,
-      n.var = n.var
+  ### covariates[[j]]
+  newcovariates = lapply(covariates, function(j){
+    switch(class(j),
+           logical    = return(covariates[[j]]),
+           factor     = return(covariates[[j]]),
+           numeric    = return(covariates[[j]]),
+           integer    = return(covariates[[j]]),
+           data.frame = return(covariates[[j]]),
+           matrix     = return(covariates[[j]]),
+           fdata      = {
+             foo <- fda.usc::min.basis(covariates[[j]], numbasis = nb)
+             fd3 <- fda.usc::fdata2fd(foo$fdata.est,
+                                      type.basis = "bspline",
+                                      nbasis = foo$numbasis.opt)
+             foo$coef <- t(fd3$coefs)
+             return(foo)
+           },
+           list       = {
+             if(all(sapply(covariates[[j]], class) == 'igraph')){
+               shell <- graph.to.shellness.distr.df(covariates[[j]])
+               return(shell)
+             }
+           }
     )
+  }
+  )
+
+nodes <- growtree(id = 1L,
+                  response = response,
+                  covariates = newcovariates,
+                  case.weights = case.weights,
+                  minbucket = minbucket,
+                  alpha = alpha,
+                  R = R,
+                  rnd.sel = rnd.sel,
+                  rnd.splt = rnd.splt,
+                  n.var = n.var)
 
   # compute terminal node number for each observation
   m.data <- c()
 
-  for (j in 1:n.var) {
-    if (class(covariates[[j]]) == "fdata") {
-      foo <- newcovariates[[j]]$coef
-      colnames(foo) <- paste(names(covariates)[j], colnames(newcovariates[[j]]$coef),sep = ".")
-    }
-    else if (class(covariates[[j]]) == "data.frame" |
-             (class(covariates[[j]]) == "list" &
-              all(sapply(covariates[[j]], class) == 'igraph'))) {
-      foo <- newcovariates[[j]]
-      colnames(foo) <- paste(names(covariates)[j], colnames(newcovariates[[j]]), sep = ".")
-    }
+  newcovariates = lapply(covariates, function(j){
+    switch(class(j),
+           logical    = return(newcovariates[[j]]),
+           factor     = return(newcovariates[[j]]),
+           numeric    = return(newcovariates[[j]]),
+           integer    = return(newcovariates[[j]]),
+           data.frame = return(newcovariates[[j]]),
+           matrix     = return(newcovariates[[j]]),
+           fdata      = {
+             foo <- newcovariates[[j]]$coef
+             colnames(foo) <- paste(names(covariates)[j], colnames(newcovariates[[j]]$coef),sep = ".")
+             return(foo)
+           },
+           list       = {
+             if(all(sapply(covariates[[j]], class) == 'igraph')){
+               foo <- newcovariates[[j]]
+               colnames(foo) <- paste(names(covariates)[j], colnames(newcovariates[[j]]), sep = ".")
+               return(foo)
+             }
+           }
+    )
+  }
+  )
 
     # fill in m.data or initialize it
     if (!is.null(m.data)) {
@@ -345,65 +363,68 @@ growtree <- function(id = 1L,
   ### isn't it possible to use kidids_split anyway?
   kidids <- c()
 
-  if (class(covariates[[varselect]]) == "fdata") {
-    # observations before the split point are assigned to node 1
-    kidids[which(covariates[[varselect]]$coef[, sp$varid] <= sp$breaks)] <-
-      1
-    # observations before the split point are assigned to node 2
-    kidids[which(covariates[[varselect]]$coef[, sp$varid] > sp$breaks)] <-
-      2
+  switch(class(covariates[[varselect]]),
+         fdata = {
+           # observations before the split point are assigned to node 1
+           kidids[which(covariates[[varselect]]$coef[, sp$varid] <= sp$breaks)] <- 1
+           # observations before the split point are assigned to node 2
+           kidids[which(covariates[[varselect]]$coef[, sp$varid] > sp$breaks)] <- 2
 
-    # number of observations assigned to node 1
-    sum1 <-
-      length(which(covariates[[varselect]]$coef[which(case.weights == 1), sp$varid] <= sp$breaks))
-    # number of observations assigned to node 2
-    sum2 <-
-      length(which(covariates[[varselect]]$coef[which(case.weights == 1), sp$varid] > sp$breaks))
+           # number of observations assigned to node 1
+           sum1 <-
+             length(which(covariates[[varselect]]$coef[which(case.weights == 1), sp$varid] <= sp$breaks))
+           # number of observations assigned to node 2
+           sum2 <-
+             length(which(covariates[[varselect]]$coef[which(case.weights == 1), sp$varid] > sp$breaks))
 
-    # vector containing the optimal number of basis for each covariate
-    nb = sapply(1:x, function(i)
-      covariates[[i]]$numbasis.opt)
-    ###partiva da 0! dove viene utilizzato?
+           # vector containing the optimal number of basis for each covariate
+           nb = sapply(1:n.var, function(i) covariates[[i]]$numbasis.opt)
+           ###partiva da 0! dove viene utilizzato?
 
-    # shift the varid of the tree based on the quantity of the
-    # previous features/basis
-    # Ex: if variable 3 is selected for splitting (variable 1
-    # is the response, it's ignored), then shift varid by the
-    # number of basis of variable 2 (if it's functional) or the
-    # maximum k_core found in the graphs (if it's a graph)
-    total_features <- c()
-    lapply(2:n.var, function(v) {
-      if (class(covariates[[v]]) == 'fdata')
-        total_features[[v]] <<- covariates[[v]]$numbasis.opt
-      if (class(covariates[[v]]) == 'data.frame')
-        total_features[[v]] <<- ncol(covariates[[v]])
-      if (class(covariates[[v]]) == 'numeric')
-        total_features[[v]] <<- 1
-    })
-    step <-
-      sum(total_features[2:n.var[which(2:n.var < varselect)]], na.rm = T)
-    sp$varid = sp$varid + as.integer(step)
-  }
-  else if (class(covariates[[varselect]]) == "data.frame") {
-    kidids[(which(covariates[[varselect]][, sp$varid] <= sp$breaks))] <-
-      1
-    kidids[(which(covariates[[varselect]][, sp$varid] > sp$breaks))] <-
-      2
+           # shift the varid of the tree based on the quantity of the
+           # previous features/basis
+           # Ex: if variable 3 is selected for splitting (variable 1
+           # is the response, it's ignored), then shift varid by the
+           # number of basis of variable 2 (if it's functional) or the
+           # maximum k_core found in the graphs (if it's a graph)
+           total_features <- lapply(covariates[2:n.var],
+                                    function(v){switch(class(v),
+                                                       logical    = 1,
+                                                       factor     = 1,
+                                                       numeric    = 1,
+                                                       integer    = 1,
+                                                       data.frame = ncol(covariates[[v]]),
+                                                       matrix     = ncol(covariates[[v]]),
+                                                       fdata      = covariates[[v]]$numbasis.opt
+                                    )
+                                    }
+           )
 
-    sum1 <-
-      length(which(covariates[[varselect]][, sp$varid][which(case.weights == 1)] <= sp$breaks))
-    sum2 <-
-      length(which(covariates[[varselect]][, sp$varid][which(case.weights == 1)] > sp$breaks))
-  }
-  else if (class(covariates[[varselect]]) == "numeric") {
-    kidids[(which(covariates[[varselect]] <= sp$breaks))] <- 1
-    kidids[(which(covariates[[varselect]] > sp$breaks))] <- 2
+           step <- sum(total_features[2:n.var[which(2:n.var < varselect)]], na.rm = T)
+           sp$varid = sp$varid + as.integer(step)
+         },
+         numeric = {
+           kidids[(which(covariates[[varselect]][, sp$varid] <= sp$breaks))] <- 1
+           kidids[(which(covariates[[varselect]][, sp$varid] > sp$breaks))] <- 2
 
-    sum1 <-
-      length(which(covariates[[varselect]][which(case.weights == 1)] <= sp$breaks))
-    sum2 <-
-      length(which(covariates[[varselect]][which(case.weights == 1)] > sp$breaks))
-  }
+           sum1 <-
+             length(which(covariates[[varselect]][, sp$varid][which(case.weights == 1)] <= sp$breaks))
+           sum2 <-
+             length(which(covariates[[varselect]][, sp$varid][which(case.weights == 1)] > sp$breaks))
+         },
+         integer = {
+           kidids[(which(covariates[[varselect]][, sp$varid] <= sp$breaks))] <- 1
+           kidids[(which(covariates[[varselect]][, sp$varid] > sp$breaks))] <- 2
+
+           sum1 <-
+             length(which(covariates[[varselect]][, sp$varid][which(case.weights == 1)] <= sp$breaks))
+           sum2 <-
+             length(which(covariates[[varselect]][, sp$varid][which(case.weights == 1)] > sp$breaks))
+         },
+         factor = {
+
+         }
+         )
 
   # if all the observations belong to the same node, no split is done
   if (all(kidids == 1) | all(kidids == 2))
