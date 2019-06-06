@@ -85,7 +85,7 @@ split.opt <- function(y, x, split.type = "coeff"){
 
 # distances ---------------------------------------------------------------
 # CHECK
-compute.dissimilarity <- function(x,  lp = 2, case.weights, p = 2, dimension = 1){
+compute.dissimilarity <- function(x, lp = 2, case.weights, p = 2, dimension = 1){
 
 
     switch(class(x),
@@ -102,7 +102,8 @@ compute.dissimilarity <- function(x,  lp = 2, case.weights, p = 2, dimension = 1
                k.fun = function(i, j) TDA::wasserstein(d1[[i]], d1[[j]], p=p, dimension = dimension)
                k.fun = Vectorize(k.fun)
                d.idx = seq_along(d1)
-               outer(d.idx,d.idx, k.fun)
+               wass.dmat = outer(d.idx,d.idx, k.fun)
+               wass.dmat
 
              }
 
@@ -114,10 +115,10 @@ compute.dissimilarity <- function(x,  lp = 2, case.weights, p = 2, dimension = 1
 
 # Test --------------------------------------------------------------------
 # CHECK
-mytestREG <- function(x, y, R = 1000, dist.types = c("default", "default"), lp = c(2,2), case.weights) {
+mytestREG <- function(x, y, R = 1000, lp = c(2,2), case.weights) {
 
-  d1 = compute.dissimilarity(x, dist.type = dist.types[1], lp = lp[1], case.weights = case.weights)
-  d2 = compute.dissimilarity(y, dist.type = dist.types[2], lp = lp[2], case.weights = case.weights)
+  d1 = compute.dissimilarity(x, lp = lp[1], case.weights = case.weights)
+  d2 = compute.dissimilarity(y, lp = lp[2], case.weights = case.weights)
 
   ct <- energy::dcor.test(d1, d2, R = R)
   if (!is.na(ct$statistic)) {
@@ -137,7 +138,6 @@ findsplit <- function(response,
                       R,
                       rnd.sel,
                       rnd.splt,
-                      dist.types = rep("default",2),
                       lp = rep(2,2)) {
 
   if(!is.list(covariates)) stop("Argument 'covariates' must be provided as a list")
