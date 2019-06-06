@@ -368,7 +368,7 @@ growtree <- function(id = 1L,
 
   switch(class(covariates[[varselect]]),
          fdata = {
-           if(split.type == "coef"){
+           if(split.type == "coeff"){
 
              # observations before the split point are assigned to node 1
                kidids[which(covariates[[varselect]]$coef[, sp$varid] <= sp$breaks)] <- 1
