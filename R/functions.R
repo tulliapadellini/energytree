@@ -56,7 +56,6 @@ split.opt <- function(y, x, split.type = "coeff"){
            },
            fdata      = {
              if(split.type == "coeff"){
-
                  x1 = x$coef
                  bselect <- 1:dim(x1)[2]
                  p1 <- c()
@@ -73,6 +72,10 @@ split.opt <- function(y, x, split.type = "coeff"){
                  comb = sapply(s, function(j) sel.coeff<j)
                  xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y)[2])
                  splitindex <- s[which.min((xp.value))]
+             }
+             else if(split.type == "cluster"){
+               cl.fdata = kmeans.fd(x, ncl=2, draw = FALSE, par.ini=list(method="exact"))
+               splitindex <- cl.fdata
              }
 
            })
@@ -192,7 +195,7 @@ findsplit <- function(response,
             return(list(
               sp = partysplit(
                 varid = as.integer(bselect),
-                breaks = splitindex,
+                index = splitindex,
                 info = list(p.value = 1 - (1 - p[2,]) ^
                               sum(!is.na(p[2,])))),
                 varselect = xselect
@@ -365,10 +368,12 @@ growtree <- function(id = 1L,
 
   switch(class(covariates[[varselect]]),
          fdata = {
-           # observations before the split point are assigned to node 1
-           kidids[which(covariates[[varselect]]$coef[, sp$varid] <= sp$breaks)] <- 1
-           # observations before the split point are assigned to node 2
-           kidids[which(covariates[[varselect]]$coef[, sp$varid] > sp$breaks)] <- 2
+           if(split.type == "coef"){
+
+             # observations before the split point are assigned to node 1
+               kidids[which(covariates[[varselect]]$coef[, sp$varid] <= sp$breaks)] <- 1
+            #  observations before the split point are assigned to node 2
+              kidids[which(covariates[[varselect]]$coef[, sp$varid] > sp$breaks)] <- 2
 
            # number of observations assigned to node 1
            sum1 <-
@@ -402,7 +407,15 @@ growtree <- function(id = 1L,
 
            step <- sum(total_features[2:n.var[which(2:n.var < varselect)]], na.rm = T)
            sp$varid = sp$varid + as.integer(step)
-         },
+
+           } else if (split.type == "cluster"){
+
+             kidids[sp$index == 1] <- 1
+             kidids[sp$index == 2] <- 2
+
+
+         }
+           },
          numeric = {
            kidids[(which(covariates[[varselect]][, sp$varid] <= sp$breaks))] <- 1
            kidids[(which(covariates[[varselect]][, sp$varid] > sp$breaks))] <- 2
@@ -412,6 +425,7 @@ growtree <- function(id = 1L,
            sum2 <-
              length(which(covariates[[varselect]][, sp$varid][which(case.weights == 1)] > sp$breaks))
          },
+
          integer = {
            kidids[(which(covariates[[varselect]][, sp$varid] <= sp$breaks))] <- 1
            kidids[(which(covariates[[varselect]][, sp$varid] > sp$breaks))] <- 2
@@ -421,7 +435,11 @@ growtree <- function(id = 1L,
            sum2 <-
              length(which(covariates[[varselect]][, sp$varid][which(case.weights == 1)] > sp$breaks))
          },
+
          factor = {
+
+           kidids[sp$index == 1] <- 1
+           kidids[sp$index == 2] <- 2
 
          }
          )
