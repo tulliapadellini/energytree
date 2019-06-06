@@ -55,3 +55,13 @@ comb = do.call("c", lapply(1:4, function(x) combn(foo.lev, x, simplify = F)))
 
 combn(foo.lev, 1, simplify = F)
 combn(foo.lev, 2, simplify = F)
+
+
+library(fda.usc)
+data(phoneme)
+mlearn<-phoneme$learn[c(1:50,101:150,201:250),]
+
+mlearn[out.fd1$cluster==1]
+out.fd1=kmeans.fd(mlearn,ncl=3,draw=TRUE)
+
+

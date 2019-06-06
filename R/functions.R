@@ -85,9 +85,9 @@ split.opt <- function(y, x, split.type = "coeff"){
 
 # distances ---------------------------------------------------------------
 # CHECK
-compute.dissimilarity <- function(x, dist.type = "default", lp = 2, case.weights){
+compute.dissimilarity <- function(x,  lp = 2, case.weights, p = 2, dimension = 1){
 
-  if(dist.type == "default"){
+
     switch(class(x),
            logical    = dist((x[case.weights])),
            factor     = daisy(as.data.frame(x[case.weights,])),
@@ -95,12 +95,19 @@ compute.dissimilarity <- function(x, dist.type = "default", lp = 2, case.weights
            integer    = dist(x[case.weights]),
            data.frame = dist(x[case.weights]),
            matrix     = dist(x[case.weights]),
-           fdata      = metric.lp(x[case.weights], lp=lp))
-  }
-  else{
-    if(!is.list(x)) stop("if distance function is arbitrary, argument x must be provided as a list")
-    dist.type(x[case.weights]) # TBC: mettilo in modo che restituisca matrice di distanze
-  }
+           fdata      = metric.lp(x[case.weights], lp=lp),
+           list       = {
+             if(attributes(x[[1]])$names == "diagram"){
+               d1 = x[case.weights]
+               k.fun = function(i, j) TDA::wasserstein(d1[[i]], d1[[j]], p=p, dimension = dimension)
+               k.fun = Vectorize(k.fun)
+               d.idx = seq_along(d1)
+               outer(d.idx,d.idx, k.fun)
+
+             }
+
+           })
+
 }
 
 
