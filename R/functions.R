@@ -1,5 +1,6 @@
 library(cluster)
 library(fda.usc)
+library(TDA)
 
 
 
@@ -271,14 +272,14 @@ mytree <- function(response,
   ### covariates[[j]]
   newcovariates = lapply(covariates, function(j){
     switch(class(j),
-           logical    = return(covariates[[j]]),
-           factor     = return(covariates[[j]]),
-           numeric    = return(covariates[[j]]),
-           integer    = return(covariates[[j]]),
-           data.frame = return(covariates[[j]]),
-           matrix     = return(covariates[[j]]),
+           logical    = return(j),
+           factor     = return(j),
+           numeric    = return(j),
+           integer    = return(j),
+           data.frame = return(j),
+           matrix     = return(j),
            fdata      = {
-             foo <- fda.usc::min.basis(covariates[[j]], numbasis = nb)
+             foo <- fda.usc::min.basis(j, numbasis = nb)
              fd3 <- fda.usc::fdata2fd(foo$fdata.est,
                                       type.basis = "bspline",
                                       nbasis = foo$numbasis.opt)
@@ -286,13 +287,13 @@ mytree <- function(response,
              return(foo)
            },
            list       = {
-             if(all(sapply(covariates[[j]], class) == 'igraph')){
-               shell <- graph.to.shellness.distr.df(covariates[[j]])
+             if(all(sapply(j, class) == 'igraph')){
+               shell <- graph.to.shellness.distr.df(j)
                return(shell)
              }
 
-             if(all(sapply(covariates[[j]], function(kk) attributes(kk)$names == 'diagram'))){
-               return(covariates[[j]])
+             if(all(sapply(j, function(kk) attributes(kk)$names == 'diagram'))){
+               return(j)
              }
            }
     )
@@ -313,8 +314,8 @@ nodes <- growtree(id = 1L,
   # compute terminal node number for each observation
   m.data <- c()
 
-  newcovariates = lapply(covariates, function(j){
-    switch(class(j),
+  newcovariates = lapply(1:nvar, function(j){
+    switch(class(covariates[[j]]),
            logical    = return(newcovariates[[j]]),
            factor     = return(newcovariates[[j]]),
            numeric    = return(newcovariates[[j]]),
@@ -344,7 +345,7 @@ nodes <- growtree(id = 1L,
     else {
       m.data <- foo
     }
-  }
+
   fitted <- fitted_node(nodes, data = data.frame(m.data))
 
   # return rich constparty object
@@ -356,7 +357,7 @@ nodes <- growtree(id = 1L,
                         check.names = FALSE),
     terms = terms(response ~ ., data = data1))
   as.constparty(ret)
-  }
+  
 
   return(ret)
 }
@@ -436,9 +437,9 @@ growtree <- function(id = 1L,
                                                        factor     = 1,
                                                        numeric    = 1,
                                                        integer    = 1,
-                                                       data.frame = ncol(covariates[[v]]),
-                                                       matrix     = ncol(covariates[[v]]),
-                                                       fdata      = covariates[[v]]$numbasis.opt
+                                                       data.frame = ncol(v),
+                                                       matrix     = ncol(v),
+                                                       fdata      = v$numbasis.opt
                                     )
                                     }
            )
