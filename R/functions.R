@@ -1,6 +1,9 @@
 library(cluster)
 library(fda.usc)
 
+
+
+
 # split value -------------------------------------------------------------
 
 #' Find Split Value
@@ -15,7 +18,7 @@ library(fda.usc)
 #' @examples
 #' add_numbers(1, 2) ## returns 3
 #'
-split.opt <- function(y, x, split.type = "coeff"){
+split.opt <- function(y, x, split.type = "coeff", wass.dist = NULL){
 
       switch(class(x),
            factor     = { #com'era prima ma overall na mezza merda
@@ -75,17 +78,22 @@ split.opt <- function(y, x, split.type = "coeff"){
              }
              else if(split.type == "cluster"){
                cl.fdata = kmeans.fd(x, ncl=2, draw = FALSE, par.ini=list(method="exact"))
-               splitindex <- cl.fdata
+               splitindex <- cl.fdata$cluster
              }
+           },
+           list = if(attributes(x[[1]])$names == "diagram"){
+             cl.diagrams = cluster::pam(wass.dist, k = 2, diss = TRUE)
+             splitindex <- cl.diagrams$clustering
+           }
 
-           })
+           )
   return(splitindex)
 }
 
 
 # distances ---------------------------------------------------------------
 # CHECK
-compute.dissimilarity <- function(x, lp = 2, case.weights, p = 2, dimension = 1){
+compute.dissimilarity <- function(x, lp = 2, case.weights, ...){
 
 
     switch(class(x),
@@ -99,12 +107,10 @@ compute.dissimilarity <- function(x, lp = 2, case.weights, p = 2, dimension = 1)
            list       = {
              if(attributes(x[[1]])$names == "diagram"){
                d1 = x[case.weights]
-               k.fun = function(i, j) TDA::wasserstein(d1[[i]], d1[[j]], p=p, dimension = dimension)
+               k.fun = function(i, j) TDA::wasserstein(d1[[i]], d1[[j]], ...)
                k.fun = Vectorize(k.fun)
                d.idx = seq_along(d1)
-               wass.dmat = outer(d.idx,d.idx, k.fun)
-               wass.dmat
-
+               outer(d.idx,d.idx, k.fun)
              }
 
            })
@@ -115,10 +121,10 @@ compute.dissimilarity <- function(x, lp = 2, case.weights, p = 2, dimension = 1)
 
 # Test --------------------------------------------------------------------
 # CHECK
-mytestREG <- function(x, y, R = 1000, lp = c(2,2), case.weights) {
+mytestREG <- function(x, y, R = 1000, lp = c(2,2), case.weights, ...) {
 
-  d1 = compute.dissimilarity(x, lp = lp[1], case.weights = case.weights)
-  d2 = compute.dissimilarity(y, lp = lp[2], case.weights = case.weights)
+  d1 = compute.dissimilarity(x, lp = lp[1], case.weights = case.weights, ...)
+  d2 = compute.dissimilarity(y, lp = lp[2], case.weights = case.weights, ...)
 
   ct <- energy::dcor.test(d1, d2, R = R)
   if (!is.na(ct$statistic)) {
@@ -138,7 +144,7 @@ findsplit <- function(response,
                       R,
                       rnd.sel,
                       rnd.splt,
-                      lp = rep(2,2)) {
+                      lp = rep(2,2), ...) {
 
   if(!is.list(covariates)) stop("Argument 'covariates' must be provided as a list")
 
@@ -150,7 +156,7 @@ findsplit <- function(response,
                                                      R = R,
                                                      dist.types = dist.types,
                                                      lp = lp,
-                                                     case.weights = case.weights))
+                                                     case.weights = case.weights, ...))
 
    rownames(p) <- c("statistic", "p-value")
 
@@ -199,15 +205,36 @@ findsplit <- function(response,
               varselect = xselect))
           },
           fdata = {
+            if(split.type == "coeff"){
             return(list(
               sp = partysplit(
                 varid = as.integer(bselect),
-                index = splitindex,
+                breaks = splitindex,
                 info = list(p.value = 1 - (1 - p[2,]) ^
                               sum(!is.na(p[2,])))),
                 varselect = xselect
-            ))
+            ))} else if(split.type == "cluster"){
+              return(list(
+                sp = partysplit(
+                  varid = as.integer(xselect),
+                  index = splitindex,
+                  info = list(p.value = 1 - (1 - p[2,]) ^
+                                sum(!is.na(p[2,])))),
+                varselect = xselect
+              ))
             }
+            },
+          list = if(attributes(x[[1]])$names == 'diagram'){
+            return(list(
+              sp = partysplit(
+                varid = as.integer(xselect),
+                index = splitindex,
+                info = list(p.value = 1 - (1 - p[2,]) ^
+                              sum(!is.na(p[2,])))),
+              varselect = xselect
+              ))
+
+   }
 
    )
 
@@ -262,6 +289,10 @@ mytree <- function(response,
              if(all(sapply(covariates[[j]], class) == 'igraph')){
                shell <- graph.to.shellness.distr.df(covariates[[j]])
                return(shell)
+             }
+
+             if(all(sapply(covariates[[j]], function(kk) attributes(kk)$names == 'diagram'))){
+               return(covariates[[j]])
              }
            }
     )
