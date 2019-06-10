@@ -336,13 +336,18 @@ mytree <- function(response,
 
   fitted.obs <- fitted_node(nodes, data = covariates, obs = 1:length(data))
 
+  prova.dati = data.frame(y = response)
+  for(i in 1:n.var){
+    prova.dati[i+1] = I(covariates[i])
+  }
   # return rich constparty object
    #data1 = cbind(response, newcovariates)
-  ret <- party(nodes, data = data.frame(),
+  ret <- party(nodes, data = prova.dati,
     fitted = data.frame("(fitted)" = fitted.obs,
                         "(response)" = response,
-                        "(case.weights)" = case.weights))
-#    terms = terms(response ~ ., data = data1))
+                        "(case.weights)" = case.weights,
+      check.names = FALSE),
+   terms = terms(y ~ ., data = prova.dati))
   as.constparty(ret)
 
   return(ret)
