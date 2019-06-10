@@ -20,6 +20,7 @@ library(fda.usc)
 #'
 split.opt <- function(y, x, split.type = "coeff", wass.dist = NULL){
 
+
       switch(class(x),
            factor     = { #com'era prima ma overall na mezza merda
 
@@ -96,6 +97,7 @@ split.opt <- function(y, x, split.type = "coeff", wass.dist = NULL){
 compute.dissimilarity <- function(x, lp = 2, case.weights, ...){
 
 
+
     switch(class(x),
            logical    = dist((x[case.weights])),
            factor     = daisy(as.data.frame(x[case.weights,])),
@@ -103,17 +105,17 @@ compute.dissimilarity <- function(x, lp = 2, case.weights, ...){
            integer    = dist(x[case.weights]),
            data.frame = dist(x[case.weights]),
            matrix     = dist(x[case.weights]),
-           fdata      = metric.lp(x[case.weights], lp=lp),
-           list       = {
-             if(attributes(x[[1]])$names == "diagram"){
-               d1 = x[case.weights]
-               k.fun = function(i, j) TDA::wasserstein(d1[[i]], d1[[j]], ...)
-               k.fun = Vectorize(k.fun)
-               d.idx = seq_along(d1)
-               outer(d.idx,d.idx, k.fun)
-             }
-
-           })
+           fdata      = metric.lp(x[case.weights], lp=lp))
+           # list       = {
+           #   if(!is.null(attributes(x[[1]]))){
+           #   if(attributes(x[[1]])$names == "diagram"){
+           #     d1 = x[case.weights]
+           #     k.fun = function(i, j) TDA::wasserstein(d1[[i]], d1[[j]], ...)
+           #     k.fun = Vectorize(k.fun)
+           #     d.idx = seq_along(d1)
+           #     outer(d.idx,d.idx, k.fun)
+           #   }}
+           #})
 
 }
 
@@ -125,7 +127,12 @@ compute.dissimilarity <- function(x, lp = 2, case.weights, ...){
 mytestREG <- function(x, y, R = 1000, lp = c(2,2), case.weights, ...) {
 
   d1 = compute.dissimilarity(x, lp = lp[1], case.weights = case.weights)
+  print(paste("x   ",class(x)))
+  if(is.null(d1)) print("OPSIE")
   d2 = compute.dissimilarity(y, lp = lp[2], case.weights = case.weights)
+  print(paste("y   ",class(y)))
+  if(is.null(d2)) print("OPSIE")
+
 
   ct <- energy::dcor.test(d1, d2, R = R)
   if (!is.na(ct$statistic)) {
@@ -152,8 +159,8 @@ findsplit <- function(response,
   n.var = length(covariates) #TBC: switch for type of covariates?
 
   # selects one covariate and performs an independece test
-  p = sapply(covariates, function(sel.cov) mytestREG(x = sel.cov,
-                                                     y = as.data.frame(response),
+  p = lapply(covariates, function(sel.cov) mytestREG(x = sel.cov,
+                                                     y = response,
                                                      R = R,
                                                      dist.types = dist.types,
                                                      lp = lp,
@@ -263,23 +270,24 @@ mytree <- function(response,
 
   # if the case weights are not provided, they are all initialized as 1
   if (is.null(case.weights))
-    case.weights <- rep(1L, as.numeric(lengths(response)))
+    case.weights <- rep(1L, as.numeric(length(response)))
 
   # new list of covariates (initialization)
   newcovariates=list()
 
   # trasformations based on the variables' nature
   newcovariates = lapply(covariates, function(j){
-    if(class(j) == 'fdata'){
-
-      foo <- fda.usc::min.basis(j, numbasis = nb)
-      fd3 <- fda.usc::fdata2fd(foo$fdata.est,
-                               type.basis = "bspline",
-                               nbasis = foo$numbasis.opt)
-      foo$coef <- t(fd3$coefs)
-      return(foo)
-
-    } else if(class(j) == 'list' &
+    # if(class(j) == 'fdata'){
+    #
+    #   foo <- fda.usc::min.basis(j, numbasis = nb)
+    #   fd3 <- fda.usc::fdata2fd(foo$fdata.est,
+    #                            type.basis = "bspline",
+    #                            nbasis = foo$numbasis.opt)
+    #   foo$coef <- t(fd3$coefs)
+    #   return(foo)
+    #
+    # } else
+    if(class(j) == 'list' &
               all(sapply(j, class) == 'igraph')){
 
       shell <- graph.to.shellness.distr.df(j)
@@ -563,5 +571,5 @@ graph.to.shellness.distr.df <- function(data, shell.limit = NULL) {
     sapply(df.shellness.distr[, seq(1, ncol(df.shellness.distr))],
            as.integer)
 
-  return(df.shellness.distr)
+  return(df.shellness.distr[,1])
 }
