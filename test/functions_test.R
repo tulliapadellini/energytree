@@ -166,6 +166,9 @@ findsplit <- function(response,
                                                      lp = lp,
                                                      case.weights = case.weights))
 
+
+   p = t(matrix(unlist(p), ncol = 2, byrow = T))
+
    rownames(p) <- c("statistic", "p-value")
 
 
@@ -331,11 +334,11 @@ mytree <- function(response,
   # )
   ### m.data probably not needed, thinking about working directly on newcovariates
 
-  fitted <- fitted_node(nodes, data = data.frame(newcovariates))
+  fitted <- fitted_node(nodes, data =newcovariates)
 
   # return rich constparty object
-  data1 = cbind(data.frame(response), data.frame(newcovariates))
-  ret <- party(nodes, data = data.frame(newcovariates),
+  data1 = cbind(response, newcovariates)
+  ret <- party(nodes, data = newcovariates,
     fitted = data.frame("(fitted)" = fitted,
                         "(response)" = response,
                         "(case.weights)" = case.weights,
@@ -410,7 +413,7 @@ growtree <- function(id = 1L,
              # is the response, it's ignored), then shift varid by the
              # number of basis of variable 2 (if it's functional) or the
              # maximum k_core found in the graphs (if it's a graph)
-             total_features <- lapply(covariates[2:n.var],
+             total_features <- lapply(covariates,
                                       function(v) {
                                         switch(
                                           class(v),
@@ -425,7 +428,7 @@ growtree <- function(id = 1L,
                                       })
 
              step <-
-               sum(total_features[2:n.var[which(2:n.var < varselect)]], na.rm = T)
+               sum(total_features[[which(1:n.var < varselect)]], na.rm = T)
              sp$varid = sp$varid + as.integer(step)
 
            } else if (split.type == "cluster") {
@@ -438,15 +441,15 @@ growtree <- function(id = 1L,
 
          numeric = {
 
-           kidids[sp$index == 1] <- 1
-           kidids[sp$index == 2] <- 2
+           kidids[(which(covariates[[varselect]][, sp$varid] <= sp$breaks))] <- 1
+           kidids[(which(covariates[[varselect]][, sp$varid] > sp$breaks))] <- 2
 
          },
 
          integer = {
 
-           kidids[sp$index == 1] <- 1
-           kidids[sp$index == 2] <- 2
+           kidids[(which(covariates[[varselect]][, sp$varid] <= sp$breaks))] <- 1
+           kidids[(which(covariates[[varselect]][, sp$varid] > sp$breaks))] <- 2
 
          },
 

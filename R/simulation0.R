@@ -12,7 +12,7 @@ require(partykit)
 
 set.seed(1)
 
-n_simulations <- 50
+n_simulations <- 1
 rmse_v <- list()
 rmse_v[["etree"]] <- rep(NA, n_simulations)
 rmse_v[["dtree"]] <- rep(NA, n_simulations)
@@ -57,7 +57,7 @@ for(j in 1:n_simulations) {
 
   # this line is used to generate the data to me used in the comparison with other algorithms
   # it's not used by ours
-  m.data <- list2matrix(data[-1], NULL, list("Y" = data$Y))
+  #m.data <- list2matrix(data[-1], NULL, list("Y" = data$Y))
 
   # split the data
   for(i in 1:length(data)) {
@@ -77,35 +77,35 @@ for(j in 1:n_simulations) {
                        minbucket = 2,
                        alpha = 0.05)
   plot(myS)
-
-  ###### PREDICTION
-  Y.test <- test[[which(names(test) == "Y")]]
-  test <- test[which(names(test) != "Y")]
-  my.pred <- my.predict(model = myS, newdata = test)
-
-  ###### GET THE TABULAR DATA TO BE USED BY OTHER ALGORITHMS
-  train <- m.data[c(rnd.ind),]
-  test <- m.data[-c(rnd.ind),]
-  test <- test[which(names(test) != "Y")]
-
-  ###### COMPARISON WITH DECISION TREES (CART)
-  dtree.model <- rpart(Y~., data=train)
-  dtree.pred <- predict(object = dtree.model, newdata = test)
-
-  ###### COMPARISON WITH CONDITIONAL TREES
-  ctree.model <- ctree(formula = Y~., data = train)
-  ctree.pred <- predict(object = ctree.model, newdata = test)
-
-  rmse_v[["etree"]][j] <-  rmse(Y.test, my.pred)
-  rmse_v[["dtree"]][j] <- rmse(Y.test, dtree.pred)
-  rmse_v[["ctree"]][j] <- rmse(Y.test, ctree.pred)
-}
-
-###### COMPARISON
-print(paste("MRMSE Energy Tree:", round(mean(rmse_v[["etree"]]),4)))
-print(paste("MRMSE Decision Tree:", round(mean(rmse_v[["dtree"]]),4)))
-print(paste("MRMSE Conditional Inference Tree:", round(mean(rmse_v[["ctree"]]),4)))
-
-print(paste("SD RMSE Energy Tree:", round(sd(rmse_v[["etree"]]),4)))
-print(paste("SD RMSE Decision Tree:", round(sd(rmse_v[["dtree"]]),4)))
-print(paste("SD RMSE Conditional Inference Tree:", round(sd(rmse_v[["ctree"]]),4)))
+# }
+#   ###### PREDICTION
+#   Y.test <- test[[which(names(test) == "Y")]]
+#   test <- test[which(names(test) != "Y")]
+#   my.pred <- my.predict(model = myS, newdata = test)
+#
+#   ###### GET THE TABULAR DATA TO BE USED BY OTHER ALGORITHMS
+#   train <- m.data[c(rnd.ind),]
+#   test <- m.data[-c(rnd.ind),]
+#   test <- test[which(names(test) != "Y")]
+#
+#   ###### COMPARISON WITH DECISION TREES (CART)
+#   dtree.model <- rpart(Y~., data=train)
+#   dtree.pred <- predict(object = dtree.model, newdata = test)
+#
+#   ###### COMPARISON WITH CONDITIONAL TREES
+#   ctree.model <- ctree(formula = Y~., data = train)
+#   ctree.pred <- predict(object = ctree.model, newdata = test)
+#
+#   rmse_v[["etree"]][j] <-  rmse(Y.test, my.pred)
+#   rmse_v[["dtree"]][j] <- rmse(Y.test, dtree.pred)
+#   rmse_v[["ctree"]][j] <- rmse(Y.test, ctree.pred)
+# }
+#
+# ###### COMPARISON
+# print(paste("MRMSE Energy Tree:", round(mean(rmse_v[["etree"]]),4)))
+# print(paste("MRMSE Decision Tree:", round(mean(rmse_v[["dtree"]]),4)))
+# print(paste("MRMSE Conditional Inference Tree:", round(mean(rmse_v[["ctree"]]),4)))
+#
+# print(paste("SD RMSE Energy Tree:", round(sd(rmse_v[["etree"]]),4)))
+# print(paste("SD RMSE Decision Tree:", round(sd(rmse_v[["dtree"]]),4)))
+# print(paste("SD RMSE Conditional Inference Tree:", round(sd(rmse_v[["ctree"]]),4)))

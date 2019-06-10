@@ -71,45 +71,4 @@ for(i in 1:M){
                   rnd.sel = T, rnd.splt = TRUE, nb=nb)
   plot(myREG)
 }
-  #FUNCTIONAL LINEAR MODEL
-  x <- list.train$V1
-  y <- list.train$Y
-  tt=x[["argvals"]]
 
-  dataf=as.data.frame(y)
-
-  nbasis.x=nb
-  nbasis.b=nb
-  basis1=create.bspline.basis(rangeval=range(tt),nbasis=nbasis.x)
-  basis2=create.bspline.basis(rangeval=range(tt),nbasis=nbasis.b)
-
-  f=y~x
-  basis.x=list("x"=basis1)
-  basis.b=list("x"=basis2)
-  ldata=list("df"=dataf,"x"=x)
-  res=fregre.lm(f,ldata,basis.x=basis.x,basis.b=basis.b)
-
-  ###################
-  ##PREDICTION MYREG##
-
-  test_y <- list.test$Y
-  f.test <- list.test$V1
-  foo <- min.basis(f.test, numbasis = nb)
-  fd3 <- fdata2fd(foo$fdata.est, type.basis = "bspline", nbasis = foo$numbasis.opt)
-  m.coef <- data.frame(t(fd3$coefs))
-  for(j in 1: dim(m.coef)[2]){
-    names(m.coef)[j] <- paste("V1",names(m.coef)[j],sep = ".")
-  }
-  y_pred=predict(myREG, newdata = m.coef)
-  MEPmy[i] <- (sum((test_y-y_pred)^2)/length(test_y))/(var(test_y))
-
-  #################
-  ##PREDICTION FLM
-  newldata=list( "x"=list.test$V1)
-  y_pred1 <- predict.fregre.lm(res, newx=newldata)
-  MEP1[i] <- (sum((test_y-y_pred1)^2)/length(test_y))/(var(test_y))
-
-
-}
-
-save(MEPmy,MEP1, file="results.RData")
