@@ -105,7 +105,7 @@ compute.dissimilarity <- function(x, lp = 2, case.weights, ...){
            integer    = dist(x[case.weights]),
            data.frame = dist(x[case.weights]),
            matrix     = dist(x[case.weights]),
-           fdata      = metric.lp(x[case.weights], lp=lp))
+           fdata      = metric.lp(x, lp=lp))
            # list       = {
            #   if(!is.null(attributes(x[[1]]))){
            #   if(attributes(x[[1]])$names == "diagram"){
