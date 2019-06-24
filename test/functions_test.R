@@ -18,8 +18,7 @@ library(fda.usc)
 #' @examples
 #' add_numbers(1, 2) ## returns 3
 #'
-split.opt <- function(y, x, split.type = "coeff", wass.dist = NULL){
-
+split.opt <- function(y, x, split.type = "coeff", R=1000, wass.dist = NULL){
 
       switch(class(x),
            factor     = { #com'era prima ma overall na mezza merda
@@ -60,22 +59,31 @@ split.opt <- function(y, x, split.type = "coeff", wass.dist = NULL){
            },
            fdata      = {
              if(split.type == "coeff"){
-                 x1 = x$coef
+                 foo <- fda.usc::min.basis(x, numbasis = nb)
+                 fd3 <- fda.usc::fdata2fd(foo$fdata.est,
+                                        type.basis = "bspline",
+                                        nbasis = foo$numbasis.opt)
+                 foo$coef <- t(fd3$coefs)
+                 x1 = foo$coef
                  bselect <- 1:dim(x1)[2]
+                 print(bselect)
                  p1 <- c()
                  p1 <- sapply(bselect, function(i) mytestREG(x1[, i], y, R = R))
                  colnames(p1) <- colnames(x1)
                  if (length(which(p1[2,] == min(p1[2,], na.rm = T))) > 1) {
-                   bselect <- which.max(p1[1,])
+                   bselect <- as.integer(which.max(p1[1,]))
                  } else{
-                   bselect <- which.min(p1[2,])
+                   bselect <- as.integer(which.min(p1[2,]))
                  }
-
                  sel.coeff = x1[,bselect]
                  s  <- sort(sel.coeff)
+                 print(s)
                  comb = sapply(s, function(j) sel.coeff<j)
+                 print(apply(comb, 2, sum))
                  xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y)[2])
+                 print(xp.value)
                  splitindex <- s[which.min((xp.value))]
+                 print(splitindex)
              }
              else if(split.type == "cluster"){
                cl.fdata = kmeans.fd(x, ncl=2, draw = FALSE, par.ini=list(method="exact"))
@@ -88,7 +96,9 @@ split.opt <- function(y, x, split.type = "coeff", wass.dist = NULL){
            }
 
            )
-  return(splitindex)
+  out <- list('splitindex' = splitindex)
+  if(class(x) == 'fdata') {out$bselect <- bselect}
+  return(out)
 }
 
 
@@ -101,7 +111,7 @@ compute.dissimilarity <- function(x, lp = 2, case.weights, ...){
     switch(class(x),
            logical    = dist((x[case.weights])),
            factor     = daisy(as.data.frame(x[case.weights,])),
-           numeric    = dist(x[case.weights]),  # TBC: controlla se si possono accorpare condizioni sullo switch
+           numeric    = dist(x),  # TBC: controlla se si possono accorpare condizioni sullo switch
            integer    = dist(x[case.weights]),
            data.frame = dist(x[case.weights]),
            matrix     = dist(x[case.weights]),
@@ -152,7 +162,8 @@ findsplit <- function(response,
                       R,
                       rnd.sel,
                       rnd.splt,
-                      lp = rep(2,2), ...) {
+                      lp = rep(2,2),
+                      split.type = "coeff", ...) {
 
   if(!is.list(covariates)) stop("Argument 'covariates' must be provided as a list")
 
@@ -165,7 +176,6 @@ findsplit <- function(response,
                                                      dist.types = dist.types,
                                                      lp = lp,
                                                      case.weights = case.weights))
-
 
    p = t(matrix(unlist(p), ncol = 2, byrow = T))
 
@@ -187,7 +197,10 @@ findsplit <- function(response,
 
    x <-  covariates[[xselect]]
 
-   splitindex = split.opt(y = response, x = x, split.type = "coeff")
+   split.objs = split.opt(y = response, x = x, split.type = "coeff")
+   splitindex <- split.objs$splitindex
+   bselect <- split.objs$bselect
+   print(splitindex)
 
    switch(class(x),
           numeric = {
@@ -275,34 +288,34 @@ mytree <- function(response,
   if (is.null(case.weights))
     case.weights <- rep(1L, as.numeric(length(response)))
 
-  # # new list of covariates (initialization)
-  # newcovariates=list()
-  #
-  # # trasformations based on the variables' nature
-  # newcovariates = lapply(covariates, function(j){
-  #   # if(class(j) == 'fdata'){
-  #   #
-  #   #   foo <- fda.usc::min.basis(j, numbasis = nb)
-  #   #   fd3 <- fda.usc::fdata2fd(foo$fdata.est,
-  #   #                            type.basis = "bspline",
-  #   #                            nbasis = foo$numbasis.opt)
-  #   #   foo$coef <- t(fd3$coefs)
-  #   #   return(foo)
-  #   #
-  #   # } else
-  #   if(class(j) == 'list' &
-  #             all(sapply(j, class) == 'igraph')){
-  #
-  #     shell <- graph.to.shellness.distr.df(j)
-  #     return(shell)
-  #
-  #   } else {
-  #
-  #     return(j)
-  #
-  #   }
-  # }
-  # )
+  # new list of covariates (initialization)
+  newcovariates=list()
+
+  # trasformations based on the variables' nature
+  newcovariates = lapply(covariates, function(j){
+    if(class(j) == 'fdata'){
+
+      foo <- fda.usc::min.basis(j, numbasis = nb)
+      fd3 <- fda.usc::fdata2fd(foo$fdata.est,
+                               type.basis = "bspline",
+                               nbasis = foo$numbasis.opt)
+      foo$coef <- t(fd3$coefs)
+      return(foo)
+
+    } else
+    if(class(j) == 'list' &
+              all(sapply(j, class) == 'igraph')){
+
+      shell <- graph.to.shellness.distr.df(j)
+      return(shell)
+
+    } else {
+
+      return(j)
+
+    }
+  }
+  )
 
   nodes <- growtree(id = 1L,
                     response = response,
@@ -314,6 +327,8 @@ mytree <- function(response,
                     rnd.sel = rnd.sel,
                     rnd.splt = rnd.splt,
                     n.var = n.var)
+
+  print(nodes)
 
   # compute terminal node number for each observation
   # m.data <- lapply(1:n.var, function(j){
@@ -334,20 +349,30 @@ mytree <- function(response,
   # )
   ### m.data probably not needed, thinking about working directly on newcovariates
 
-  fitted.obs <- fitted_node(nodes, data = covariates, obs = 1:length(data))
+  fitted.obs <- fitted_node(nodes,
+                            data = newcovariates[[1]]$fdataobj$data,
+                            vmatch = 1:length(newcovariates[[1]]$fdataobj$data),
+                            obs = 1:nrow(newcovariates[[1]]$fdataobj$data))
+
+  # # old fitted.obs (original data)
+  # fitted.obs <- fitted_node(nodes,
+  #                           data = covariates[[1]]$data,
+  #                           vmatch = 1:length(covariates[[1]]$data),
+  #                           obs = 1:nrow(covariates[[1]]$data))
 
   prova.dati = data.frame(y = response)
   for(i in 1:n.var){
     prova.dati[i+1] = I(covariates[i])
   }
+
   # return rich constparty object
-   #data1 = cbind(response, newcovariates)
-  ret <- party(nodes, data = prova.dati,
+  data1 = cbind('response'=as.data.frame(response), as.data.frame(newcovariates[[1]]$fdataobj$data))
+  ret <- party(nodes, data = as.data.frame(newcovariates[[1]]$fdataobj$data),
     fitted = data.frame("(fitted)" = fitted.obs,
-                        "(response)" = response,
+                        "(response)" = as.data.frame(response),
                         "(case.weights)" = case.weights,
       check.names = FALSE),
-   terms = terms(y ~ ., data = prova.dati))
+   terms = terms(response ~ ., data = data1))
   as.constparty(ret)
 
   return(ret)
@@ -365,7 +390,8 @@ growtree <- function(id = 1L,
                      R,
                      rnd.sel,
                      rnd.splt,
-                     n.var) {
+                     n.var,
+                     split.type = 'coeff') {
   # for less than <minbucket> observations stop here
   if (sum(case.weights) < minbucket)
     return(partynode(id = id))
@@ -386,6 +412,8 @@ growtree <- function(id = 1L,
   # separately saving res_splt outputs
   sp <- res_splt$sp
   varselect <- res_splt$varselect
+  print(c('sp is', sp))
+  print(c('varselect is', varselect))
 
   # no split found, stop here
   if (is.null(sp))
@@ -399,16 +427,27 @@ growtree <- function(id = 1L,
          fdata = {
            if(split.type == "coeff"){
 
+             basis_covariates = lapply(covariates, function(j){
+               foo <- fda.usc::min.basis(j, numbasis = nb)
+               fd3 <- fda.usc::fdata2fd(foo$fdata.est,
+                                        type.basis = "bspline",
+                                        nbasis = foo$numbasis.opt)
+               foo$coef <- t(fd3$coefs)
+               return(foo)
+             }
+             )
+
              # observations before the split point are assigned to node 1
-             kidids[which(covariates[[varselect]]$coef[, sp$varid] <= sp$breaks)] <-
+             kidids[which(basis_covariates[[varselect]]$coef[, sp$varid] <= sp$breaks)] <-
                1
              #  observations before the split point are assigned to node 2
-             kidids[which(covariates[[varselect]]$coef[, sp$varid] > sp$breaks)] <-
+             kidids[which(basis_covariates[[varselect]]$coef[, sp$varid] > sp$breaks)] <-
                2
 
+             print(kidids)
+
              # vector containing the optimal number of basis for each covariate
-             nb = sapply(1:n.var, function(i)
-               covariates[[i]]$numbasis.opt)
+             nb = sapply(1:n.var, function(i) basis_covariates[[i]]$numbasis.opt)
              ###partiva da 0! dove viene utilizzato?
 
              # shift the varid of the tree based on the quantity of the
@@ -417,7 +456,7 @@ growtree <- function(id = 1L,
              # is the response, it's ignored), then shift varid by the
              # number of basis of variable 2 (if it's functional) or the
              # maximum k_core found in the graphs (if it's a graph)
-             total_features <- lapply(covariates,
+             total_features <- lapply(basis_covariates,
                                       function(v) {
                                         switch(
                                           class(v),
@@ -430,9 +469,16 @@ growtree <- function(id = 1L,
                                           fdata      = v$numbasis.opt
                                         )
                                       })
+             print(total_features)
 
-             step <-
-               sum(total_features[[which(1:n.var < varselect)]], na.rm = T)
+             step <- if(length(total_features) > 1) {
+               sum_feat <- sum(total_features[[which(1:n.var <= varselect)]], na.rm = T)
+               as.integer(sum_feat)
+             } else {
+               sum_feat <- 0L
+             }
+             print(step)
+
              sp$varid = sp$varid + as.integer(step)
 
            } else if (split.type == "cluster") {
@@ -473,10 +519,13 @@ growtree <- function(id = 1L,
   kids <-
     vector(mode = "list", length = max(kidids, na.rm = TRUE))
 
+  print(c('length is',length(kids)))
+
   for (kidid in 1:length(kids)) {
     # select observations for current node
     w <- case.weights
     w[kidids != kidid] <- 0
+    print(w)
 
     # get next node id
     if (kidid > 1) {

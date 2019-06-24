@@ -8,7 +8,7 @@ library(entropy)
 library(partykit)
 
 ##Load the classification tree function
-source("functionsREG.R")
+#source("functionsREG.R")
 
 
 ################
@@ -49,8 +49,9 @@ MEPmy <- c()
 
 MEP_b <- c()
 
-
 MEP_pc <- c()
+
+M <- 1
 for(i in 1:M){
   print(i)
 
@@ -68,7 +69,7 @@ for(i in 1:M){
   myREG <- mytree(response = resp.list[[i]],
                   covariates = cov.list[i],
                   case.weights = NULL,
-                  minbucket = 1,
+                  minbucket = 195,
                   alpha = 0.05,
                   R = 1000,
                   rnd.sel = T,
@@ -77,8 +78,8 @@ for(i in 1:M){
   plot(myREG)
 
   #FUNCTIONAL LINEAR MODEL BASIS
-  x <- data[[i]]$V1
-  y <- data[[i]]$Y
+  x <- cov.list[[i]]
+  y <- resp.list[[i]]
   tt=x[["argvals"]]
 
   dataf=as.data.frame(y)
