@@ -4,7 +4,8 @@ library(cluster)
 library(fda.usc)
 
 
-# etree (Main function) ---------------------------------------------------
+
+# Main function -----------------------------------------------------------
 
 etree <- function(response,
                   covariates,
@@ -12,8 +13,8 @@ etree <- function(response,
                   minbucket = 1,
                   alpha = 0.05,
                   R = 1000,
-                  rnd.sel = T,
-                  rnd.splt = TRUE,
+                  split.type = 'coeff',
+                  coef.split.type = 'test',
                   nb = 5) {
 
   # Check whether covariates is a list
@@ -23,10 +24,10 @@ etree <- function(response,
   n.var = length(covariates)
 
   # If the case weights are not provided, they are all initialized as 1
-  if (is.null(case.weights))
+  if(is.null(case.weights))
     case.weights <- rep(1L, as.numeric(length(response)))
 
-  # New list of covariates
+  # New list of covariates (needed here to build the df used by party)
   newcovariates = lapply(covariates, function(j){
     if(class(j) == 'fdata'){
 
@@ -69,10 +70,10 @@ etree <- function(response,
                     minbucket = minbucket,
                     alpha = alpha,
                     R = R,
-                    rnd.sel = rnd.sel,
-                    rnd.splt = rnd.splt,
                     n.var = n.var,
-                    nb=nb)
+                    split.type = split.type,
+                    coef.split.type = coef.split.type,
+                    nb = nb)
   print(c('NODES', nodes))
 
   # Actually performing the splits
@@ -103,27 +104,50 @@ growtree <- function(id = 1L,
                      minbucket,
                      alpha,
                      R,
-                     rnd.sel,
-                     rnd.splt,
                      n.var,
                      split.type = 'coeff',
+                     coef.split.type = 'test',
                      nb) {
 
   # For less than <minbucket> observations, stop here
   if (sum(case.weights) < minbucket)
     return(partynode(id = id))
 
-  # Finding the best split (variable selection & split point search)
-  res_splt <- findsplit(response,
-                        covariates,
-                        alpha,
-                        R,
-                        rnd.sel,
-                        rnd.splt,
-                        dist.types = rep("default", 2),
-                        lp = rep(2, 2),
-                        nb=nb
+  # New list of covariates (here again, since it must be done at each split)
+  newcovariates = lapply(covariates, function(j){
+    if(class(j) == 'fdata'){
+
+      foo <- fda.usc::min.basis(j, numbasis = nb)
+      fd3 <- fda.usc::fdata2fd(foo$fdata.est,
+                               type.basis = "bspline",
+                               nbasis = foo$numbasis.opt)
+      foo$coef <- t(fd3$coefs)
+      return(foo)
+
+    } else if(class(j) == 'list' &
+              all(sapply(j, class) == 'igraph')){
+
+      shell <- graph.to.shellness.distr.df(j)
+      return(shell)
+
+    } else {
+
+      return(j)
+
+    }
+  }
   )
+
+  # Finding the best split (variable selection & split point search)
+  res_splt <- findsplit(response = response,
+                        covariates = covariates,
+                        newcovariates = newcovariates,
+                        alpha = alpha,
+                        R = R,
+                        lp = rep(2, 2),
+                        split.type = split.type,
+                        coef.split.type = coef.split.type,
+                        nb = nb)
 
   # Separately saving res_splt outputs
   sp <- res_splt$sp
@@ -139,21 +163,14 @@ growtree <- function(id = 1L,
 
          fdata = {
 
-           if(split.type == "coeff"){
-
-             foo <- fda.usc::min.basis(covariates[[varselect]], numbasis = nb)
-             fd3 <- fda.usc::fdata2fd(foo$fdata.est,
-                                      type.basis = "bspline",
-                                      nbasis = foo$numbasis.opt)
-             foo$coef <- t(fd3$coefs)
-             basis_covariates <- foo
+           if(split.type == 'coeff'){
 
              # observations before the split point are assigned to node 1
-             kidids[which(basis_covariates$coef[, sp$varid] <= sp$breaks)] <- 1
+             kidids[which(newcovariates[[varselect]]$coef[, sp$varid] <= sp$breaks)] <- 1
              #  observations before the split point are assigned to node 2
-             kidids[which(basis_covariates$coef[, sp$varid] > sp$breaks)] <- 2
+             kidids[which(newcovariates[[varselect]]$coef[, sp$varid] > sp$breaks)] <- 2
 
-           } else if (split.type == "cluster") {
+           } else if (split.type == 'cluster') {
 
              kidids[sp$index == 1] <- 1
              kidids[sp$index == 2] <- 2
@@ -184,7 +201,7 @@ growtree <- function(id = 1L,
   )
 
   # Total number of features for each covariate
-  total_features <- lapply(covariates,
+  total_features <- lapply(newcovariates,
                            function(v) {
                              switch(
                                class(v),
@@ -194,8 +211,7 @@ growtree <- function(id = 1L,
                                integer    = 1,
                                matrix     = ncol(v),
                                fdata      = {
-                                 foo <- fda.usc::min.basis(v, numbasis = nb)
-                                 foo$numbasis.opt
+                                 v$numbasis.opt
                                }
                              )
                            })
@@ -209,7 +225,7 @@ growtree <- function(id = 1L,
   }
 
   # Shifting the varid by the number of the previous features
-  if(class(covariates[[varselect]])=='fdata'){
+  if(class(covariates[[varselect]]) == 'fdata'){
     sp$varid = step + sp$varid #since here sp$varid is bselect
   } else {
     sp$varid = step + 1 #since sp$varid is xselect!
@@ -245,11 +261,10 @@ growtree <- function(id = 1L,
         minbucket,
         alpha,
         R,
-        rnd.sel,
-        rnd.splt ,
         n.var = n.var,
-        nb = nb
-      )
+        split.type = split.type,
+        coef.split.type = coef.split.type,
+        nb = nb)
   }
 
   # Return the nodes (i.e. the split rules)
@@ -266,19 +281,18 @@ growtree <- function(id = 1L,
 
 findsplit <- function(response,
                       covariates,
+                      newcovariates,
                       alpha,
                       R,
-                      rnd.sel,
-                      rnd.splt,
                       lp = rep(2,2),
-                      split.type = "coeff",
-                      nb, ...) {
+                      split.type = 'coeff',
+                      coef.split.type = 'test',
+                      nb) {
 
   # Performing an independence test between the response and each covariate
   p = lapply(covariates, function(sel.cov) mytestREG(x = sel.cov,
                                                      y = response,
                                                      R = R,
-                                                     dist.types = dist.types,
                                                      lp = lp))
   p = t(matrix(unlist(p), ncol = 2, byrow = T))
   rownames(p) <- c("statistic", "p-value")
@@ -298,11 +312,14 @@ findsplit <- function(response,
 
   # Selected covariate
   x <-  covariates[[xselect]]
+  newx <- newcovariates[[xselect]]
 
   # Split point search
   split.objs = split.opt(y = response,
                          x = x,
-                         split.type = "coeff",
+                         newx = newx,
+                         split.type = split.type,
+                         coef.split.type = coef.split.type,
                          nb = nb)
 
   # Separately saving split.objs outputs
@@ -341,12 +358,12 @@ findsplit <- function(response,
 
          fdata = {
 
-           if(split.type == "coeff"){
+           if(split.type == 'coeff'){
              return(list(sp = partysplit(varid = as.integer(bselect),
                                          breaks = splitindex,
                                          info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,])))),
                          varselect = xselect))
-             } else if(split.type == "cluster"){
+             } else if(split.type == 'cluster'){
                return(list(sp = partysplit(varid = as.integer(xselect),
                                            index = splitindex,
                                            info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,])))),
@@ -384,7 +401,9 @@ findsplit <- function(response,
 
 split.opt <- function(y,
                       x,
-                      split.type = "coeff",
+                      newx,
+                      split.type = 'coeff',
+                      coef.split.type = 'test',
                       nb,
                       R=1000,
                       wass.dist = NULL){
@@ -416,30 +435,34 @@ split.opt <- function(y,
            numeric    = {
 
              s  <- sort(x)
-             comb = sapply(s, function(j) x<j)
-             xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y)[2])
-             splitindex <- s[which.min((xp.value))]
+             comb = sapply(s[2:(length(s)-1)], function(j) x<j)
+             #first and last one are excluded (trivial partitions)
+             xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y))
+             if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
+               splitindex <- s[which.max(xp.value[1,])]
+             } else {
+               splitindex <- s[which.min(xp.value[2,])]
+             }
 
              },
 
            integer    = {
 
              s  <- sort(x)
-             comb = sapply(s, function(j) x<j)
-             xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y)[2])
-             splitindex <- s[which.min((xp.value))]
+             comb = sapply(s[2:(length(s)-1)], function(j) x<j)
+             xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y))
+             if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
+               splitindex <- s[which.max(xp.value[1,])]
+             } else {
+               splitindex <- s[which.min(xp.value[2,])]
+             }
 
            },
 
            fdata      = {
 
-             if(split.type == "coeff"){
-                 foo <- fda.usc::min.basis(x, numbasis = nb)
-                 fd3 <- fda.usc::fdata2fd(foo$fdata.est,
-                                        type.basis = "bspline",
-                                        nbasis = foo$numbasis.opt)
-                 foo$coef <- t(fd3$coefs)
-                 x1 = foo$coef
+             if(split.type == 'coeff'){
+                 x1 = newx$coef
                  bselect <- 1:dim(x1)[2]
                  p1 <- c()
                  p1 <- sapply(bselect, function(i) mytestREG(x1[, i], y, R = R))
@@ -451,22 +474,34 @@ split.opt <- function(y,
                  }
                  sel.coeff = x1[,bselect]
                  s  <- sort(sel.coeff)
-                 comb = sapply(s, function(j) sel.coeff<j)
+                 comb = sapply(s[2:(length(s)-1)], function(j) sel.coeff<j)
 
-                 obj <- apply(comb, 2, function(c){
-                   data1 <- y[c]
-                   data2 <- y[!c]
-                   v1 <- var(data1)
-                   v2 <- var(data2)
-                   n1 <- length(data1)
-                   n2 <- length(data2)
-                   n <- n1+n2
-                   obj_c <- (n1*v1+n2*v2)/n
-                   return(obj_c)
-                 } )
+                 if(coef.split.type == 'variance'){
 
-                 splitindex <- s[which.min(obj)]
-             } else if(split.type == "cluster") {
+                   obj <- apply(comb, 2, function(c){
+                     data1 <- y[c]
+                     data2 <- y[!c]
+                     v1 <- var(data1)
+                     v2 <- var(data2)
+                     n1 <- length(data1)
+                     n2 <- length(data2)
+                     n <- n1+n2
+                     obj_c <- (n1*v1+n2*v2)/n
+                     return(obj_c)})
+                   splitindex <- s[which.min(obj)]
+
+                 } else if (coef.split.type == 'test'){
+
+                   xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y))
+                   if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
+                     splitindex <- s[which.max(xp.value[1,])]
+                   } else {
+                     splitindex <- s[which.min(xp.value[2,])]
+                   }
+
+                 }
+
+             } else if(split.type == 'cluster') {
                cl.fdata = kmeans.fd(x, ncl=2, draw = FALSE, par.ini=list(method="exact"))
                splitindex <- cl.fdata$cluster
              }
@@ -494,7 +529,7 @@ split.opt <- function(y,
 mytestREG <- function(x,
                       y,
                       R = 1000,
-                      lp = c(2,2), ...) {
+                      lp = c(2,2)) {
 
   # Computing the dissimilarities within x and y
   d1 = compute.dissimilarity(x, lp = lp[1])
@@ -514,7 +549,7 @@ mytestREG <- function(x,
 # Distances ---------------------------------------------------------------
 
 compute.dissimilarity <- function(x,
-                                  lp = 2, ...){
+                                  lp = 2){
 
   # Computing the dissimilarities
   switch(class(x),
@@ -528,7 +563,7 @@ compute.dissimilarity <- function(x,
   #   if(!is.null(attributes(x[[1]]))){
   #   if(attributes(x[[1]])$names == "diagram"){
   #     d1 = x[case.weights]
-  #     k.fun = function(i, j) TDA::wasserstein(d1[[i]], d1[[j]], ...)
+  #     k.fun = function(i, j) TDA::wasserstein(d1[[i]], d1[[j]])
   #     k.fun = Vectorize(k.fun)
   #     d.idx = seq_along(d1)
   #     outer(d.idx,d.idx, k.fun)

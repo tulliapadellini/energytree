@@ -43,8 +43,6 @@ etree_fit <- etree(response = resp,
                    minbucket = 1,
                    alpha = 0.05,
                    R = 1000,
-                   rnd.sel = T,
-                   rnd.splt = TRUE,
                    nb = 15)
 plot(etree_fit)
 
