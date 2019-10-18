@@ -201,7 +201,7 @@ growtree <- function(id = 1L,
   )
 
   # Total number of features for each covariate
-  total_features <- lapply(newcovariates,
+  total_features <- lapply(covariates,
                            function(v) {
                              switch(
                                class(v),
@@ -211,8 +211,8 @@ growtree <- function(id = 1L,
                                integer    = 1,
                                matrix     = ncol(v),
                                fdata      = {
-                                 v$numbasis.opt
-                               }
+                                 foo <- fda.usc::min.basis(v, numbasis = nb)
+                                 foo$numbasis.opt                               }
                              )
                            })
 
@@ -554,7 +554,7 @@ compute.dissimilarity <- function(x,
   # Computing the dissimilarities
   switch(class(x),
          logical    = dist(x),
-         factor     = cluster::daisy(as.data.frame(x)),
+         factor     = as.matrix(cluster::daisy(as.data.frame(x))),
          numeric    = dist(x),
          integer    = dist(x),
          matrix     = dist(x),
