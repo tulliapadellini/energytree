@@ -113,7 +113,7 @@ etree <- function(response,
                                    check.names = FALSE),
                terms = terms(response ~ ., data = data.frame(response = response, newcovariates.df)))
 
-  return(as.constparty(ret))
+  return(list(etree = as.constparty(ret),  fitted.obs =  fitted.obs))
 
 }
 
@@ -196,8 +196,10 @@ growtree <- function(id = 1L,
 
            } else if (split.type == 'cluster') {
 
-             kidids[sp$index == 1] <- 1
-             kidids[sp$index == 2] <- 2
+             kidids <- sp$index
+
+             # kidids[sp$index == 1] <- 1
+             # kidids[sp$index == 2] <- 2
 
            }
          },
@@ -218,8 +220,10 @@ growtree <- function(id = 1L,
 
          factor = {
 
-           kidids[sp$index == 1] <- 1
-           kidids[sp$index == 2] <- 2
+           kidids <- sp$index
+
+           # kidids[sp$index == 1] <- 1
+           # kidids[sp$index == 2] <- 2
 
          }
   )
