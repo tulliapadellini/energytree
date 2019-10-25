@@ -235,8 +235,13 @@ growtree <- function(id = 1L,
                                integer    = 1,
                                matrix     = ncol(v),
                                fdata      = {
-                                 foo <- fda.usc::min.basis(v, numbasis = nb)
-                                 foo$numbasis.opt                               }
+                                 if(split.type == "coeff"){
+                                   foo <- fda.usc::min.basis(v, numbasis = nb)
+                                   foo$numbasis.opt
+                                 } else if(split.type == "cluster"){
+                                  1
+                                 }
+                                }
                              )
                            })
 
@@ -249,7 +254,7 @@ growtree <- function(id = 1L,
   }
 
   # Shifting the varid by the number of the previous features
-  if(class(covariates[[varselect]]) == 'fdata'&& split.type == "coeff"){
+  if(class(covariates[[varselect]]) == 'fdata' & split.type == "coeff"){
     sp$varid = step + sp$varid #since here sp$varid is bselect
   } else {
     sp$varid = step + 1 #since sp$varid is xselect!
@@ -387,6 +392,7 @@ findsplit <- function(response,
                                          breaks = splitindex,
                                          info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,])))),
                          varselect = xselect))
+
            } else if(split.type == 'cluster'){
 
              return(list(sp = partysplit(varid = as.integer(xselect),
