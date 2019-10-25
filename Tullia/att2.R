@@ -32,12 +32,18 @@ etree <- function(response,
   # New list of covariates (needed here to build the df used by party)
   newcovariates = lapply(covariates, function(j){
     if(class(j) == 'fdata'){
+      if(split.type== "coeff"){
 
       foo <- fda.usc::min.basis(j, numbasis = nb)
       fd3 <- fda.usc::fdata2fd(foo$fdata.est,
                                type.basis = "bspline",
                                nbasis = foo$numbasis.opt)
       foo$coef <- t(fd3$coefs)
+
+      } else if(split.type == "cluster"){
+        foo = as.factor(1:length(response))
+      }
+
       return(foo)
 
     } else if(class(j) == 'list' &
@@ -57,7 +63,7 @@ etree <- function(response,
   # Building a df with all the new 'variables'
   newcovariates.onlybasis <- newcovariates
   for(i in 1:n.var){
-    if(class(covariates[[i]]) == 'fdata') {
+    if(class(covariates[[i]]) == 'fdata'&& split.type=="coeff") {
       newcovariates.onlybasis[[i]] <- newcovariates.onlybasis[[i]]$coef
     }
   }
@@ -82,30 +88,30 @@ etree <- function(response,
 
   # Returning a rich constparty object
   #data1 = cbind('response' = as.data.frame(response), newcovariates.df)
-  df.cov = data.frame(row.names = response)
-
-  df.cov$V1 = covariates[[1]]
-  df.cov$V2 = covariates[[2]]
-  df.cov$V3 = as.factor(1:length(response))
+  # df.cov = data.frame(row.names = response)
+  #
+  # df.cov$V1 = covariates[[1]]
+  # df.cov$V2 = covariates[[2]]
+  # df.cov$V3 = as.factor(1:length(response))
   # for(kk in 1:length(covariates)){
   #   print(kk)
   #   df.cov[kk] = covariates[[kk]]
   # }
 
 
-  if(split.type == "coeff") df.cov = newcovariates.df
+  #if(split.type == "coeff") df.cov = newcovariates.df
 
-  fitted.obs <- fitted_node(nodes, data = df.cov)
+  fitted.obs <- fitted_node(nodes, data = newcovariates.df)
 
 
 
   #names(data1) <- c('response', 1:(ncol(data1)-1))
   ret <- party(nodes,
-               data = df.cov,
+               data = newcovariates.df,
                fitted = data.frame("(fitted)" = fitted.obs,
                                    "(response)" = response,
                                    check.names = FALSE),
-               terms = terms(response ~ ., data = data.frame(response = response, df.cov)))
+               terms = terms(response ~ ., data = data.frame(response = response, newcovariates.df)))
 
   return(as.constparty(ret))
 
@@ -243,7 +249,7 @@ growtree <- function(id = 1L,
   }
 
   # Shifting the varid by the number of the previous features
-  if(class(covariates[[varselect]]) == 'fdata'){
+  if(class(covariates[[varselect]]) == 'fdata'&& split.type == "coeff"){
     sp$varid = step + sp$varid #since here sp$varid is bselect
   } else {
     sp$varid = step + 1 #since sp$varid is xselect!
