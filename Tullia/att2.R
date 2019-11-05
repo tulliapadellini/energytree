@@ -67,7 +67,7 @@ etree <- function(response,
       newcovariates.onlybasis[[i]] <- newcovariates.onlybasis[[i]]$coef
     }
   }
-  newcovariates.df <- as.data.frame(do.call(cbind, newcovariates.onlybasis))
+  newcovariates.df <- as.data.frame(newcovariates.onlybasis)
   names(newcovariates.df) <- 1:ncol(newcovariates.df)
 
   # Growing the tree (finds the split rules)
@@ -86,20 +86,6 @@ etree <- function(response,
 
   # Actually performing the splits
 
-  # Returning a rich constparty object
-  #data1 = cbind('response' = as.data.frame(response), newcovariates.df)
-  # df.cov = data.frame(row.names = response)
-  #
-  # df.cov$V1 = covariates[[1]]
-  # df.cov$V2 = covariates[[2]]
-  # df.cov$V3 = as.factor(1:length(response))
-  # for(kk in 1:length(covariates)){
-  #   print(kk)
-  #   df.cov[kk] = covariates[[kk]]
-  # }
-
-
-  #if(split.type == "coeff") df.cov = newcovariates.df
 
   fitted.obs <- fitted_node(nodes, data = newcovariates.df)
 
@@ -113,7 +99,7 @@ etree <- function(response,
                                    check.names = FALSE),
                terms = terms(response ~ ., data = data.frame(response = response, newcovariates.df)))
 
-  return(list(etree = as.constparty(ret),  fitted.obs =  fitted.obs))
+  return(etree = as.constparty(ret))
 
 }
 
