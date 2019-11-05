@@ -126,12 +126,18 @@ growtree <- function(id = 1L,
   # New list of covariates (here again, since it must be done at each split)
   newcovariates = lapply(covariates, function(j){
     if(class(j) == 'fdata'){
+      if(split.type== "coeff"){
 
-      foo <- fda.usc::min.basis(j, numbasis = nb)
-      fd3 <- fda.usc::fdata2fd(foo$fdata.est,
-                               type.basis = "bspline",
-                               nbasis = foo$numbasis.opt)
-      foo$coef <- t(fd3$coefs)
+        foo <- fda.usc::min.basis(j, numbasis = nb)
+        fd3 <- fda.usc::fdata2fd(foo$fdata.est,
+                                 type.basis = "bspline",
+                                 nbasis = foo$numbasis.opt)
+        foo$coef <- t(fd3$coefs)
+
+      } else if(split.type == "cluster"){
+        foo = as.factor(1:length(response))
+      }
+
       return(foo)
 
     } else if(class(j) == 'list' &
@@ -524,8 +530,18 @@ split.opt <- function(y,
 
            } else if(split.type == 'cluster') {
              cl.fdata = kmeans.fd(x, ncl=2, draw = FALSE, par.ini=list(method="exact"))
-             splitindex <- cl.fdata$cluster
+
+             clindex <- cl.fdata$cluster
+
+             lev = levels(newx)
+             print(lev)
+             splitindex = rep(NA, length(lev))
+
+             splitindex[lev %in% newx[clindex==1]]<- 1
+             splitindex[lev %in% newx[clindex==2]]<- 2
+             print(splitindex)
            }
+
 
          },
 
