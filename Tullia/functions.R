@@ -179,7 +179,7 @@ growtree <- function(id = 1L,
 
          factor = {
 
-           kidids <- sp$index
+           kidids <- na.exclude(sp$index)
 
            # kidids[sp$index == 1] <- 1
            # kidids[sp$index == 2] <- 2
