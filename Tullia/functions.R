@@ -142,6 +142,9 @@ growtree <- function(id = 1L,
   if (is.null(sp))
     return(partynode(id = id))
 
+
+
+
   # Assigning the ids to the observations
   kidids <- c()
   switch(class(covariates[[varselect]]),
@@ -150,7 +153,22 @@ growtree <- function(id = 1L,
 
            if(split.type == 'coeff'){
 
-             newcovariates = covariates[(length(covariates)/2 +1):length(covariates)]
+             newcovariates = lapply(covariates[1:length(covariates)/2], function(j){
+               if(class(j) == 'fdata'){
+
+                   foo <- fda.usc::min.basis(j, numbasis = nb)
+                   fd3 <- fda.usc::fdata2fd(foo$fdata.est,
+                                            type.basis = "bspline",
+                                            nbasis = foo$numbasis.opt)
+                   foo$coef <- t(fd3$coefs)
+                 return(foo)
+             } else {
+               return(j)
+             }
+               }
+             )
+
+
              # observations before the split point are assigned to node 1
              kidids[which(newcovariates[[varselect]]$coef[, sp$varid] <= sp$breaks)] <- 1
              #  observations before the split point are assigned to node 2
@@ -307,6 +325,22 @@ findsplit <- function(response,
   x <-  covariates[[xselect]]
 
   newcovariates = covariates[(n.cov +1):(2*n.cov)]
+
+  newcovariates = lapply(1:length(newcovariates), function(j){
+    if(class(covariates[[j]]) == 'fdata' && split.type == "coeff"){
+
+      foo <- fda.usc::min.basis(covariates[[j]], numbasis = nb)
+      fd3 <- fda.usc::fdata2fd(foo$fdata.est,
+                               type.basis = "bspline",
+                               nbasis = foo$numbasis.opt)
+      foo$coef <- t(fd3$coefs)
+      return(foo)
+    } else {
+      return(newcovariates[[j]])
+    }
+  }
+  )
+
   newx <- newcovariates[[xselect]]
 
   # Split point search
