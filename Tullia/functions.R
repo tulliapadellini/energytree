@@ -70,8 +70,7 @@ etree <- function(response,
   newcovariates.df <- as.data.frame(newcovariates.onlybasis)
   names(newcovariates.df) <- 1:ncol(newcovariates.df)
 
-  covariates_large = covariates
-  covariates_large[[n.var + 1]] = newcovariates.df
+  covariates_large = c(covariates, newcovariates)
   # Growing the tree (finds the split rules)
   nodes <- growtree(id = 1L,
                     response = response,
@@ -151,6 +150,7 @@ growtree <- function(id = 1L,
 
            if(split.type == 'coeff'){
 
+             newcovariates = covariates[(length(covariates)/2 +1):length(covariates)]
              # observations before the split point are assigned to node 1
              kidids[which(newcovariates[[varselect]]$coef[, sp$varid] <= sp$breaks)] <- 1
              #  observations before the split point are assigned to node 2
@@ -159,9 +159,6 @@ growtree <- function(id = 1L,
            } else if (split.type == 'cluster') {
 
              kidids <- na.exclude(sp$index)
-
-             # kidids[sp$index == 1] <- 1
-             # kidids[sp$index == 2] <- 2
 
            }
          },
@@ -283,7 +280,7 @@ findsplit <- function(response,
                       coef.split.type = 'test',
                       nb) {
 
-  n.cov = length(covariates)-1
+  n.cov = length(covariates)/2
 
   # Performing an independence test between the response and each covariate
   p = lapply(covariates[1:n.cov], function(sel.cov) mytestREG(x = sel.cov,
@@ -309,7 +306,8 @@ findsplit <- function(response,
   # Selected covariate
   x <-  covariates[[xselect]]
 
-  newx <- covariates[[n.cov +1]][,xselect]
+  newcovariates = covariates[(n.cov +1):(2*n.cov)]
+  newx <- newcovariates[[xselect]]
 
   # Split point search
   split.objs = split.opt(y = response,
