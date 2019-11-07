@@ -31,18 +31,32 @@ etree <- function(response,
   newcovariates = lapply(covariates, function(j){
     if(class(j) == 'fdata'){
 
-      foo <- fda.usc::min.basis(j, numbasis = nb)
-      fd3 <- fda.usc::fdata2fd(foo$fdata.est,
-                               type.basis = "bspline",
-                               nbasis = foo$numbasis.opt)
-      foo$coef <- t(fd3$coefs)
+      if(split.type == "coeff"){
+
+        foo <- fda.usc::min.basis(j, numbasis = nb)
+        fd3 <- fda.usc::fdata2fd(foo$fdata.est,
+                                 type.basis = "bspline",
+                                 nbasis = foo$numbasis.opt)
+        foo$coef <- t(fd3$coefs)
+
+      } else if(split.type == "cluster"){
+
+        foo <- as.factor(1:length(response))
+
+      }
+
       return(foo)
 
     } else if(class(j) == 'list' &
               all(sapply(j, class) == 'igraph')){
 
-        shell <- graph.to.shellness.distr.df(j)
-        return(shell)
+      if(split.type == "coeff"){
+        foo <- graph.shell(j)
+      } else if(split.type == "cluster"){
+        foo <- as.factor(1:length(response))
+      }
+
+      return(foo)
 
       } else {
 
@@ -55,17 +69,20 @@ etree <- function(response,
   # Building a df with all the new 'variables'
   newcovariates.onlybasis <- newcovariates
   for(i in 1:n.var){
-    if(class(covariates[[i]]) == 'fdata') {
+    if(class(covariates[[i]]) == 'fdata' && split.type == "coeff") {
       newcovariates.onlybasis[[i]] <- newcovariates.onlybasis[[i]]$coef
     }
   }
-  newcovariates.df <- as.data.frame(do.call(cbind, newcovariates.onlybasis))
+  newcovariates.df <- as.data.frame(newcovariates.onlybasis)
   names(newcovariates.df) <- 1:ncol(newcovariates.df)
+
+  # Large list with both covariates and newcovariates
+  covariates_large = c(covariates, newcovariates)
 
   # Growing the tree (finds the split rules)
   nodes <- growtree(id = 1L,
                     response = response,
-                    covariates = covariates,
+                    covariates = covariates_large,
                     case.weights = case.weights,
                     minbucket = minbucket,
                     alpha = alpha,
@@ -80,16 +97,14 @@ etree <- function(response,
   fitted.obs <- fitted_node(nodes, data = newcovariates.df)
 
   # Returning a rich constparty object
-  data1 = cbind('response' = as.data.frame(response), newcovariates.df)
-  names(data1) <- c('response', 1:(ncol(data1)-1))
   ret <- party(nodes,
                data = newcovariates.df,
                fitted = data.frame("(fitted)" = fitted.obs,
-                                   "(response)" = data1$response,
+                                   "(response)" = response,
                                    check.names = FALSE),
-               terms = terms(response ~ ., data = data1))
+               terms = terms(response ~ ., data = data.frame(response = response, newcovariates.df)))
 
-  return(as.constparty(ret))
+  return(etree = as.constparty(ret))
 
 }
 
@@ -113,35 +128,9 @@ growtree <- function(id = 1L,
   if (sum(case.weights) < minbucket)
     return(partynode(id = id))
 
-  # New list of covariates (here again, since it must be done at each split)
-  newcovariates = lapply(covariates, function(j){
-    if(class(j) == 'fdata'){
-
-      foo <- fda.usc::min.basis(j, numbasis = nb)
-      fd3 <- fda.usc::fdata2fd(foo$fdata.est,
-                               type.basis = "bspline",
-                               nbasis = foo$numbasis.opt)
-      foo$coef <- t(fd3$coefs)
-      return(foo)
-
-    } else if(class(j) == 'list' &
-              all(sapply(j, class) == 'igraph')){
-
-      shell <- graph.to.shellness.distr.df(j)
-      return(shell)
-
-    } else {
-
-      return(j)
-
-    }
-  }
-  )
-
   # Finding the best split (variable selection & split point search)
   res_splt <- findsplit(response = response,
                         covariates = covariates,
-                        newcovariates = newcovariates,
                         alpha = alpha,
                         R = R,
                         lp = rep(2, 2),
@@ -165,6 +154,22 @@ growtree <- function(id = 1L,
 
            if(split.type == 'coeff'){
 
+             # New expansion
+             newcovariates = lapply(covariates[1:length(covariates)/2], function(j){
+               if(class(j) == 'fdata'){
+
+                 foo <- fda.usc::min.basis(j, numbasis = nb)
+                 fd3 <- fda.usc::fdata2fd(foo$fdata.est,
+                                          type.basis = "bspline",
+                                          nbasis = foo$numbasis.opt)
+                 foo$coef <- t(fd3$coefs)
+                 return(foo)
+               } else {
+                 return(j)
+               }
+             }
+             )
+
              # observations before the split point are assigned to node 1
              kidids[which(newcovariates[[varselect]]$coef[, sp$varid] <= sp$breaks)] <- 1
              #  observations before the split point are assigned to node 2
@@ -172,8 +177,7 @@ growtree <- function(id = 1L,
 
            } else if (split.type == 'cluster') {
 
-             kidids[sp$index == 1] <- 1
-             kidids[sp$index == 2] <- 2
+             kidids <- na.exclude(sp$index)
 
            }
          },
@@ -194,14 +198,29 @@ growtree <- function(id = 1L,
 
          factor = {
 
-           kidids[sp$index == 1] <- 1
-           kidids[sp$index == 2] <- 2
+           kidids <- na.exclude(sp$index)
 
+         },
+
+         list = if(FALSE){
+           #attributes(x[[1]])$names == 'diagram'
+         } else if(all(sapply(covariates[[varselect]], class) == 'igraph')){
+
+           if(split.type == 'coeff'){
+
+             kidids[which(covariates[[varselect*2]][, sp$varid] <= sp$breaks)] <- 1
+             kidids[which(covariates[[varselect*2]][, sp$varid] > sp$breaks)] <- 2
+
+           } else if(split.type == 'cluster') {
+
+             kidids <- na.exclude(sp$index)
+
+           }
          }
   )
 
   # Total number of features for each covariate
-  total_features <- lapply(covariates,
+  total_features <- lapply(covariates[1:length(covariates)/2],
                            function(v) {
                              switch(
                                class(v),
@@ -211,8 +230,23 @@ growtree <- function(id = 1L,
                                integer    = 1,
                                matrix     = ncol(v),
                                fdata      = {
-                                 foo <- fda.usc::min.basis(v, numbasis = nb)
-                                 foo$numbasis.opt                               }
+                                 if(split.type == "coeff"){
+                                   foo <- fda.usc::min.basis(v, numbasis = nb)
+                                   foo$numbasis.opt
+                                 } else if(split.type == "cluster"){
+                                   1
+                                 }
+                               },
+                               list       = if(FALSE){
+                                 #attributes(v[[1]])$names == 'diagram'
+                               } else if(all(sapply(v, class) == 'igraph')){
+                                 if(split.type == 'coeff'){
+                                   idx <- which(sapply(covariates, function(c){identical(c,v)}))
+                                   ncol(covariates[[idx*2]])
+                                 } else if(split.type == 'cluster') {
+                                   1
+                                 }
+                               }
                              )
                            })
 
@@ -225,9 +259,14 @@ growtree <- function(id = 1L,
   }
 
   # Shifting the varid by the number of the previous features
-  if(class(covariates[[varselect]]) == 'fdata'){
+  if(class(covariates[[varselect]]) == 'fdata' &&
+     split.type == "coeff"){
     sp$varid = step + sp$varid #since here sp$varid is bselect
-  } else {
+  } else if(class(covariates[[varselect]]) == 'list' &&
+            all(sapply(covariates[[varselect]], class) == 'igraph') &&
+            split.type == "coeff") {
+    sp$varid = step + sp$varid #since here sp$varid is bselect
+    } else {
     sp$varid = step + 1 #since sp$varid is xselect!
   }
 
@@ -257,7 +296,7 @@ growtree <- function(id = 1L,
         id = as.integer(myid + 1),
         response = subset(response, as.logical(w)),
         covariates = lapply(covariates, function(cov) subset(cov, as.logical(w))),
-        case.weights = rep(1L, sum(w)),
+        case.weights = rep(1L, sum(w, na.rm = TRUE)),
         minbucket,
         alpha,
         R,
@@ -281,7 +320,6 @@ growtree <- function(id = 1L,
 
 findsplit <- function(response,
                       covariates,
-                      newcovariates,
                       alpha,
                       R,
                       lp = rep(2,2),
@@ -289,11 +327,14 @@ findsplit <- function(response,
                       coef.split.type = 'test',
                       nb) {
 
+  # Number of original covariates
+  n.cov = length(covariates)/2
+
   # Performing an independence test between the response and each covariate
-  p = lapply(covariates, function(sel.cov) mytestREG(x = sel.cov,
-                                                     y = response,
-                                                     R = R,
-                                                     lp = lp))
+  p = lapply(covariates[1:n.cov], function(sel.cov) independence.test(x = sel.cov,
+                                                             y = response,
+                                                             R = R,
+                                                             lp = lp))
   p = t(matrix(unlist(p), ncol = 2, byrow = T))
   rownames(p) <- c("statistic", "p-value")
   if (all(is.na(p[2,]))) return(NULL)
@@ -311,7 +352,24 @@ findsplit <- function(response,
   }
 
   # Selected covariate
-  x <-  covariates[[xselect]]
+  x <- covariates[[xselect]]
+
+  # New expansion
+  newcovariates = covariates[(n.cov +1):(2*n.cov)]
+  newcovariates = lapply(1:length(newcovariates), function(j){
+    if(class(covariates[[j]]) == 'fdata' && split.type == "coeff"){
+
+      foo <- fda.usc::min.basis(covariates[[j]], numbasis = nb)
+      fd3 <- fda.usc::fdata2fd(foo$fdata.est,
+                               type.basis = "bspline",
+                               nbasis = foo$numbasis.opt)
+      foo$coef <- t(fd3$coefs)
+      return(foo)
+    } else {
+      return(newcovariates[[j]])
+    }
+  }
+  )
   newx <- newcovariates[[xselect]]
 
   # Split point search
@@ -365,20 +423,39 @@ findsplit <- function(response,
                          varselect = xselect))
              } else if(split.type == 'cluster'){
                return(list(sp = partysplit(varid = as.integer(xselect),
-                                           index = splitindex,
+                                           index = as.integer(splitindex),
                                            info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,])))),
                            varselect = xselect))
              }
 
          },
 
-         list = if(attributes(x[[1]])$names == 'diagram'){
+         list = if(FALSE){
+           #attributes(v[[1]])$names == 'diagram'
            return(list(sp = partysplit(varid = as.integer(xselect),
-                                       index = splitindex,
+                                       index = as.integer(splitindex),
                                        info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,])))),
                        varselect = xselect))
 
+         } else if(all(sapply(x, class) == 'igraph')){
+
+           if(split.type == 'coeff'){
+
+             return(list(sp = partysplit(varid = as.integer(bselect),
+                                         breaks = splitindex,
+                                         info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,])))),
+                         varselect = xselect))
+
+           } else if(split.type == 'cluster') {
+
+             return(list(sp = partysplit(varid = as.integer(xselect),
+                                         index = as.integer(splitindex),
+                                         info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,])))),
+                         varselect = xselect))
+
            }
+         }
+
          )
 }
 
@@ -437,7 +514,7 @@ split.opt <- function(y,
              s  <- sort(x)
              comb = sapply(s[2:(length(s)-1)], function(j) x<j)
              #first and last one are excluded (trivial partitions)
-             xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y))
+             xp.value <- apply(comb, 2, function(q) independence.test(x = q, y = y))
              if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
                splitindex <- s[which.max(xp.value[1,])]
              } else {
@@ -450,7 +527,7 @@ split.opt <- function(y,
 
              s  <- sort(x)
              comb = sapply(s[2:(length(s)-1)], function(j) x<j)
-             xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y))
+             xp.value <- apply(comb, 2, function(q) independence.test(x = q, y = y))
              if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
                splitindex <- s[which.max(xp.value[1,])]
              } else {
@@ -465,7 +542,7 @@ split.opt <- function(y,
                  x1 = newx$coef
                  bselect <- 1:dim(x1)[2]
                  p1 <- c()
-                 p1 <- sapply(bselect, function(i) mytestREG(x1[, i], y, R = R))
+                 p1 <- sapply(bselect, function(i) independence.test(x1[, i], y, R = R))
                  colnames(p1) <- colnames(x1)
                  if (length(which(p1[2,] == min(p1[2,], na.rm = T))) > 1) {
                    bselect <- as.integer(which.max(p1[1,]))
@@ -492,7 +569,7 @@ split.opt <- function(y,
 
                  } else if (coef.split.type == 'test'){
 
-                   xp.value <- apply(comb, 2, function(q) mytestREG(x = q, y = y))
+                   xp.value <- apply(comb, 2, function(q) independence.test(x = q, y = y))
                    if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
                      splitindex <- s[which.max(xp.value[1,])]
                    } else {
@@ -503,21 +580,83 @@ split.opt <- function(y,
 
              } else if(split.type == 'cluster') {
                cl.fdata = kmeans.fd(x, ncl=2, draw = FALSE, par.ini=list(method="exact"))
-               splitindex <- cl.fdata$cluster
+               clindex <- cl.fdata$cluster
+               lev = levels(newx)
+               splitindex = rep(NA, length(lev))
+               splitindex[lev %in% newx[clindex==1]]<- 1
+               splitindex[lev %in% newx[clindex==2]]<- 2
              }
 
            },
 
-           list = if(attributes(x[[1]])$names == "diagram"){
-
+           list = if(FALSE){
+             #attributes(x[[1]])$names == "diagram"
              cl.diagrams = cluster::pam(wass.dist, k = 2, diss = TRUE)
              splitindex <- cl.diagrams$clustering
+
+           } else if(all(sapply(x, class) == 'igraph')){
+
+             if(split.type == 'coeff'){
+               x1 = newx
+               bselect <- 1:dim(x1)[2]
+               p1 <- c()
+               p1 <- sapply(bselect, function(i) independence.test(x1[, i], y, R = R))
+               colnames(p1) <- colnames(x1)
+               if (length(which(p1[2,] == min(p1[2,], na.rm = T))) > 1) {
+                 bselect <- as.integer(which.max(p1[1,]))
+               } else{
+                 bselect <- as.integer(which.min(p1[2,]))
+               }
+               sel.coeff = x1[,bselect]
+               s  <- sort(sel.coeff)
+               comb = sapply(s[2:(length(s)-1)], function(j) sel.coeff<j)
+
+               if(coef.split.type == 'variance'){
+
+                 obj <- apply(comb, 2, function(c){
+                   data1 <- y[c]
+                   data2 <- y[!c]
+                   v1 <- var(data1)
+                   v2 <- var(data2)
+                   n1 <- length(data1)
+                   n2 <- length(data2)
+                   n <- n1+n2
+                   obj_c <- (n1*v1+n2*v2)/n
+                   return(obj_c)})
+                 splitindex <- s[which.min(obj)]
+
+               } else if (coef.split.type == 'test'){
+
+                 xp.value <- apply(comb, 2, function(q) independence.test(x = q, y = y))
+                 if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
+                   splitindex <- s[which.max(xp.value[1,])]
+                 } else {
+                   splitindex <- s[which.min(xp.value[2,])]
+                 }
+
+               }
+
+             } else if(split.type == 'cluster') {
+               adj_matrices <- lapply(x, as_adjacency_matrix)
+               d <- nd.csd(adj_matrices) #continuous spectral density for the moment
+               graph.dist <- d$D
+               clindex <- cluster::pam(graph.dist, k = 2, diss = TRUE,
+                                       cluster.only = TRUE)
+               lev = levels(newx)
+               splitindex = rep(NA, length(lev))
+               splitindex[lev %in% newx[clindex==1]]<- 1
+               splitindex[lev %in% newx[clindex==2]]<- 2
+             }
+
 
            }
            )
 
   out <- list('splitindex' = splitindex)
-  if(class(x) == 'fdata') out$bselect <- bselect
+  if(class(x) == 'fdata' &&
+     split.type == "coeff") out$bselect <- bselect
+  if(class(x) == 'list' && all(sapply(x, class) == 'igraph'
+                               && split.type == "coeff")) out$bselect <- bselect
   return(out)
 
 }
@@ -526,10 +665,10 @@ split.opt <- function(y,
 
 # Independence (dcor) test ------------------------------------------------
 
-mytestREG <- function(x,
-                      y,
-                      R = 1000,
-                      lp = c(2,2)) {
+independence.test <- function(x,
+                              y,
+                              R = 1000,
+                              lp = c(2,2)) {
 
   # Computing the dissimilarities within x and y
   d1 = compute.dissimilarity(x, lp = lp[1])
@@ -558,7 +697,14 @@ compute.dissimilarity <- function(x,
          numeric    = dist(x),
          integer    = dist(x),
          matrix     = dist(x),
-         fdata      = metric.lp(x, lp=lp))
+         fdata      = metric.lp(x, lp=lp),
+         list       = {
+           if(all(sapply(x, class) == 'igraph')){
+             adj_matrices <- lapply(x, as_adjacency_matrix)
+             d <- nd.csd(adj_matrices) #continuous spectral density for the moment
+             return(d$D)
+           }
+         })
   # list       = {
   #   if(!is.null(attributes(x[[1]]))){
   #   if(attributes(x[[1]])$names == "diagram"){
@@ -574,78 +720,49 @@ compute.dissimilarity <- function(x,
 
 
 
-
-
-
 # Graphs ------------------------------------------------------------------
 
-graph.to.shellness.distr.df <- function(data, shell.limit = NULL) {
-  tot.graphs = length(data)
+graph.shell <- function(graph.list, shell.limit = NULL){
 
-  list.df <- list()
-  max.shellness = 0
+  # Number of observations (graphs)
+  n.graphs <- length(graph.list)
 
-  for (i in 1:tot.graphs) {
-    g = data[[i]]
-    coreness.distr = count(coreness(g)) # aggr. by count
-    rownames(coreness.distr) <-
-      coreness.distr$x # re-index the df by the shellness number
+  # Shell distribution for each graph
+  table.shell <- lapply(graph.list, function(g){table(coreness(g))})
 
-    # keep just the frequency column
-    coreness.distr = coreness.distr[c('freq')]
+  # Maximum shell index
+  max.shell <- do.call(max, lapply(table.shell,
+                                   function(s){
+                                     as.integer(names(s))
+                                   }))
 
-    # transpose the df. Convert the column-df into row-df.
-    #This will ease the join with df.shellness.distr
-    coreness.distr = t(coreness.distr)
-    list.df[[i]] <- coreness.distr
+  # Column names for the shell df
+  col.names = as.character(seq(0, max.shell, 1))
 
-    this.max.shellness = colnames(coreness.distr)[
-      ncol(coreness.distr)]
+  # Shell df inizialization
+  all.shell.df = data.frame(matrix(
+    data = 0L,
+    nrow = n.graphs,
+    ncol = length(col.names)))
+  colnames(all.shell.df) <- col.names
 
-    # update the maximum shellness found so far (used to build
-    #the df of shellness distr)
-    if (this.max.shellness > max.shellness) {
-      max.shellness = this.max.shellness
-    }
+  # Fill in with the actual shell distibutions
+  invisible(sapply(1:n.graphs, function(i){
+    cols <- names(table.shell[[i]])
+    all.shell.df[i, cols] <<- table.shell[[i]][cols] # <<- for global environment assignment
+  }))
+  # better a for cycle?
+  # for(i in 1:n.graphs){
+  #   cols <- names(table.shell[[i]])
+  #   all.shell.df[i, cols] = table.shell[[i]][cols]
+  # }
+
+  # No more than 'shell.limit' indices for each graph
+  if(!is.null(shell.limit) && max.shell > shell.limit){
+    all.shell.df <- all.shell.df[,as.character(seq(0, shell.limit, 1))]
   }
 
-  if (!is.null(shell.limit)) {
-    # calculates the max shellness between the number of
-    # predictors used in train set and the one calculated in
-    # test set
-    max.shellness <-
-      if (as.numeric(max.shellness) < shell.limit - 1)
-        shell.limit - 1
-    else
-      max.shellness
-  }
+  # Return the final shell df
+  return(all.shell.df)
 
-  col.names = seq(0, max.shellness, 1)
-  col.names = lapply(col.names, function(x)
-    as.character(x))  # convert to char
-  df.shellness.distr = data.frame(matrix(
-    data = NA_integer_,
-    nrow = tot.graphs,
-    ncol = length(col.names)
-  )) #df with all graphs shellness distribution
-  colnames(df.shellness.distr) <- col.names
-
-  # fill in the df with the shellness distribution of each graph
-  for (i in 1:tot.graphs) {
-    updated.cols = colnames(list.df[[i]])
-
-    for (x in updated.cols) {
-      df.shellness.distr[i, x] = list.df[[i]][, x]
-    }
-  }
-
-  df.shellness.distr[is.na(df.shellness.distr)] <-
-    0 # replace NA by 0
-
-  # converted the df columns to integer
-  df.shellness.distr[, seq(1, ncol(df.shellness.distr))] <-
-    sapply(df.shellness.distr[, seq(1, ncol(df.shellness.distr))],
-           as.integer)
-
-  return(df.shellness.distr[,1])
 }
