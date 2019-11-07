@@ -156,16 +156,16 @@ growtree <- function(id = 1L,
              newcovariates = lapply(covariates[1:length(covariates)/2], function(j){
                if(class(j) == 'fdata'){
 
-                   foo <- fda.usc::min.basis(j, numbasis = nb)
-                   fd3 <- fda.usc::fdata2fd(foo$fdata.est,
-                                            type.basis = "bspline",
-                                            nbasis = foo$numbasis.opt)
-                   foo$coef <- t(fd3$coefs)
+                 foo <- fda.usc::min.basis(j, numbasis = nb)
+                 fd3 <- fda.usc::fdata2fd(foo$fdata.est,
+                                          type.basis = "bspline",
+                                          nbasis = foo$numbasis.opt)
+                 foo$coef <- t(fd3$coefs)
                  return(foo)
-             } else {
-               return(j)
-             }
+               } else {
+                 return(j)
                }
+             }
              )
 
 
@@ -299,9 +299,9 @@ findsplit <- function(response,
 
   # Performing an independence test between the response and each covariate
   p = lapply(covariates[1:n.cov], function(sel.cov) mytestREG(x = sel.cov,
-                                                     y = response,
-                                                     R = R,
-                                                     lp = lp))
+                                                              y = response,
+                                                              R = R,
+                                                              lp = lp))
   p = t(matrix(unlist(p), ncol = 2, byrow = T))
   rownames(p) <- c("statistic", "p-value")
   if (all(is.na(p[2,]))) return(NULL)
@@ -323,6 +323,8 @@ findsplit <- function(response,
 
   newcovariates = covariates[(n.cov +1):(2*n.cov)]
 
+
+  ### lapply to be removed and basis computed only on selected functional covariate
   newcovariates = lapply(1:length(newcovariates), function(j){
     if(class(covariates[[j]]) == 'fdata' && split.type == "coeff"){
 
@@ -340,13 +342,25 @@ findsplit <- function(response,
 
   newx <- newcovariates[[xselect]]
 
+  dist.mat = NULL
+
+  switch(class(x),
+         numeric = {dist.mat = NULL},
+         integer = {dist.mat = NULL},
+         factor  = {dist.mat = NULL},
+         list    =
+         )
+
+
+
   # Split point search
   split.objs = split.opt(y = response,
                          x = x,
                          newx = newx,
                          split.type = split.type,
                          coef.split.type = coef.split.type,
-                         nb = nb)
+                         nb = nb,
+                         dist.mat = dist.mat)
 
   # Separately saving split.objs outputs
   splitindex <- split.objs$splitindex
@@ -434,9 +448,8 @@ split.opt <- function(y,
                       coef.split.type = 'test',
                       nb,
                       R=1000,
-                      wass.dist = NULL){
-
-  switch(class(x),
+                      dist.mat = NULL){
+    switch(class(x),
 
          factor     = {
 
@@ -535,12 +548,10 @@ split.opt <- function(y,
              clindex <- cl.fdata$cluster
 
              lev = levels(newx)
-             print(lev)
              splitindex = rep(NA, length(lev))
 
              splitindex[lev %in% newx[clindex==1]]<- 1
              splitindex[lev %in% newx[clindex==2]]<- 2
-             print(splitindex)
            }
 
 
@@ -548,11 +559,19 @@ split.opt <- function(y,
 
          list = if(attributes(x[[1]])$names == "diagram"){
 
-           cl.diagrams = cluster::pam(wass.dist, k = 2, diss = TRUE)
-           splitindex <- cl.diagrams$clustering
+           cl.diagrams = cluster::pam(dist.mat, k = 2, diss = TRUE)
+           clindex <- cl.diagrams$clustering
+
+           lev = levels(newx)
+           splitindex = rep(NA, length(lev))
+
+           splitindex[lev %in% newx[clindex==1]]<- 1
+           splitindex[lev %in% newx[clindex==2]]<- 2
+
 
          }
   )
+
 
   out <- list('splitindex' = splitindex)
   if(class(x) == 'fdata' && split.type=="coeff") out$bselect <- bselect
