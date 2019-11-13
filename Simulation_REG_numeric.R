@@ -42,8 +42,7 @@ etree_fit <- etree(response = resp,
                    case.weights = NULL,
                    minbucket = 1,
                    alpha = 0.05,
-                   R = 1000,
-                   nb = 15)
+                   R = 1000)
 plot(etree_fit)
 
 ### LINEAR REGRESSION ###
@@ -52,37 +51,10 @@ lm_fit <- lm (resp ~ do.call(cbind, cov.list))
 
 # Prediction --------------------------------------------------------------
 
-### MYREG PREDICTION ###
-new.cov.list = lapply(cov.list, function(j){
-  if(class(j) == 'fdata'){
-
-    foo <- fda.usc::min.basis(j, numbasis = n.bas)
-    fd3 <- fda.usc::fdata2fd(foo$fdata.est,
-                             type.basis = "bspline",
-                             nbasis = foo$numbasis.opt)
-    foo$coef <- t(fd3$coefs)
-    return(foo$coef)
-
-  } else if(class(j) == 'list' &
-            all(sapply(j, class) == 'igraph')){
-
-      shell <- graph.to.shellness.distr.df(j)
-      return(shell)
-
-    } else {
-
-      return(j)
-
-    }
-}
-)
-
-# New covariates dataframe
-new.cov.df <- as.data.frame(do.call(cbind, new.cov.list))
-names(new.cov.df) <- 1:ncol(new.cov.df)
+### ETREE PREDICTION ###
 
 # Prediction
-y_pred <- predict(etree_fit, newdata = new.cov.df)
+y_pred <- predict(etree_fit)
 
 # Error
 y <- resp

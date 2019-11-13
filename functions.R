@@ -171,9 +171,9 @@ growtree <- function(id = 1L,
              )
 
              # observations before the split point are assigned to node 1
-             kidids[which(newcovariates[[varselect]]$coef[, sp$varid] <= sp$breaks)] <- 1
+             kidids[which(covariates[[(length(covariates)/2)+varselect]]$coef[, sp$varid] <= sp$breaks)] <- 1
              #  observations before the split point are assigned to node 2
-             kidids[which(newcovariates[[varselect]]$coef[, sp$varid] > sp$breaks)] <- 2
+             kidids[which(covariates[[(length(covariates)/2)+varselect]]$coef[, sp$varid] > sp$breaks)] <- 2
 
            } else if (split.type == 'cluster') {
 
@@ -208,8 +208,8 @@ growtree <- function(id = 1L,
 
            if(split.type == 'coeff'){
 
-             kidids[which(covariates[[varselect*2]][, sp$varid] <= sp$breaks)] <- 1
-             kidids[which(covariates[[varselect*2]][, sp$varid] > sp$breaks)] <- 2
+             kidids[which(covariates[[(length(covariates)/2)+varselect]][, sp$varid] <= sp$breaks)] <- 1
+             kidids[which(covariates[[(length(covariates)/2)+varselect]][, sp$varid] > sp$breaks)] <- 2
 
            } else if(split.type == 'cluster') {
 
@@ -242,7 +242,7 @@ growtree <- function(id = 1L,
                                } else if(all(sapply(v, class) == 'igraph')){
                                  if(split.type == 'coeff'){
                                    idx <- which(sapply(covariates, function(c){identical(c,v)}))
-                                   ncol(covariates[[idx*2]])
+                                   ncol(covariates[[(length(covariates)/2)+idx]])
                                  } else if(split.type == 'cluster') {
                                    1
                                  }
@@ -364,6 +364,11 @@ findsplit <- function(response,
                                type.basis = "bspline",
                                nbasis = foo$numbasis.opt)
       foo$coef <- t(fd3$coefs)
+      return(foo)
+    } else if(class(covariates[[j]]) == 'list' &&
+              all(sapply(covariates[[j]], class) == 'igraph') &&
+              split.type == 'coeff') {
+      foo <- graph.shell(covariates[[j]])
       return(foo)
     } else {
       return(newcovariates[[j]])
@@ -551,7 +556,7 @@ split.opt <- function(y,
                  }
                  sel.coeff = x1[,bselect]
                  s  <- sort(sel.coeff)
-                 comb = sapply(s[2:(length(s)-1)], function(j) sel.coeff<j)
+                 comb = sapply(s[1:(length(s)-1)], function(j) sel.coeff<=j)
 
                  if(coef.split.type == 'variance'){
 
@@ -609,7 +614,7 @@ split.opt <- function(y,
                }
                sel.coeff = x1[,bselect]
                s  <- sort(sel.coeff)
-               comb = sapply(s[2:(length(s)-1)], function(j) sel.coeff<j)
+               comb = sapply(s[1:(length(s)-1)], function(j) sel.coeff<=j)
 
                if(coef.split.type == 'variance'){
 
@@ -737,7 +742,8 @@ graph.shell <- function(graph.list, shell.limit = NULL){
                                    }))
 
   # Column names for the shell df
-  col.names = as.character(seq(0, max.shell, 1))
+  col.names = as.character(seq(1, max.shell, 1))
+  #starting from 1 since we presumably only deal with connected graphs
 
   # Shell df inizialization
   all.shell.df = data.frame(matrix(
@@ -759,7 +765,7 @@ graph.shell <- function(graph.list, shell.limit = NULL){
 
   # No more than 'shell.limit' indices for each graph
   if(!is.null(shell.limit) && max.shell > shell.limit){
-    all.shell.df <- all.shell.df[,as.character(seq(0, shell.limit, 1))]
+    all.shell.df <- all.shell.df[,as.character(seq(1, shell.limit, 1))]
   }
 
   # Return the final shell df
