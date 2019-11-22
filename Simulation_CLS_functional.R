@@ -25,23 +25,12 @@ obs <- sample(1:798, 150)
 resp <- lapply(data, function(x) x$cls[obs])[[1]]
 #remark: we take the first element since the dataset contains 100 simulations
 
-# Classification with one functional predictor
+# Only one functional predictor
 cov.list <- lapply(data, function(x) fdata(x[obs,2:129]))[1]
 
-# Classification with many functional predictors
+# Two functional predictors
 cov.list <- list(lapply(data, function(x) fdata(x[obs,2:129]))[[1]],
                  lapply(data, function(x) fdata(x[obs,2:129]))[[2]])
-
-# Classification with two functional predictors and a numeric one
-#the numeric is one of the basis of another simulation of the same dataset
-foo <- fda.usc::min.basis(lapply(data, function(x) fdata(x[obs,2:129]))[[2]], numbasis = 15)
-fd3 <- fda.usc::fdata2fd(foo$fdata.est,
-                         type.basis = "bspline",
-                         nbasis = foo$numbasis.opt)
-foo$coef <- t(fd3$coefs)
-cov.list <- list(lapply(data, function(x) fdata(x[obs,2:129]))[[1]],
-                 lapply(data, function(x) fdata(x[obs,2:129]))[[2]],
-                 foo$coef[,8])
 
 
 # Model fitting -----------------------------------------------------------
@@ -57,8 +46,7 @@ etree_fit <- etree(response = resp,
                    alpha = 0.05,
                    R = 1000,
                    split.type = 'coeff',
-                   coef.split.type = 'test',
-                   nb = n.bas)
+                   coef.split.type = 'test')
 plot(etree_fit)
 
 ### FUNCTIONAL CLASSIFICATION TREE ###
@@ -85,39 +73,10 @@ ct_fit <- classif.tree(resp ~ x, data = list_all, basis.b = list(x =fvb))
 
 # Prediction --------------------------------------------------------------
 
-### CLASSIFICATION ENERGY TREE PREDICTION ###
-
-# New covariates
-new.cov.list = lapply(cov.list, function(j){
-  if(class(j) == 'fdata'){
-
-    foo <- fda.usc::min.basis(j, numbasis = n.bas)
-    fd3 <- fda.usc::fdata2fd(foo$fdata.est,
-                             type.basis = "bspline",
-                             nbasis = foo$numbasis.opt)
-    foo$coef <- t(fd3$coefs)
-    return(foo$coef)
-
-  } else if(class(j) == 'list' &
-            all(sapply(j, class) == 'igraph')){
-
-    shell <- graph.to.shellness.distr.df(j)
-    return(shell)
-
-  } else {
-
-    return(j)
-
-  }
-}
-)
-
-# New covariates dataframe
-new.cov.df <- as.data.frame(do.call(cbind, new.cov.list))
-names(new.cov.df) <- 1:ncol(new.cov.df)
+### ETREE CLASSIFICATION PREDICTION ###
 
 # Prediction
-y_pred <- predict(etree_fit, newdata = new.cov.df)
+y_pred <- predict(etree_fit)
 
 # Error
 y <- resp
@@ -125,7 +84,7 @@ t <- table(y_pred, y)
 ACC_etree <- sum(diag(t))/(length(y))
 
 
-### FUNCTIONAL CLASSIFICATION TREE ###
+### FUNCTIONAL CLASSIFICATION TREE PREDICTION ###
 t <- table(predict(ct_fit))
 ACC_ftree <- sum(diag(t))/(length(y))
 
