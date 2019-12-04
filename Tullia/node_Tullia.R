@@ -1,5 +1,5 @@
 
-partynode <- function(id, split = NULL, kids = NULL, surrogates = NULL, info = NULL) {
+partynode <- function(id, split = NULL, kids = NULL, surrogates = NULL, info = NULL, centroids = NULL) {
 
     if (!is.integer(id) || length(id) != 1) {
         id <- as.integer(id0 <- id)
@@ -25,7 +25,7 @@ partynode <- function(id, split = NULL, kids = NULL, surrogates = NULL, info = N
                  " ", "objects")
     }
 
-    node <- list(id = id, split = split, kids = kids, surrogates = surrogates, info = info)
+    node <- list(id = id, split = split, kids = kids, surrogates = surrogates, info = info, centroids = centroids)
     class(node) <- "partynode"
     return(node)
 }
@@ -70,12 +70,12 @@ as.partynode.list <- function(x, ...) {
         stop("each list in 'x' has to define a node 'id'")
 
     ok <- sapply(x, function(x)
-              all(names(x) %in% c("id", "split", "kids", "surrogates", "info")))
+              all(names(x) %in% c("id", "split", "kids", "surrogates", "info", "centroids")))
     if (any(!ok))
         sapply(which(!ok), function(i)
             warning(paste("list element", i, "defines additional elements:",
                           paste(names(x[[i]])[!(names(x[[i]]) %in%
-                                c("id", "split", "kids", "surrogates", "info"))],
+                                c("id", "split", "kids", "surrogates", "info", "centroids"))],
                                 collapse = ", "))))
 
     ids <- as.integer(sapply(x, function(node) node$id))
@@ -167,7 +167,7 @@ formatinfo_node <- function(node, FUN = NULL, default = "", prefix = NULL, ...) 
 
 ### FIXME: permutation and surrogate splits: is only the primary
 ### variable permuted?
-kidids_node <- function(node, data, vmatch = 1:ncol(data), obs = NULL,
+kidids_node <- function(node, data, vmatch = 1:length(data), obs = NULL,
                         perm = NULL) {
 
     primary <- split_node(node)
@@ -201,7 +201,7 @@ kidids_node <- function(node, data, vmatch = 1:ncol(data), obs = NULL,
             if (varid_split(primary) %in% perm)
                 x <- .resample(x)
         } else {
-            if (is.null(obs)) obs <- 1:nrow(data)
+            if (is.null(obs)) obs <- 1:length(data)
             strata <- perm[[varid_split(primary)]]
             if (!is.null(strata)) {
                 strata <- strata[obs, drop = TRUE]
