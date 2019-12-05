@@ -214,19 +214,12 @@ kidids_node <- function(node, data, vmatch = 1:length(data), obs = NULL,
 }
 
 fitted_node <- function(node, data, vmatch = 1:length(data),
-                        obs = 1:length(data$response), perm = NULL) {
-
-    ### should be equivalent to:
-    # return(.Call("R_fitted_node", node, data, vmatch, as.integer(obs),
-    #             as.integer(perm)))
+                        obs = 1:unique(sapply(data, NROW)), perm = NULL) {
 
     if (is.logical(obs)) obs <- which(obs)
     if (is.terminal(node))
         return(rep(id_node(node), length(obs)))
     retid <- nextid <- kidids_node(node, data, vmatch, obs, perm)
-
-
-
 
     for (i in unique(nextid)) {
         indx <- nextid == i
