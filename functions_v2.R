@@ -66,9 +66,7 @@ etree <- function(response,
   }
   )
 
-  # Building a df with all the new 'variables'
-  newcovariates.df <- as.data.frame(newcovariates)
-  names(newcovariates.df) <- 1:ncol(newcovariates.df)
+  names(newcovariates) <- 1:length(newcovariates)
 
   # Distances
   cov.distance <- lapply(covariates, compute.dissimilarity)
@@ -99,7 +97,7 @@ etree <- function(response,
                fitted = data.frame("(fitted)" = fitted.obs,
                                    "(response)" = response,
                                    check.names = FALSE),
-               terms = terms(response ~ ., data = list(response = response, newcovariates= newcovariates)))
+               terms = terms(response ~ ., data = newcovariates))
 
   return(etree = as.constparty(ret))
 
