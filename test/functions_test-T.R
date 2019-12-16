@@ -301,6 +301,7 @@ growtree <- function(id = 1L,
   ### isn't it possible to use kidids_split anyway?
   kidids <- c()
 
+  print(class(covariates[[varselect]]))
   switch(class(covariates[[varselect]]),
          fdata = {
            if(split.type == "coeff"){
@@ -312,6 +313,7 @@ growtree <- function(id = 1L,
                                         nbasis = foo$numbasis.opt)
                foo$coef <- t(fd3$coefs)
                return(foo)
+
              }
              )
 
