@@ -642,18 +642,13 @@ compute.dissimilarity <- function(x,
              adj_matrices <- lapply(x, as_adjacency_matrix)
              d <- nd.csd(adj_matrices) #continuous spectral density for the moment
              return(as.matrix(d$D))
+           } else if(all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
+             k.fun = function(i,j) TDA::wasserstein(x[[i]], x[[j]])
+             k.fun = Vectorize(k.fun)
+             d.idx = seq_along(x)
+             outer(d.idx,d.idx, k.fun)
            }
          })
-  # list       = {
-  #   if(!is.null(attributes(x[[1]]))){
-  #   if(attributes(x[[1]])$names == "diagram"){
-  #     d1 = x[case.weights]
-  #     k.fun = function(i, j) TDA::wasserstein(d1[[i]], d1[[j]])
-  #     k.fun = Vectorize(k.fun)
-  #     d.idx = seq_along(d1)
-  #     outer(d.idx,d.idx, k.fun)
-  #   }}
-  #})
 
 }
 
@@ -670,6 +665,11 @@ compute.dissimilarity.cl <- function(centroid, x,
              adj_matrices <- lapply(x, as_adjacency_matrix)
              d <- nd.csd(adj_matrices) #continuous spectral density for the moment
              return(as.matrix(d$D))
+           } else if (all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
+             k.fun = function(i, centroid) TDA::wasserstein(x[[i]], centroid)
+             k.fun = Vectorize(k.fun)
+             d.idx = seq_along(x)
+             outer(d.idx, centroid, k.fun)
            }
          })
   # list       = {
