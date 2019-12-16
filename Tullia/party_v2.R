@@ -312,10 +312,12 @@ predict.party <- function(object, newdata = NULL, perm = NULL, ...)
           xlev <- lapply(unames[factors],
                          function(x) levels(object$data[[x]]))
           names(xlev) <- unames[factors]
-          mf <- model.frame(delete.response(object$terms), newdata,
-                            xlev = xlev)
-          fitted_node_predict(node_party(object), data = mf,
-                      vmatch = match(vnames, names(mf)), perm = perm)
+#         mf <- model.frame(delete.response(object$terms), newdata,
+#                          xlev = xlev)
+          # fitted_node_predict(node_party(object), data = newdata,
+          #             vmatch = match(vnames, names(mf)), perm = perm)
+          fitted_node_predict(node_party(object), data = newdata,
+                              perm = perm)
         } else
           stop("") ## FIXME: write error message
       }

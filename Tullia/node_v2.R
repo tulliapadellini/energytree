@@ -220,7 +220,7 @@ kidids_node_predict <- function(node, data, vmatch = 1:length(data), obs = NULL,
   surrogates <- surrogates_node(node)
 
   ### perform primary split
-  x <- kidids_split(primary, data, vmatch, obs)
+  x <- kidids_split_predict(primary, data, vmatch, obs)
 
   ### surrogate / random splits if needed
   if (any(is.na(x))) {

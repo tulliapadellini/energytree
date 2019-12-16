@@ -207,8 +207,8 @@ kidids_split_predict <- function(split, data, vmatch = 1:length(data), obs = NUL
 
     if(!is.null(centroids_split(split))){
 
-      cl.idx = compute.dissimilarity.cl(centroids_split(split), x, lp = 2)
-      x <- apply(cl.idx, 1, which.min)
+      cl.idx = lapply(centroids_split(split), compute.dissimilarity.cl, x = x, lp = 2)
+      x <- apply(matrix(unlist(cl.idx),ncol = 2),1, which.min)
     }
 
     if (storage.mode(x) != "integer")
