@@ -303,7 +303,7 @@ predict.party <- function(object, newdata = NULL, perm = NULL, ...)
       ## FIXME: inform about wrong classes / factor levels?
       if(all(unames %in% ndnames) && checkclass && checkfactors) {
         vmatch <- match(vnames, ndnames)
-        fitted_node(node_party(object), data = newdata,
+        fitted_node_predict(node_party(object), data = newdata,
                     vmatch = vmatch, perm = perm)
       } else {
         if (!is.null(object$terms)) {
@@ -312,10 +312,12 @@ predict.party <- function(object, newdata = NULL, perm = NULL, ...)
           xlev <- lapply(unames[factors],
                          function(x) levels(object$data[[x]]))
           names(xlev) <- unames[factors]
-          mf <- model.frame(delete.response(object$terms), newdata,
-                            xlev = xlev)
-          fitted_node(node_party(object), data = mf,
-                      vmatch = match(vnames, names(mf)), perm = perm)
+#         mf <- model.frame(delete.response(object$terms), newdata,
+#                          xlev = xlev)
+          # fitted_node_predict(node_party(object), data = newdata,
+          #             vmatch = match(vnames, names(mf)), perm = perm)
+          fitted_node_predict(node_party(object), data = newdata,
+                              perm = perm)
         } else
           stop("") ## FIXME: write error message
       }
@@ -538,7 +540,7 @@ data_party.default <- function(party, id = 1L) {
     nt <- nodeids(party, id, terminal = TRUE)
     wi <- party$fitted[["(fitted)"]] %in% nt
 
-    ret <- if (nrow(party$data) == 0)
+    ret <- if (length(party$data) == 0)
       subset(party$fitted, wi)
     else
       subset(cbind(party$data, party$fitted), wi)
