@@ -1,0 +1,12 @@
+Package: etree
+Type: Package
+Title: Classification and Regression using Mixed-Type Data
+Version: 0.1.0
+Author: Riccardo Giubilei, Tullia Padellini, Pierpaolo Brutti
+Maintainer: Riccardo Giubilei <riccardo.giubilei@uniroma1.it>
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+License: license
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.0.2
