@@ -239,8 +239,50 @@ nodeapply.partynode <- function(obj, ids = 1, FUN = NULL, ...) {
   return(rval)
 }
 
-predict.party <- function(object, newdata = NULL, perm = NULL, ...)
+predict.party <- function(object, newdata = NULL, split.type, nb, perm = NULL, ...)
 {
+
+  if(!is.null(newdata)){
+
+
+  newdata = lapply(newdata, function(j){
+    if(class(j) == 'fdata'){
+
+      if(split.type == "coeff"){
+
+        foo <- fda.usc::optim.basis(j, numbasis = nb)
+        fd3 <- fda.usc::fdata2fd(foo$fdata.est,
+                                 type.basis = "bspline",
+                                 nbasis = foo$numbasis.opt)
+        foo <- t(fd3$coefs)
+
+      } else if(split.type == "cluster"){
+
+        foo <- as.factor(1:length(response))
+
+      }
+
+      return(foo)
+
+    } else if(class(j) == 'list' &
+              all(sapply(j, class) == 'igraph')){
+
+      if(split.type == "coeff"){
+        foo <- graph.shell(j)
+      } else if(split.type == "cluster"){
+        foo <- as.factor(1:length(response))
+      }
+
+      return(foo)
+
+    } else {
+
+      return(j)
+
+    }
+  }
+  )
+  }
 
   ### compute fitted node ids first
   fitted <- if(is.null(newdata) && is.null(perm)) {

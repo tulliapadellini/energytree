@@ -198,6 +198,7 @@ kidids_split_predict <- function(split, data, vmatch = 1:length(data), obs = NUL
   class(data) <- "list" ### speed up
   if(!is.null(basid)){ #means we are in the coeff case
     x <- data[[vmatch[varid]]][,basid]
+
   } else { #means we are in the cluster case
     x <- data[[vmatch[varid]]]
   }
