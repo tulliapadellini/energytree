@@ -244,37 +244,20 @@ predict.party <- function(object, newdata = NULL, split.type, nb, perm = NULL, .
 
   if(!is.null(newdata)){
 
-
   newdata = lapply(newdata, function(j){
-    if(class(j) == 'fdata'){
-
-      if(split.type == "coeff"){
+    if(class(j) == 'fdata' && split.type == "coeff"){
 
         foo <- fda.usc::optim.basis(j, numbasis = nb)
         fd3 <- fda.usc::fdata2fd(foo$fdata.est,
                                  type.basis = "bspline",
                                  nbasis = foo$numbasis.opt)
         foo <- t(fd3$coefs)
-
-      } else if(split.type == "cluster"){
-
-        foo <- as.factor(1:length(response))
-
-      }
-
-      return(foo)
+        return(foo)
 
     } else if(class(j) == 'list' &
-              all(sapply(j, class) == 'igraph')){
-
-      if(split.type == "coeff"){
+              all(sapply(j, class) == 'igraph') & split.type == "coeff"){
         foo <- graph.shell(j)
-      } else if(split.type == "cluster"){
-        foo <- as.factor(1:length(response))
-      }
-
-      return(foo)
-
+        return(foo)
     } else {
 
       return(j)

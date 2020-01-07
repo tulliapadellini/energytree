@@ -511,7 +511,7 @@ split.opt <- function(y,
              }
 
            } else if(split.type == 'cluster') {
-             cl.fdata = kmeans.fd(x, ncl=2, draw = FALSE, par.ini=list(method="exact"))
+             cl.fdata = kmeans.fd(x, ncl=2, draw = FALSE, par.ini=list(method="exact"), cluster.size = 1)
              clindex <- cl.fdata$cluster
              lev = levels(newx)
              splitindex = rep(NA, length(lev))
