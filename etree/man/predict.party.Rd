@@ -19,6 +19,6 @@
 Compute predictions based on an Energy Tree Fit.
 }
 \examples{
-add_numbers(1, 2) ## returns 3
+ ## returns 3
 
 }

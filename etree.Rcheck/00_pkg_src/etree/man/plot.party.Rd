@@ -61,6 +61,6 @@
 \code{plot} method for \code{party} objects with extended facilities for plugging in panel functions.
 }
 \examples{
-add_numbers(1, 2) ## returns 3
+## returns 3
 
 }

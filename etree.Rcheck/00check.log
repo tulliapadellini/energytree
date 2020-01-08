@@ -42,17 +42,22 @@
 .pred_Surv_response: no visible global function definition for
   ‘.median_survival_time’
 as.constparty: no visible global function definition for ‘as.party’
+compute.dissimilarity: no visible binding for global variable
+  ‘as_adjacency_matrix’
+compute.dissimilarity: no visible global function definition for
+  ‘nd.csd’
+compute.dissimilarity.cl: no visible binding for global variable
+  ‘as_adjacency_matrix’
+compute.dissimilarity.cl: no visible global function definition for
+  ‘nd.csd’
 depth.party: no visible global function definition for ‘depth’
 depth.partynode: no visible binding for global variable ‘depth’
-etree : <anonymous>: no visible global function definition for
-  ‘graph.shell’
-etree: no visible binding for global variable ‘compute.dissimilarity’
 etree: no visible global function definition for ‘growtree’
+graph.shell : <anonymous>: no visible global function definition for
+  ‘coreness’
 kidids_node: no visible global function definition for ‘.resample’
 kidids_node_predict: no visible global function definition for
   ‘.resample’
-kidids_split_predict: no visible binding for global variable
-  ‘compute.dissimilarity.cl’
 nodeprune.partynode: no visible binding for global variable ‘.get_path’
 plot.party: no visible binding for global variable ‘node_terminal’
 plot.party: no visible binding for global variable ‘node_inner’
@@ -69,12 +74,12 @@ plot.party: no visible global function definition for ‘upViewport’
 plot.party: no visible global function definition for ‘plotViewport’
 plot.party: no visible global function definition for ‘.plot_node’
 plot.party: no visible global function definition for ‘popViewport’
-predict.party : <anonymous>: no visible global function definition for
-  ‘graph.shell’
+split.opt : <anonymous>: no visible global function definition for
+  ‘mychisqtest’
 Undefined global functions or variables:
   .get_path .median_survival_time .plot_node .resample as.party
-  compute.dissimilarity compute.dissimilarity.cl depth edge_simple gpar
-  graph.shell grid.layout grid.newpage grid.text growtree node_inner
+  as_adjacency_matrix coreness depth edge_simple gpar grid.layout
+  grid.newpage grid.text growtree mychisqtest nd.csd node_inner
   node_terminal plotViewport popViewport pushViewport survfit unit
   upViewport viewport
 * checking Rd files ... OK
@@ -97,19 +102,6 @@ See chapter ‘Writing R documentation files’ in the ‘Writing R
 Extensions’ manual.
 * checking Rd contents ... OK
 * checking for unstated dependencies in examples ... OK
-* checking examples ... ERROR
-Running examples in ‘etree-Ex.R’ failed
-The error most likely occurred in:
-
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
-> ### Name: plot.party
-> ### Title: Visualization of Energy Trees
-> ### Aliases: plot.party
-> 
-> ### ** Examples
-> 
-> add_numbers(1, 2) ## returns 3
-Error in add_numbers(1, 2) : could not find function "add_numbers"
-Execution halted
+* checking examples ... OK
 * DONE
-Status: 1 ERROR, 1 WARNING, 1 NOTE
+Status: 1 WARNING, 1 NOTE

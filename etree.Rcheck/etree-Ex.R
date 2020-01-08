@@ -50,7 +50,7 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 
 ### ** Examples
 
-add_numbers(1, 2) ## returns 3
+## returns 3
 
 
 
@@ -70,7 +70,7 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 
 ### ** Examples
 
-add_numbers(1, 2) ## returns 3
+ ## returns 3
 
 
 

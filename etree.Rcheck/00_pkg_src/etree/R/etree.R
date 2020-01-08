@@ -9,6 +9,7 @@
 #' @docType package
 #' @name etree
 #' @importFrom stats model.frame terms approxfun density ecdf getCall model.response model.weights predict quantile weighted.mean
-#' @importFrom fda.usc optim.basis
-#' @importFrom utils capture.output
+#'             dist var
+#' @importFrom fda.usc optim.basis kmeans.fd metric.lp
+#' @importFrom utils capture.output combn
 NULL

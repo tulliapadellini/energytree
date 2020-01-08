@@ -1374,4 +1374,3 @@ nodeprune.default <- function(x, ids, ...)
   node <- recFun(node_party(x))
   paste(rule, collapse = " & ")
 }
-
