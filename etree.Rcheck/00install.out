@@ -1,6 +1,8 @@
 * installing *source* package ‘etree’ ...
 ** using staged installation
 ** R
+** data
+*** moving datasets to lazyload DB
 ** byte-compile and prepare package for lazy loading
 ** help
 *** installing help indices

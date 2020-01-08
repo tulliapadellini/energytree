@@ -16,4 +16,4 @@ RoxygenNote: 7.0.2
 Imports: energy, partykit, fda.usc, igraph, NetworkDistance, TDA
 Suggests: cluster, knitr, rmarkdown, entropy
 NeedsCompilation: no
-Packaged: 2020-01-08 17:04:31 UTC; tulliapadellini
+Packaged: 2020-01-08 17:29:57 UTC; tulliapadellini

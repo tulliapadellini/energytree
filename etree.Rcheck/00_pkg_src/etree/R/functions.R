@@ -436,6 +436,150 @@ plot.party <- function(x, main = NULL,
 
 
 
+growtree <- function(id = 1L,
+                     response,
+                     covariates,
+                     case.weights,
+                     minbucket,
+                     alpha,
+                     R,
+                     n.var,
+                     split.type = 'coeff',
+                     coef.split.type = 'test',
+                     nb) {
+
+  # For less than <minbucket> observations, stop here
+  if (sum(case.weights) < minbucket)
+    return(partynode(id = id))
+
+  # Finding the best split (variable selection & split point search)
+  split <- findsplit(response = response,
+                     covariates = covariates,
+                     alpha = alpha,
+                     R = R,
+                     lp = rep(2, 2),
+                     split.type = split.type,
+                     coef.split.type = coef.split.type,
+                     nb = nb)
+
+  # If no split is found, stop here
+  if (is.null(split))
+    return(partynode(id = id))
+
+  # Selected variable index and possibly selected basis index
+  varid <- split$varid
+  if(!is.null(split$basid)){
+    basid <- split$basid
+  }
+
+  breaks <- split$breaks
+  index <- split$index
+
+  # Assigning the ids to the observations
+  kidids <- c()
+  switch(class(covariates$cov[[varid]]),
+
+         fdata = {
+
+           if(split.type == 'coeff'){
+
+             # observations before the split point are assigned to node 1
+             kidids[which(covariates$newcov[[varid]][, basid] <= breaks)] <- 1
+             #  observations before the split point are assigned to node 2
+             kidids[which(covariates$newcov[[varid]][, basid] > breaks)] <- 2
+
+           } else if (split.type == 'cluster') {
+
+             kidids <- na.exclude(index)
+
+           }
+         },
+
+         numeric = {
+
+           kidids[(which(covariates$cov[[varid]] <= breaks))] <- 1
+           kidids[(which(covariates$cov[[varid]] > breaks))] <- 2
+
+         },
+
+         integer = {
+
+           kidids[(which(covariates$newcov[[varid]] <= breaks))] <- 1
+           kidids[(which(covariates$newcov[[varid]] > breaks))] <- 2
+
+         },
+
+         factor = {
+
+           kidids <- na.exclude(index)
+
+         },
+
+         list = if(FALSE){
+           #attributes(x[[1]])$names == 'diagram'
+         } else if(all(sapply(covariates$cov[[varid]], class) == 'igraph')){
+
+           if(split.type == 'coeff'){
+
+             kidids[which(covariates$newcov[[varid]][, basid] <= breaks)] <- 1
+             kidids[which(covariates$newcov[[varid]][, basid] > breaks)] <- 2
+
+           } else if(split.type == 'cluster') {
+
+             kidids <- na.exclude(index)
+
+           }
+         }
+  )
+
+  # If all the observations belong to the same node, no split is done
+  if (all(kidids == 1) | all(kidids == 2))
+    return(partynode(id = id))
+
+  # Initialization of the kid nodes
+  kids <- vector(mode = "list", length = max(kidids, na.rm = TRUE))
+
+  # Giving birth to the kid nodes
+  for (kidid in 1:length(kids)) {
+    # selecting observations for the current node
+    w <- case.weights
+    w[kidids != kidid] <- 0
+
+    # getting next node id
+    if (kidid > 1) {
+      myid <- max(nodeids(kids[[kidid - 1]]))
+    } else{
+      myid <- id
+    }
+
+    # starting recursion on this kid node
+    covariates.updated <- list()
+    covariates.updated$cov <- lapply(covariates$cov, function(cov) subset(cov, as.logical(w)))
+    covariates.updated$newcov <- lapply(covariates$newcov, function(cov) subset(cov, as.logical(w)))
+    covariates.updated$dist <- lapply(covariates$dist, function(cov) subset(cov, subset = as.logical(w), select = which(w == 1)))
+
+    kids[[kidid]] <-
+      growtree(
+        id = as.integer(myid + 1),
+        response = subset(response, as.logical(w)),
+        covariates = covariates.updated,
+        case.weights = rep(1L, sum(w, na.rm = TRUE)),
+        minbucket,
+        alpha,
+        R,
+        n.var = n.var,
+        split.type = split.type,
+        coef.split.type = coef.split.type,
+        nb = nb)
+  }
+
+  # Return the nodes (i.e. the split rules)
+  return(partynode(id = as.integer(id),
+                   split = split,
+                   kids = kids,
+                   info = list(p.value = min(info_split(split)$p.value, na.rm = TRUE))
+  ))
+}
 
 
 
@@ -579,6 +723,18 @@ findsplit <- function(response,
 
 # Split point search ------------------------------------------------------
 
+#' Find Split Value
+#'
+#' Computes optimal split value
+#'
+#' @param y response variable
+#' @param x selected covariate
+#'
+#' @export
+#'
+#' @examples
+#' add_numbers(1, 2) ## returns 3
+#'
 
 split.opt <- function(y,
                       x,

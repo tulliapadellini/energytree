@@ -17,11 +17,16 @@
 * checking for sufficient/correct file permissions ... OK
 * checking serialization versions ... OK
 * checking whether package ‘etree’ can be installed ... OK
-* checking installed package size ... OK
+* checking installed package size ... NOTE
+  installed size is  7.8Mb
+  sub-directories of 1Mb or more:
+    data   7.6Mb
 * checking package directory ... OK
 * checking for future file timestamps ... OK
 * checking DESCRIPTION meta-information ... OK
-* checking top-level files ... OK
+* checking top-level files ... NOTE
+Non-standard file/directory found at top level:
+  ‘test.R’
 * checking for left-over files ... OK
 * checking index information ... OK
 * checking package subdirectories ... OK
@@ -34,7 +39,15 @@
 * checking whether the namespace can be unloaded cleanly ... OK
 * checking loading without being on the library search path ... OK
 * checking dependencies in R code ... OK
-* checking S3 generic/method consistency ... OK
+* checking S3 generic/method consistency ... WARNING
+split:
+  function(x, f, drop, ...)
+split.opt:
+  function(y, x, newx, xdist, split.type, coef.split.type, nb, R,
+           wass.dist)
+
+See section ‘Generic functions and methods’ in the ‘Writing R
+Extensions’ manual.
 * checking replacement functions ... OK
 * checking foreign function calls ... OK
 * checking R code for possible problems ... NOTE
@@ -52,9 +65,9 @@ compute.dissimilarity.cl: no visible global function definition for
   ‘nd.csd’
 depth.party: no visible global function definition for ‘depth’
 depth.partynode: no visible binding for global variable ‘depth’
-etree: no visible global function definition for ‘growtree’
 graph.shell : <anonymous>: no visible global function definition for
   ‘coreness’
+growtree: no visible global function definition for ‘na.exclude’
 kidids_node: no visible global function definition for ‘.resample’
 kidids_node_predict: no visible global function definition for
   ‘.resample’
@@ -79,9 +92,12 @@ split.opt : <anonymous>: no visible global function definition for
 Undefined global functions or variables:
   .get_path .median_survival_time .plot_node .resample as.party
   as_adjacency_matrix coreness depth edge_simple gpar grid.layout
-  grid.newpage grid.text growtree mychisqtest nd.csd node_inner
+  grid.newpage grid.text mychisqtest na.exclude nd.csd node_inner
   node_terminal plotViewport popViewport pushViewport survfit unit
   upViewport viewport
+Consider adding
+  importFrom("stats", "na.exclude")
+to your NAMESPACE file.
 * checking Rd files ... OK
 * checking Rd metadata ... OK
 * checking Rd line widths ... OK
@@ -95,6 +111,9 @@ Documented arguments not in \usage in documentation object 'plot.party':
 Undocumented arguments in documentation object 'predict.party'
   ‘split.type’ ‘nb’
 
+Undocumented arguments in documentation object 'split.opt'
+  ‘newx’ ‘xdist’ ‘split.type’ ‘coef.split.type’ ‘nb’ ‘R’ ‘wass.dist’
+
 Functions with \usage entries need to have the appropriate \alias
 entries, and all their arguments documented.
 The \usage entries must correspond to syntactically valid R code.
@@ -102,6 +121,23 @@ See chapter ‘Writing R documentation files’ in the ‘Writing R
 Extensions’ manual.
 * checking Rd contents ... OK
 * checking for unstated dependencies in examples ... OK
-* checking examples ... OK
+* checking contents of ‘data’ directory ... OK
+* checking data for non-ASCII characters ... OK
+* checking data for ASCII and uncompressed saves ... WARNING
+  Warning: package needs dependence on R (>= 2.10)
+* checking examples ... ERROR
+Running examples in ‘etree-Ex.R’ failed
+The error most likely occurred in:
+
+> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+> ### Name: split.opt
+> ### Title: Find Split Value
+> ### Aliases: split.opt
+> 
+> ### ** Examples
+> 
+> add_numbers(1, 2) ## returns 3
+Error in add_numbers(1, 2) : could not find function "add_numbers"
+Execution halted
 * DONE
-Status: 1 WARNING, 1 NOTE
+Status: 1 ERROR, 3 WARNINGs, 3 NOTEs

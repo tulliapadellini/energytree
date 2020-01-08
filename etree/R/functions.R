@@ -723,19 +723,6 @@ findsplit <- function(response,
 
 # Split point search ------------------------------------------------------
 
-#' Find Split Value
-#'
-#' Computes optimal split value
-#'
-#' @param y response variable
-#' @param x selected covariate
-#'
-#' @export
-#'
-#' @examples
-#' add_numbers(1, 2) ## returns 3
-#'
-
 split.opt <- function(y,
                       x,
                       newx,

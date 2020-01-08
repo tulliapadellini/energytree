@@ -1,3 +1,5 @@
 etree	etree
 plot.party	plot.party
 predict.party	predict.party
+sim_reg	sim_reg
+split.opt	split.opt
