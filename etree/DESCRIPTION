@@ -6,8 +6,8 @@ Author: Marco Brandi, Pierpaolo Brutti, Riccardo Giubilei, Gabriel Nespoli, Tull
 Maintainer: Riccardo Giubilei <riccardo.giubilei@uniroma1.it>
 Description: The etree package allows to build regression/classification conditional inference trees. 
     The splitting procedure is carried out by means of energy tests, thus allowing for covariates of mixed type. 
-    Current implementation covers the case of functions, graphs and persistence diagrams, as well as
-    standard categorical and numerical values, as covariates.
+    Current implementation covers takes as covariates functional data, graphs and persistence diagrams, as well as
+    standard categorical and numerical values.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
