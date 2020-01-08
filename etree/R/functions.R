@@ -15,7 +15,7 @@
 #' @export
 #'
 #' @examples
-#' add_numbers(1, 2) ## returns 3
+#'  ## returns 3
 #'
 
 etree <- function(response, covariates, case.weights = NULL, minbucket = 1, alpha = 0.05, R = 1000, split.type = 'coeff', coef.split.type = 'test', nb = 5) {

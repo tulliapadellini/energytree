@@ -8,10 +8,108 @@
 * this is package ‘etree’ version ‘0.1.0’
 * package encoding: UTF-8
 * checking package namespace information ... OK
-* checking package dependencies ... ERROR
-Namespace dependency not required: ‘methods’
+* checking package dependencies ... OK
+* checking if this is a source package ... OK
+* checking if there is a namespace ... OK
+* checking for executable files ... OK
+* checking for hidden files and directories ... OK
+* checking for portable file names ... OK
+* checking for sufficient/correct file permissions ... OK
+* checking serialization versions ... OK
+* checking whether package ‘etree’ can be installed ... OK
+* checking installed package size ... OK
+* checking package directory ... OK
+* checking for future file timestamps ... OK
+* checking DESCRIPTION meta-information ... OK
+* checking top-level files ... OK
+* checking for left-over files ... OK
+* checking index information ... OK
+* checking package subdirectories ... OK
+* checking R files for non-ASCII characters ... OK
+* checking R files for syntax errors ... OK
+* checking whether the package can be loaded ... OK
+* checking whether the package can be loaded with stated dependencies ... OK
+* checking whether the package can be unloaded cleanly ... OK
+* checking whether the namespace can be loaded with stated dependencies ... OK
+* checking whether the namespace can be unloaded cleanly ... OK
+* checking loading without being on the library search path ... OK
+* checking dependencies in R code ... OK
+* checking S3 generic/method consistency ... OK
+* checking replacement functions ... OK
+* checking foreign function calls ... OK
+* checking R code for possible problems ... NOTE
+.pred_Surv: no visible global function definition for ‘survfit’
+.pred_Surv_response: no visible global function definition for
+  ‘.median_survival_time’
+as.constparty: no visible global function definition for ‘as.party’
+depth.party: no visible global function definition for ‘depth’
+depth.partynode: no visible binding for global variable ‘depth’
+etree : <anonymous>: no visible global function definition for
+  ‘graph.shell’
+etree: no visible binding for global variable ‘compute.dissimilarity’
+etree: no visible global function definition for ‘growtree’
+kidids_node: no visible global function definition for ‘.resample’
+kidids_node_predict: no visible global function definition for
+  ‘.resample’
+kidids_split_predict: no visible binding for global variable
+  ‘compute.dissimilarity.cl’
+nodeprune.partynode: no visible binding for global variable ‘.get_path’
+plot.party: no visible binding for global variable ‘node_terminal’
+plot.party: no visible binding for global variable ‘node_inner’
+plot.party: no visible binding for global variable ‘edge_simple’
+plot.party: no visible global function definition for ‘gpar’
+plot.party: no visible global function definition for ‘depth’
+plot.party: no visible global function definition for ‘grid.newpage’
+plot.party: no visible global function definition for ‘viewport’
+plot.party: no visible global function definition for ‘grid.layout’
+plot.party: no visible global function definition for ‘unit’
+plot.party: no visible global function definition for ‘pushViewport’
+plot.party: no visible global function definition for ‘grid.text’
+plot.party: no visible global function definition for ‘upViewport’
+plot.party: no visible global function definition for ‘plotViewport’
+plot.party: no visible global function definition for ‘.plot_node’
+plot.party: no visible global function definition for ‘popViewport’
+predict.party : <anonymous>: no visible global function definition for
+  ‘graph.shell’
+Undefined global functions or variables:
+  .get_path .median_survival_time .plot_node .resample as.party
+  compute.dissimilarity compute.dissimilarity.cl depth edge_simple gpar
+  graph.shell grid.layout grid.newpage grid.text growtree node_inner
+  node_terminal plotViewport popViewport pushViewport survfit unit
+  upViewport viewport
+* checking Rd files ... OK
+* checking Rd metadata ... OK
+* checking Rd line widths ... OK
+* checking Rd cross-references ... OK
+* checking for missing documentation entries ... OK
+* checking for code/documentation mismatches ... OK
+* checking Rd \usage sections ... WARNING
+Documented arguments not in \usage in documentation object 'plot.party':
+  ‘type’ ‘digits’
 
-See section ‘The DESCRIPTION file’ in the ‘Writing R Extensions’
-manual.
+Undocumented arguments in documentation object 'predict.party'
+  ‘split.type’ ‘nb’
+
+Functions with \usage entries need to have the appropriate \alias
+entries, and all their arguments documented.
+The \usage entries must correspond to syntactically valid R code.
+See chapter ‘Writing R documentation files’ in the ‘Writing R
+Extensions’ manual.
+* checking Rd contents ... OK
+* checking for unstated dependencies in examples ... OK
+* checking examples ... ERROR
+Running examples in ‘etree-Ex.R’ failed
+The error most likely occurred in:
+
+> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+> ### Name: plot.party
+> ### Title: Visualization of Energy Trees
+> ### Aliases: plot.party
+> 
+> ### ** Examples
+> 
+> add_numbers(1, 2) ## returns 3
+Error in add_numbers(1, 2) : could not find function "add_numbers"
+Execution halted
 * DONE
-Status: 1 ERROR
+Status: 1 ERROR, 1 WARNING, 1 NOTE

@@ -3,12 +3,19 @@
 \docType{package}
 \name{etree}
 \alias{etree}
-\alias{etree-package}
 \title{etree: Energy Trees for Mixed Type Data}
 \usage{
-etree(response, covariates, case.weights = NULL, minbucket = 1,
-  alpha = 0.05, R = 1000, split.type = "coeff",
-  coef.split.type = "test", nb = 5)
+etree(
+  response,
+  covariates,
+  case.weights = NULL,
+  minbucket = 1,
+  alpha = 0.05,
+  R = 1000,
+  split.type = "coeff",
+  coef.split.type = "test",
+  nb = 5
+)
 }
 \arguments{
 \item{response}{response variable (either numeric or factor).}
@@ -38,6 +45,6 @@ as well as standard categorical and numerical values, as covariates.
 Fits an energy tree for classification/regression using mixed type data.
 }
 \examples{
-add_numbers(1, 2) ## returns 3
+ ## returns 3
 
 }

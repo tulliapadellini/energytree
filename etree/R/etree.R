@@ -8,6 +8,7 @@
 #'
 #' @docType package
 #' @name etree
-#' @importFrom methods as new
-#' @importFrom stats delete.response fitted model.matrix na.omit napredict pnorm predict terms
+#' @importFrom stats model.frame terms approxfun density ecdf getCall model.response model.weights predict quantile weighted.mean
+#' @importFrom fda.usc optim.basis
+#' @importFrom utils capture.output
 NULL

@@ -4,11 +4,23 @@
 \alias{plot.party}
 \title{Visualization of Energy Trees}
 \usage{
-\method{plot}{party}(x, main = NULL, terminal_panel = node_terminal,
-  tp_args = list(), inner_panel = node_inner, ip_args = list(),
-  edge_panel = edge_simple, ep_args = list(), drop_terminal = FALSE,
-  tnex = 1, newpage = TRUE, pop = TRUE, gp = gpar(),
-  margins = NULL, ...)
+\method{plot}{party}(
+  x,
+  main = NULL,
+  terminal_panel = node_terminal,
+  tp_args = list(),
+  inner_panel = node_inner,
+  ip_args = list(),
+  edge_panel = edge_simple,
+  ep_args = list(),
+  drop_terminal = FALSE,
+  tnex = 1,
+  newpage = TRUE,
+  pop = TRUE,
+  gp = gpar(),
+  margins = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{an object of class party or constparty.}
