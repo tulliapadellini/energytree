@@ -1,0 +1,17 @@
+* using log directory ‘/home/tulliapadellini/Documents/Research/Energy-Trees/Pacchetto/energytree/etree.Rcheck’
+* using R version 3.6.1 (2019-07-05)
+* using platform: x86_64-pc-linux-gnu (64-bit)
+* using session charset: UTF-8
+* using options ‘--no-manual --as-cran’
+* checking for file ‘etree/DESCRIPTION’ ... OK
+* checking extension type ... Package
+* this is package ‘etree’ version ‘0.1.0’
+* package encoding: UTF-8
+* checking package namespace information ... OK
+* checking package dependencies ... ERROR
+Namespace dependency not required: ‘methods’
+
+See section ‘The DESCRIPTION file’ in the ‘Writing R Extensions’
+manual.
+* DONE
+Status: 1 ERROR
