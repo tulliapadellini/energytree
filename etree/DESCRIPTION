@@ -1,12 +1,22 @@
 Package: etree
 Type: Package
-Title: Classification and Regression using Mixed-Type Data
+Title: Energy Trees for Classification and Regression with Mixed-Type Data
 Version: 0.1.0
-Author: Riccardo Giubilei, Tullia Padellini, Pierpaolo Brutti
+Author: Marco Brandi, Pierpaolo Brutti, Riccardo Giubilei, Gabriel Nespoli, 
+    Tullia Padellini 
 Maintainer: Riccardo Giubilei <riccardo.giubilei@uniroma1.it>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: license
+Description: The etree package allows to build regression/classification 
+    conditional inference trees. The splitting procedure is carried out by means
+    of energy tests, thus allowing for covariates of mixed type. Current 
+    implementation takes as covariates functional data, graphs and persistence 
+    diagrams, as well as standard categorical and numerical values.
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.0.2
+Imports: energy, partykit, fda.usc, igraph, NetworkDistance, TDA
+Suggests: 
+    cluster,
+    knitr,
+    rmarkdown,
+    entropy

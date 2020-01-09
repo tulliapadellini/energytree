@@ -4,7 +4,7 @@
 \alias{predict.party}
 \title{Energy Tree Predictions}
 \usage{
-\method{predict}{party}(object, newdata = NULL, perm = NULL, ...)
+\method{predict}{party}(object, newdata = NULL, split.type, nb, perm = NULL, ...)
 }
 \arguments{
 \item{object}{object of class party.}
@@ -19,6 +19,6 @@
 Compute predictions based on an Energy Tree Fit.
 }
 \examples{
-add_numbers(1, 2) ## returns 3
+ ## returns 3
 
 }
