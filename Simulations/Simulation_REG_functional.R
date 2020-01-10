@@ -44,7 +44,8 @@ etree_fit <- etree(response = resp,
                    alpha = 0.05,
                    R = 1000,
                    split.type = 'cluster',
-                   coef.split.type = 'test')
+                   coef.split.type = 'test',
+                   nb = n.bas)
 plot(etree_fit)
 
 
@@ -78,7 +79,7 @@ funpc_fit <- fregre.pc(x, y, kmax = 7)
 ### ETREE PREDICTION ###
 
 # Prediction
-y_pred <- predict(etree_fit)
+y_pred <- predict(etree_fit, newdata = cov.list)
 
 # Error
 y <- resp

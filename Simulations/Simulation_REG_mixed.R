@@ -67,8 +67,9 @@ etree_fit <- etree(response = resp,
                    minbucket = 5,
                    alpha = 0.05,
                    R = 1000,
-                   split.type = 'coeff',
-                   coef.split.type = 'test')
+                   split.type = 'cluster',
+                   coef.split.type = 'test',
+                   nb = n.bas)
 plot(etree_fit)
 
 
