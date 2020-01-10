@@ -12,4 +12,6 @@
 #'             dist var
 #' @importFrom fda.usc optim.basis kmeans.fd metric.lp
 #' @importFrom utils capture.output combn
+#' @importFrom grid depth
+#' @importFrom cluster pam
 NULL

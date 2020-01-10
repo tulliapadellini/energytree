@@ -579,7 +579,7 @@ kidids_split_predict <- function(split, data, vmatch = 1:length(data), obs = NUL
   ### empty factor levels correspond to NA and return NA here
   ### and thus the corresponding observations will be treated
   ### as missing values (surrogate or random splits):
-  if (!is.null(index))
+  if (!is.null(index) & is.null(centroids_split(split)))
     x <- index[x]
   return(x)
 }
@@ -1215,7 +1215,7 @@ data_party.default <- function(party, id = 1L) {
 
   extract <- function(id) {
     if(is.null(party$fitted))
-      if(nrow(party$data) == 0) return(NULL)
+      if(length(party$data) == 0) return(NULL)
     else
       stop("cannot subset data without fitted ids")
 
@@ -1223,7 +1223,7 @@ data_party.default <- function(party, id = 1L) {
     nt <- nodeids(party, id, terminal = TRUE)
     wi <- party$fitted[["(fitted)"]] %in% nt
 
-    ret <- if (nrow(party$data) == 0)
+    ret <- if (length(party$data) == 0)
       subset(party$fitted, wi)
     else
       subset(cbind(party$data, party$fitted), wi)
@@ -1677,7 +1677,7 @@ class(edge_simple) <- "grapcon_generator"
                       name =  paste("edge", id_node(node), "-", i, sep = ""))
     pushViewport(sp_vp)
     if(debug) grid.rect(gp = gpar(lty = "dotted", col = 2))
-    edge_simple(node, i)
+    edge_panel(node, i)
     upViewport()
   }
 
@@ -1766,6 +1766,55 @@ plot.party <- function(x, main = NULL,
   upViewport()
   if (pop) popViewport() else upViewport()
 }
+
+plot.constparty <- function(x, main = NULL, type = c("extended", "simple"),
+                            terminal_panel = NULL, tp_args = list(),
+                            inner_panel = node_inner, ip_args = list(),
+                            edge_panel = edge_simple, ep_args = list(),
+                            drop_terminal = NULL, tnex = NULL,
+                            newpage = TRUE, pop = TRUE, gp = gpar(), ...)
+{
+  ### compute default settings
+  type <- match.arg(type)
+  if (type == "simple") {
+    x <- as.simpleparty(x)
+    if (is.null(terminal_panel))
+      terminal_panel <- node_terminal
+    if (is.null(tnex)) tnex <- 1
+    if (is.null(drop_terminal)) drop_terminal <- FALSE
+    if (is.null(tp_args) || length(tp_args) < 1L) {
+      tp_args <- list(FUN = .make_formatinfo_simpleparty(x, digits = getOption("digits") - 4L, sep = "\n"))
+    } else {
+      if(is.null(tp_args$FUN)) {
+        tp_args$FUN <- .make_formatinfo_simpleparty(x, digits = getOption("digits") - 4L, sep = "\n")
+      }
+    }
+  } else {
+    if (is.null(terminal_panel)) {
+      cl <- class(x$fitted[["(response)"]])
+      if("factor" %in% cl) {
+        terminal_panel <- node_barplot
+      } else if("Surv" %in% cl) {
+        terminal_panel <- node_surv
+      } else if ("data.frame" %in% cl) {
+        terminal_panel <- node_mvar
+        if (is.null(tnex)) tnex <- 2 * NCOL(x$fitted[["(response)"]])
+      } else {
+        terminal_panel <- node_boxplot
+      }
+    }
+    if (is.null(tnex)) tnex <- 2
+    if (is.null(drop_terminal)) drop_terminal <- TRUE
+  }
+
+  plot.party(x, main = main,
+             terminal_panel = terminal_panel, tp_args = tp_args,
+             inner_panel = inner_panel, ip_args = ip_args,
+             edge_panel = edge_panel, ep_args = ep_args,
+             drop_terminal = drop_terminal, tnex = tnex,
+             newpage = newpage, pop = pop, gp = gp, ...)
+}
+
 
 node_barplot <- function(obj,
                          col = "black",

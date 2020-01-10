@@ -14,17 +14,21 @@ etree_fit <- etree(response = resp,
                    minbucket = 5,
                    alpha = 0.05,
                    R = 1000,
-                   split.type = 'coeff',
+                   split.type = 'cluster',
                    coef.split.type = 'test')
 
 plot(etree_fit)
 
 y_pred = predict(etree_fit)
-y_pred2 = predict(etree_fit, newdata = cov.list, split.type = "coeff", nb = 5)
-
+y_pred2 = predict(etree_fit, newdata = cov.list, split.type = "cluster", nb = 5)
+y_pred3 = predict(etree_fit, newdata = cov.list, split.type = "cluster", nb = 5)
 y_pred - y_pred2
+y_pred3 - y_pred2
+
+mean((resp-y_pred)^2)
+mean((resp-y_pred2)^2)
 
 
 new.cov.list <- list(lapply(sim_reg, function(x) x$V1)[[51]], lapply(sim_reg, function(x) x$V1)[[52]])
-y_pred3 = predict(etree_fit, newdata = new.cov.list, split.type = "coeff", nb = 5)
+y_pred4 = predict(etree_fit, newdata = new.cov.list, split.type = "cluster", nb = 5)
 
