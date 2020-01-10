@@ -7,7 +7,7 @@ library(partykit)
 library(cluster)
 library(igraph)
 library(NetworkDistance)
-source("functions.R")
+#source("functions.R")
 
 # Error(s)
 MEP_etree <- c()

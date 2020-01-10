@@ -511,7 +511,7 @@ split.opt <- function(y,
              }
 
            } else if(split.type == 'cluster') {
-             cl.fdata = kmeans.fd(x, ncl=2, draw = FALSE, par.ini=list(method="exact"))
+             cl.fdata = kmeans.fd(x, ncl=2, draw = FALSE, par.ini=list(method="exact"), cluster.size = 1)
              clindex <- cl.fdata$cluster
              lev = levels(newx)
              splitindex = rep(NA, length(lev))
@@ -642,6 +642,40 @@ compute.dissimilarity <- function(x,
              adj_matrices <- lapply(x, as_adjacency_matrix)
              d <- nd.csd(adj_matrices) #continuous spectral density for the moment
              return(as.matrix(d$D))
+           } else if(all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
+             k.fun = function(i,j) TDA::wasserstein(x[[i]], x[[j]])
+             k.fun = Vectorize(k.fun)
+             d.idx = seq_along(x)
+             outer(d.idx,d.idx, k.fun)
+           }
+         })
+
+}
+
+
+
+
+compute.dissimilarity.cl <- function(centroid, x,
+                                     lp = 2){
+
+  switch(class(x),
+         fdata      = metric.lp(fdata1 = x, fdata2 = centroid, lp=lp),
+         list       = {
+           if(all(sapply(x, class) == 'igraph')){
+             # adj_matrices <- lapply(x, as_adjacency_matrix)
+             # d <- nd.csd(adj_matrices) #continuous spectral density for the moment
+             adj_data <- lapply(x, as_adjacency_matrix)
+             adj_centroid <- as_adjacency_matrix(centroid)
+             k.fun = function(i, centroid) nd.csd(list(adj_data[[i]], adj_centroid))
+             k.fun = Vectorize(k.fun)
+             d.idx = seq_along(adj_data)
+             outer(d.idx, adj_centroid, k.fun)
+             return(as.matrix(d$D))
+           } else if (all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
+             k.fun = function(i, centroid) TDA::wasserstein(x[[i]], centroid)
+             k.fun = Vectorize(k.fun)
+             d.idx = seq_along(x)
+             outer(d.idx, centroid, k.fun)
            }
          })
   # list       = {

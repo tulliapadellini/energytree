@@ -8,9 +8,22 @@
 #' @param minbucket minimum number of observations that each terminal node must contain. Default is 1.
 #' @param alpha significance level for the global test of association and, if \code{split.type = "coeff"} and \code{coef.split.type = "test"}, for the test used in each split. Default is 0.05.
 #' @param R number of replicates for the global test of association and, if \code{split.type = "coeff"} and \code{coef.split.type = "test"}, for the test used in each split. Deafult is 1000.
-#' @param split.type type of the split when covariates are "complex" (i.e. they are not numeric or factor). This variable can be se to either "coeff" (only available when there is a coeffient representation) or "cluster"
-#' @param coef.split.type either "variance" or "test"
+#' @param split.type type of the split when covariates are "complex" (i.e. they are not numeric or factor). It can be set either to \code{coeff} or \code{cluster}. See details for further information.
+#' @param coef.split.type type of the split when \code{split.type = "coeff"}. It can be set either to \code{variance} or \code{test}. See details for further information.
 #' @param nb number of basis to use for fdata covariates if \code{split.type = "coeff"}.
+#'
+#' @details
+#' \code{split.type} defines the type of the split when covariates are "complex" (i.e. they are not numeric or factor). Possible values are:
+#' \itemize{
+#' \item \code{coeff}: in this case, complex variables are transformed using variable-specific representation: basis expansion for functional data, shell distribution for graphs, and ??? for persistence diagrams.
+#' \item \code{cluster}: in this case, variables are maintained in their original form, and at each split units are assigned to the nearest of two centroids. Centroids calculation and units assignment are performed using \code{kmeans.fd} from \code{fda.usc} for functional data, and \code{pam} from \code{cluster} for graphs and persistence diagrams.
+#' }
+#' \code{coeff.split.type} defines the type of the split when \code{split.type = "coeff"}, i.e. it affects the output only when there is a coefficient representation. When \code{split.type = "coeff"}, an energy test of independence is performed between the response variable and each representation component to find the most associated component. Then, the split point is searched among the ordered coefficients of that component in two possible ways:
+#' \itemize{
+#' \item \code{variance}: minimizing the weighted average of the variances for the response in the two kid nodes.
+#' \item \code{test}: performing an energy test of independence between the response and a logical vector indicating the assignment of the units to the first kid node; thus, the chosen split point is the most statistically associated with the response variable (among those considered).
+#' }
+#'
 #'
 #' @export
 #'
@@ -237,113 +250,22 @@ predict.party <- function(object, newdata = NULL, split.type, nb, perm = NULL, .
   predict_party(object, fitted, newdata, ...)
 }
 
-## Versione Riccardo
-# predict.party <- function(object, newdata = NULL, perm = NULL, ...)
-# {
-#
-#   ### compute fitted node ids first
-#   fitted <- if(is.null(newdata) && is.null(perm)) {
-#     object$fitted[["(fitted)"]]
-#   } else {
-#     if (is.null(newdata)) newdata <- model.frame(object)
-#     ### make sure all the elements in newdata have the same number of rows
-#     stopifnot(length(unique(sapply(newdata, NROW))) == 1L)
-#
-#     terminal <- nodeids(object, terminal = TRUE)
-#
-#     if(max(terminal) == 1L) {
-#       rep.int(1L, unique(sapply(newdata, NROW)))
-#     } else {
-#
-#       inner <- 1L:max(terminal)
-#       inner <- inner[-terminal]
-#
-#       primary_vars <- nodeapply(object, ids = inner, by_node = TRUE, FUN = function(node) {
-#         varid_split(split_node(node))
-#       })
-#       surrogate_vars <- nodeapply(object, ids = inner, by_node = TRUE, FUN = function(node) {
-#         surr <- surrogates_node(node)
-#         if(is.null(surr)) return(NULL) else return(sapply(surr, varid_split))
-#       })
-#       vnames <- names(object$data)
-#
-#       ### the splits of nodes with a primary split in perm
-#       ### will be permuted
-#       if (!is.null(perm)) {
-#         if (is.character(perm)) {
-#           stopifnot(all(perm %in% vnames))
-#           perm <- match(perm, vnames)
-#         } else {
-#           ### perm is a named list of factors coding strata
-#           ### (for varimp(..., conditional = TRUE)
-#           stopifnot(all(names(perm) %in% vnames))
-#           stopifnot(all(sapply(perm, is.factor)))
-#           tmp <- vector(mode = "list", length = length(vnames))
-#           tmp[match(names(perm), vnames)] <- perm
-#           perm <- tmp
-#         }
-#       }
-#
-#       ## ## FIXME: the is.na() call takes loooong on large data sets
-#       ## unames <- if(any(sapply(newdata, is.na)))
-#       ##     vnames[unique(unlist(c(primary_vars, surrogate_vars)))]
-#       ## else
-#       ##     vnames[unique(unlist(primary_vars))]
-#       unames <- vnames[unique(unlist(c(primary_vars, surrogate_vars)))]
-#
-#       vclass <- structure(lapply(object$data, class), .Names = vnames)
-#       ndnames <- names(newdata)
-#       ndclass <- structure(lapply(newdata, class), .Names = ndnames)
-#       checkclass <- all(sapply(unames, function(x)
-#         isTRUE(all.equal(vclass[[x]], ndclass[[x]]))))
-#       factors <- sapply(unames, function(x) inherits(object$data[[x]], "factor"))
-#       checkfactors <- all(sapply(unames[factors], function(x)
-#         isTRUE(all.equal(levels(object$data[[x]]), levels(newdata[[x]])))))
-#       ## FIXME: inform about wrong classes / factor levels?
-#       if(all(unames %in% ndnames) && checkclass && checkfactors) {
-#         vmatch <- match(vnames, ndnames)
-#         fitted_node_predict(node_party(object), data = newdata,
-#                             vmatch = vmatch, perm = perm)
-#       } else {
-#         if (!is.null(object$terms)) {
-#           ### <FIXME> this won't work for multivariate responses
-#           ### </FIXME>
-#           xlev <- lapply(unames[factors],
-#                          function(x) levels(object$data[[x]]))
-#           names(xlev) <- unames[factors]
-#           #         mf <- model.frame(delete.response(object$terms), newdata,
-#           #                          xlev = xlev)
-#           # fitted_node_predict(node_party(object), data = newdata,
-#           #             vmatch = match(vnames, names(mf)), perm = perm)
-#           fitted_node_predict(node_party(object), data = newdata,
-#                               perm = perm)
-#         } else
-#           stop("") ## FIXME: write error message
-#       }
-#     }
-#   }
-#   ### compute predictions
-#   predict_party(object, fitted, newdata, ...)
-# }
-
-
-
 #' Visualization of Energy Trees
 #'
 #' \code{plot} method for \code{party} objects with extended facilities for plugging in panel functions.
 #'
-#' @param x	an object of class party or constparty.
+#' @param x	an object of class \code{party} or \code{constparty}.
 #' @param main an optional title for the plot.
-#' @param type a character specifying the complexity of the plot: extended tries to visualize the distribution of the response variable in each terminal node whereas simple only gives some summary information.
-#' @param terminal_panel an optional panel function of the form function(node) plotting the terminal nodes. Alternatively, a panel generating function of class "grapcon_generator" that is called with arguments x and tp_args to set up a panel function. By default, an appropriate panel function is chosen depending on the scale of the dependent variable.
-#' @param tp_args	a list of arguments passed to terminal_panel if this is a "grapcon_generator" object.
-#' @param inner_panel	an optional panel function of the form function(node) plotting the inner nodes. Alternatively, a panel generating function of class "grapcon_generator" that is called with arguments x and ip_args to set up a panel function.
-#' @param ip_args	a list of arguments passed to inner_panel if this is a "grapcon_generator" object.
-#' @param edge_panel an optional panel function of the form function(split, ordered = FALSE, left = TRUE) plotting the edges. Alternatively, a panel generating function of class "grapcon_generator" that is called with arguments x and ip_args to set up a panel function.
-#' @param ep_args	a list of arguments passed to edge_panel if this is a "grapcon_generator" object.
+#' @param type a character specifying the complexity of the plot: \code{extended} tries to visualize the distribution of the response variable in each terminal node whereas \code{simple} only gives some summary information.
+#' @param terminal_panel an optional panel function of the form \code{function(node)} plotting the terminal nodes. Alternatively, a panel generating function of class "\code{grapcon_generator}" that is called with arguments \code{x} and \code{tp_args} to set up a panel function. By default, an appropriate panel function is chosen depending on the scale of the dependent variable.
+#' @param tp_args	a list of arguments passed to \code{terminal_panel} if this is a "\code{grapcon_generator}" object.
+#' @param inner_panel	an optional panel function of the form \code{function(node)} plotting the inner nodes. Alternatively, a panel generating function of class "\code{grapcon_generator}" that is called with arguments \code{x} and \code{ip_args} to set up a panel function.
+#' @param ip_args	a list of arguments passed to \code{inner_panel} if this is a "\code{grapcon_generator}" object.
+#' @param edge_panel an optional panel function of the form \code{function(split, ordered = FALSE, left = TRUE)} plotting the edges. Alternatively, a panel generating function of class "\code{grapcon_generator}" that is called with arguments \code{x} and \code{ep_args} to set up a panel function.
+#' @param ep_args	a list of arguments passed to \code{edge_panel} if this is a "\code{grapcon_generator}" object.
 #' @param drop_terminal	a logical indicating whether all terminal nodes should be plotted at the bottom.
 #' @param tnex a numeric value giving the terminal node extension in relation to the inner nodes.
-#' @param newpage	a logical indicating whether grid.newpage() should be called.
+#' @param newpage	a logical indicating whether \code{grid.newpage()} should be called.
 #' @param pop	a logical whether the viewport tree should be popped before return.
 #' @param gp graphical parameters.
 #' @param margins	numeric vector of margin sizes.
@@ -356,84 +278,53 @@ predict.party <- function(object, newdata = NULL, split.type, nb, perm = NULL, .
 #' ## returns 3
 #'
 
-plot.party <- function(x, main = NULL,
-                       terminal_panel = node_terminal, tp_args = list(),
-                       inner_panel = node_inner, ip_args = list(),
-                       edge_panel = edge_simple, ep_args = list(),
-                       drop_terminal = FALSE, tnex = 1,
-                       newpage = TRUE, pop = TRUE, gp = gpar(),
-                       margins = NULL, ...)
+plot.constparty <- function(x, main = NULL, type = c("extended", "simple"),
+                            terminal_panel = NULL, tp_args = list(),
+                            inner_panel = node_inner, ip_args = list(),
+                            edge_panel = edge_simple, ep_args = list(),
+                            drop_terminal = NULL, tnex = NULL,
+                            newpage = TRUE, pop = TRUE, gp = gpar(), ...)
 {
-
-  ### extract tree
-  node <- node_party(x)
-  ### total number of terminal nodes
-  nx <- width(node)
-  ### maximal depth of the tree
-  ny <- depth(node, root = TRUE)
-
-  ## setup newpage
-  if (newpage) grid.newpage()
-
-  ## setup root viewport
-  margins <- if(is.null(margins)) {
-    c(1, 1, if(is.null(main)) 0 else 3, 1)
+  ### compute default settings
+  type <- match.arg(type)
+  if (type == "simple") {
+    x <- as.simpleparty(x)
+    if (is.null(terminal_panel))
+      terminal_panel <- node_terminal
+    if (is.null(tnex)) tnex <- 1
+    if (is.null(drop_terminal)) drop_terminal <- FALSE
+    if (is.null(tp_args) || length(tp_args) < 1L) {
+      tp_args <- list(FUN = .make_formatinfo_simpleparty(x, digits = getOption("digits") - 4L, sep = "\n"))
+    } else {
+      if(is.null(tp_args$FUN)) {
+        tp_args$FUN <- .make_formatinfo_simpleparty(x, digits = getOption("digits") - 4L, sep = "\n")
+      }
+    }
   } else {
-    rep_len(margins, 4L)
-  }
-  root_vp <- viewport(layout = grid.layout(3, 3,
-                                           heights = unit(c(margins[3L], 1, margins[1L]),
-                                                          c("lines", "null", "lines")),
-                                           widths = unit(c(margins[2L], 1, margins[4L]),
-                                                         c("lines", "null", "lines"))),
-                      name = "root",
-                      gp = gp)
-  pushViewport(root_vp)
-
-  ## viewport for main title (if any)
-  if (!is.null(main)) {
-    main_vp <- viewport(layout.pos.col = 2, layout.pos.row = 1,
-                        name = "main")
-    pushViewport(main_vp)
-    grid.text(y = unit(1, "lines"), main, just = "center")
-    upViewport()
+    if (is.null(terminal_panel)) {
+      cl <- class(x$fitted[["(response)"]])
+      if("factor" %in% cl) {
+        terminal_panel <- node_barplot
+      } else if("Surv" %in% cl) {
+        terminal_panel <- node_surv
+      } else if ("data.frame" %in% cl) {
+        terminal_panel <- node_mvar
+        if (is.null(tnex)) tnex <- 2 * NCOL(x$fitted[["(response)"]])
+      } else {
+        terminal_panel <- node_boxplot
+      }
+    }
+    if (is.null(tnex)) tnex <- 2
+    if (is.null(drop_terminal)) drop_terminal <- TRUE
   }
 
-  ## setup viewport for tree
-  tree_vp <- viewport(layout.pos.col = 2, layout.pos.row = 2,
-                      xscale = c(0, nx), yscale = c(0, ny + (tnex - 1)),
-                      name = "tree")
-  pushViewport(tree_vp)
-
-  ### setup panel functions (if necessary)
-  if(inherits(terminal_panel, "grapcon_generator"))
-    terminal_panel <- do.call("terminal_panel", c(list(x), as.list(tp_args)))
-  if(inherits(inner_panel, "grapcon_generator"))
-    inner_panel <- do.call("inner_panel", c(list(x), as.list(ip_args)))
-  if(inherits(edge_panel, "grapcon_generator"))
-    edge_panel <- do.call("edge_panel", c(list(x), as.list(ep_args)))
-
-
-  if((nx <= 1 & ny <= 1)) {
-    if(is.null(margins)) margins <- rep.int(1.5, 4)
-    pushViewport(plotViewport(margins = margins, name = paste("Node", id_node(node), sep = "")))
-    terminal_panel(node)
-  } else {
-    ## call the workhorse
-    .plot_node(node,
-               xlim = c(0, nx), ylim = c(0, ny - 0.5 + (tnex - 1)),
-               nx = nx, ny = ny,
-               terminal_panel = terminal_panel,
-               inner_panel = inner_panel,
-               edge_panel = edge_panel,
-               tnex = tnex,
-               drop_terminal = drop_terminal,
-               debug = FALSE)
-  }
-  upViewport()
-  if (pop) popViewport() else upViewport()
+  plot.party(x, main = main,
+             terminal_panel = terminal_panel, tp_args = tp_args,
+             inner_panel = inner_panel, ip_args = ip_args,
+             edge_panel = edge_panel, ep_args = ep_args,
+             drop_terminal = drop_terminal, tnex = tnex,
+             newpage = newpage, pop = pop, gp = gp, ...)
 }
-
 
 
 growtree <- function(id = 1L,

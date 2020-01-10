@@ -30,9 +30,9 @@ etree(
 
 \item{R}{number of replicates for the global test of association and, if \code{split.type = "coeff"} and \code{coef.split.type = "test"}, for the test used in each split. Deafult is 1000.}
 
-\item{split.type}{type of the split when covariates are "complex" (i.e. they are not numeric or factor). This variable can be se to either "coeff" (only available when there is a coeffient representation) or "cluster"}
+\item{split.type}{type of the split when covariates are "complex" (i.e. they are not numeric or factor). It can be set either to \code{coeff} or \code{cluster}. See details for further information.}
 
-\item{coef.split.type}{either "variance" or "test"}
+\item{coef.split.type}{type of the split when \code{split.type = "coeff"}. It can be set either to \code{variance} or \code{test}. See details for further information.}
 
 \item{nb}{number of basis to use for fdata covariates if \code{split.type = "coeff"}.}
 }
@@ -43,6 +43,18 @@ Current implementation covers the case of functions, graphs and persistence diag
 as well as standard categorical and numerical values, as covariates.
 
 Fits an energy tree for classification/regression using mixed type data.
+}
+\details{
+\code{split.type} defines the type of the split when covariates are "complex" (i.e. they are not numeric or factor). Possible values are:
+\itemize{
+\item \code{coeff}: in this case, complex variables are transformed using variable-specific representation: basis expansion for functional data, shell distribution for graphs, and ??? for persistence diagrams.
+\item \code{cluster}: in this case, variables are maintained in their original form, and at each split units are assigned to the nearest of two centroids. Centroids calculation and units assignment are performed using \code{kmeans.fd} from \code{fda.usc} for functional data, and \code{pam} from \code{cluster} for graphs and persistence diagrams.
+}
+\code{coeff.split.type} defines the type of the split when \code{split.type = "coeff"}, i.e. it affects the output only when there is a coefficient representation. When \code{split.type = "coeff"}, an energy test of independence is performed between the response variable and each representation component to find the most associated component. Then, the split point is searched among the ordered coefficients of that component in two possible ways:
+\itemize{
+\item \code{variance}: minimizing the weighted average of the variances for the response in the two kid nodes.
+\item \code{test}: performing an energy test of independence between the response and a logical vector indicating the assignment of the units to the first kid node; thus, the chosen split point is the most statistically associated with the response variable (among those considered).
+}
 }
 \examples{
  ## returns 3
