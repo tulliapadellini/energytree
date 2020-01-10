@@ -11,5 +11,6 @@
 #' @importFrom stats model.frame terms approxfun density ecdf getCall model.response model.weights predict quantile weighted.mean
 #'             dist var
 #' @importFrom fda.usc optim.basis kmeans.fd metric.lp
+#' @importFrom cluster pam
 #' @importFrom utils capture.output combn
 NULL
