@@ -297,7 +297,7 @@ class(edge_simple) <- "grapcon_generator"
                       name =  paste("edge", id_node(node), "-", i, sep = ""))
     pushViewport(sp_vp)
     if(debug) grid.rect(gp = gpar(lty = "dotted", col = 2))
-    edge_panel(node, i)
+    edge_simple(node, i)
     upViewport()
   }
 

@@ -213,6 +213,52 @@ kidids_node <- function(node, data, vmatch = 1:length(data), obs = NULL,
     return(x)
 }
 
+kidids_node_predict <- function(node, data, vmatch = 1:length(data), obs = NULL,
+                                perm = NULL) {
+
+  primary <- split_node(node)
+  surrogates <- surrogates_node(node)
+
+  ### perform primary split
+  x <- kidids_split_predict(primary, data, vmatch, obs)
+
+  ### surrogate / random splits if needed
+  if (any(is.na(x))) {
+    ### surrogate splits
+    if (length(surrogates) >= 1) {
+      for (surr in surrogates) {
+        nax <- is.na(x)
+        if (!any(nax)) break;
+        x[nax] <- kidids_split_predict(surr, data, vmatch, obs = obs)[nax]
+      }
+    }
+    nax <- is.na(x)
+    ### random splits
+    if (any(nax)) {
+      prob <- prob_split(primary)
+      x[nax] <- sample(1:length(prob), sum(nax), prob = prob,
+                       replace = TRUE)
+    }
+  }
+
+  ### permute variable `perm' _after_ dealing with surrogates etc.
+  if (!is.null(perm)) {
+    if (is.integer(perm)) {
+      if (varid_split(primary) %in% perm)
+        x <- .resample(x)
+    } else {
+      if (is.null(obs)) obs <- 1:length(data)
+      strata <- perm[[varid_split(primary)]]
+      if (!is.null(strata)) {
+        strata <- strata[obs, drop = TRUE]
+        for (s in levels(strata))
+          x[strata == s] <- .resample(x[strata == s])
+      }
+    }
+  }
+  return(x)
+}
+
 fitted_node <- function(node, data, vmatch = 1:length(data),
                         obs = 1:unique(sapply(data, NROW)), perm = NULL) {
 
@@ -227,6 +273,22 @@ fitted_node <- function(node, data, vmatch = 1:length(data),
                                    vmatch, obs[indx], perm)
     }
     return(retid)
+}
+
+fitted_node_predict <- function(node, data, vmatch = 1:length(data),
+                                obs = 1:unique(sapply(data, NROW)), perm = NULL) {
+
+  if (is.logical(obs)) obs <- which(obs)
+  if (is.terminal(node))
+    return(rep(id_node(node), length(obs)))
+  retid <- nextid <- kidids_node_predict(node, data, vmatch, obs, perm)
+
+  for (i in unique(nextid)) {
+    indx <- nextid == i
+    retid[indx] <- fitted_node_predict(kids_node(node)[[i]], data,
+                                       vmatch, obs[indx], perm)
+  }
+  return(retid)
 }
 
 

@@ -189,6 +189,49 @@ kidids_split <- function(split, data, vmatch = 1:length(data), obs = NULL) {
   return(x)
 }
 
+kidids_split_predict <- function(split, data, vmatch = 1:length(data), obs = NULL) {
+
+  varid <- varid_split(split)
+  basid <- basid_split(split)
+  class(data) <- "list" ### speed up
+  if(!is.null(basid)){ #means we are in the coeff case
+    x <- data[[vmatch[varid]]][,basid]
+
+  } else { #means we are in the cluster case
+    x <- data[[vmatch[varid]]]
+  }
+  if (!is.null(obs)) x <- x[obs]
+
+  if (is.null(breaks_split(split))) {
+
+    if(!is.null(centroids_split(split))){
+
+      cl.idx = lapply(centroids_split(split), compute.dissimilarity.cl, x = x, lp = 2)
+      x <- apply(matrix(unlist(cl.idx),ncol = 2),1, which.min)
+    }
+
+    if (storage.mode(x) != "integer")
+      stop("variable", " ", vmatch[varid], " ", "is not integer")
+  } else {
+    ### labels = FALSE returns integers and is faster
+    ### <FIXME> use findInterval instead of cut?
+    #        x <- cut.default(as.numeric(x), labels = FALSE,
+    #                 breaks = unique(c(-Inf, breaks_split(split), Inf)),  ### breaks_split(split) = Inf possible (MIA)
+    #                 right = right_split(split))
+    x <- .bincode(as.numeric(x), # labels = FALSE,
+                  breaks = unique(c(-Inf, breaks_split(split), Inf)),  ### breaks_split(split) = Inf possible (MIA)
+                  right = right_split(split))
+    ### </FIXME>
+  }
+  index <- index_split(split)
+  ### empty factor levels correspond to NA and return NA here
+  ### and thus the corresponding observations will be treated
+  ### as missing values (surrogate or random splits):
+  if (!is.null(index))
+    x <- index[x]
+  return(x)
+}
+
 character_split <- function(split, data = NULL, digits = getOption("digits") - 2) {
 
   varid <- varid_split(split)

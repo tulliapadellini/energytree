@@ -239,8 +239,33 @@ nodeapply.partynode <- function(obj, ids = 1, FUN = NULL, ...) {
   return(rval)
 }
 
-predict.party <- function(object, newdata = NULL, perm = NULL, ...)
+predict.party <- function(object, newdata = NULL, split.type, nb, perm = NULL, ...)
 {
+
+  if(!is.null(newdata)){
+
+    newdata = lapply(newdata, function(j){
+      if(class(j) == 'fdata' && split.type == "coeff"){
+
+        foo <- fda.usc::optim.basis(j, numbasis = nb)
+        fd3 <- fda.usc::fdata2fd(foo$fdata.est,
+                                 type.basis = "bspline",
+                                 nbasis = foo$numbasis.opt)
+        foo <- t(fd3$coefs)
+        return(foo)
+
+      } else if(class(j) == 'list' &
+                all(sapply(j, class) == 'igraph') & split.type == "coeff"){
+        foo <- graph.shell(j)
+        return(foo)
+      } else {
+
+        return(j)
+
+      }
+    }
+    )
+  }
 
   ### compute fitted node ids first
   fitted <- if(is.null(newdata) && is.null(perm)) {
@@ -304,7 +329,7 @@ predict.party <- function(object, newdata = NULL, perm = NULL, ...)
       if(all(unames %in% ndnames) && checkclass && checkfactors) {
         vmatch <- match(vnames, ndnames)
         fitted_node_predict(node_party(object), data = newdata,
-                    vmatch = vmatch, perm = perm)
+                            vmatch = vmatch, perm = perm)
       } else {
         if (!is.null(object$terms)) {
           ### <FIXME> this won't work for multivariate responses
@@ -312,8 +337,8 @@ predict.party <- function(object, newdata = NULL, perm = NULL, ...)
           xlev <- lapply(unames[factors],
                          function(x) levels(object$data[[x]]))
           names(xlev) <- unames[factors]
-#         mf <- model.frame(delete.response(object$terms), newdata,
-#                          xlev = xlev)
+          #         mf <- model.frame(delete.response(object$terms), newdata,
+          #                          xlev = xlev)
           # fitted_node_predict(node_party(object), data = newdata,
           #             vmatch = match(vnames, names(mf)), perm = perm)
           fitted_node_predict(node_party(object), data = newdata,
@@ -532,7 +557,7 @@ data_party.default <- function(party, id = 1L) {
 
   extract <- function(id) {
     if(is.null(party$fitted))
-      if(nrow(party$data) == 0) return(NULL)
+      if(length(party$data) == 0) return(NULL)
     else
       stop("cannot subset data without fitted ids")
 
