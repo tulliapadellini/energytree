@@ -126,9 +126,13 @@ etree <- function(response, covariates, case.weights = NULL, minbucket = 1, alph
 #' Compute predictions based on an Energy Tree Fit.
 #'
 #' @param object object of class party.
-#' @param newdata an optional list of variables used to make predictions. If omitted, the fitted values are used.
+#' @param newdata an optional list of variables used to make predictions. Each element of the list is a different variable. If omitted, the fitted values are used.
+#' @param nb number of basis to use for fdata covariates if \code{split.type = "coeff"} has been used in the fitting process. Default value is 10.
 #' @param perm an optional character vector of variable names. Splits of nodes with a primary split in any of these variables will be permuted (after dealing with surrogates). Note that surrogate split in the \code{perm} variables will no be permuted.
 #' @param ... additional arguments.
+#'
+#' @details
+#' \code{predict} computes predictions for the object given as output by the \code{etree} call. \code{newdata}, if present, is automatically treated with the same \code{split.type} used in \code{etree}.
 #'
 #' @export
 #'
@@ -137,8 +141,17 @@ etree <- function(response, covariates, case.weights = NULL, minbucket = 1, alph
 #'
 
 
-predict.party <- function(object, newdata = NULL, split.type, nb, perm = NULL, ...)
+predict.party <- function(object, newdata = NULL, nb = 10, perm = NULL, ...)
 {
+  # extract basid from the first node (which is necessarily present)
+  basid_l <- nodeapply(object, by_node = TRUE, ids = 1,
+                       FUN = function(node) basid_split(split_node(node)))
+  # if basid is not null, it means we are in the coeff case; otherwise, cluster
+  if (!is.null(unlist(basid_l))){
+    split.type <- 'coeff'
+  } else {
+    split.type <- 'cluster'
+  }
 
   if(!is.null(newdata)){
 
