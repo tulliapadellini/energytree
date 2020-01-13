@@ -662,15 +662,13 @@ compute.dissimilarity.cl <- function(centroid, x,
          fdata      = metric.lp(fdata1 = x, fdata2 = centroid, lp=lp),
          list       = {
            if(all(sapply(x, class) == 'igraph')){
-             # adj_matrices <- lapply(x, as_adjacency_matrix)
-             # d <- nd.csd(adj_matrices) #continuous spectral density for the moment
              adj_data <- lapply(x, as_adjacency_matrix)
              adj_centroid <- as_adjacency_matrix(centroid)
-             k.fun = function(i, centroid) nd.csd(list(adj_data[[i]], adj_centroid))
-             k.fun = Vectorize(k.fun)
-             d.idx = seq_along(adj_data)
-             outer(d.idx, adj_centroid, k.fun)
-             return(as.matrix(d$D))
+             dist_centroid <- sapply(adj_data, function(i){
+               d <- nd.csd(list(i, adj_centroid))
+               d$D
+             })
+             return(dist_centroid)
            } else if (all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
              k.fun = function(i, centroid) TDA::wasserstein(x[[i]], centroid)
              k.fun = Vectorize(k.fun)

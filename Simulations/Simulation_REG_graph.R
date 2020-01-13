@@ -44,7 +44,7 @@ etree_fit <- etree(response = resp,
                    minbucket = 5,
                    alpha = 0.05,
                    R = 1000,
-                   split.type = 'coeff',
+                   split.type = 'cluster',
                    coef.split.type = 'test')
 plot(etree_fit)
 
@@ -56,6 +56,13 @@ plot(etree_fit)
 
 # Prediction
 y_pred <- predict(etree_fit)
+
+# Prediction with newdata
+graph.list3 <- lapply(resp, function(n.edges){sample_gnm(100, n.edges)})
+graph.list4 <- lapply(resp, function(n.edges){sample_gnm(100, n.edges)})
+new.cov.list <- list(graph.list3, graph.list4)
+y_pred <- predict(etree_fit, newdata = new.cov.list)
+
 
 # Error
 y <- resp
