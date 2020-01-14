@@ -31,7 +31,15 @@
 #'  ## returns 3
 #'
 
-etree <- function(response, covariates, case.weights = NULL, minbucket = 1, alpha = 0.05, R = 1000, split.type = 'coeff', coef.split.type = 'test', nb = 5) {
+etree <- function(response,
+                  covariates,
+                  case.weights = NULL,
+                  minbucket = 1,
+                  alpha = 0.05,
+                  R = 1000,
+                  split.type = 'coeff',
+                  coef.split.type = 'test',
+                  nb = 5) {
 
   # Check whether covariates is a list
   if(!is.list(covariates)) stop("Argument 'covariates' must be provided as a list")
@@ -143,6 +151,7 @@ etree <- function(response, covariates, case.weights = NULL, minbucket = 1, alph
 
 predict.party <- function(object, newdata = NULL, nb = 10, perm = NULL, ...)
 {
+
   # extract basid from the first node (which is necessarily present)
   basid_l <- nodeapply(object, by_node = TRUE, ids = 1,
                        FUN = function(node) basid_split(split_node(node)))
@@ -263,6 +272,7 @@ predict.party <- function(object, newdata = NULL, nb = 10, perm = NULL, ...)
   predict_party(object, fitted, newdata, ...)
 }
 
+
 #' Visualization of Energy Trees
 #'
 #' \code{plot} method for \code{party} objects with extended facilities for plugging in panel functions.
@@ -291,11 +301,11 @@ predict.party <- function(object, newdata = NULL, nb = 10, perm = NULL, ...)
 #' ## returns 3
 #'
 
-plot.constparty <- function(x, main = NULL, type = c("extended", "simple"),
+plot.constparty <- function(x, main = NULL,
                             terminal_panel = NULL, tp_args = list(),
                             inner_panel = node_inner, ip_args = list(),
                             edge_panel = edge_simple, ep_args = list(),
-                            drop_terminal = NULL, tnex = NULL,
+                            type = c("extended", "simple"), drop_terminal = NULL, tnex = NULL,
                             newpage = TRUE, pop = TRUE, gp = gpar(), ...)
 {
   ### compute default settings
@@ -339,6 +349,8 @@ plot.constparty <- function(x, main = NULL, type = c("extended", "simple"),
              newpage = newpage, pop = pop, gp = gp, ...)
 }
 
+
+# growtree ----------------------------------------------------------------
 
 growtree <- function(id = 1L,
                      response,
@@ -627,6 +639,19 @@ findsplit <- function(response,
 
 # Split point search ------------------------------------------------------
 
+#' Find Split Value
+#'
+#' Computes optimal split value
+#'
+#' @param y response variable
+#' @param x selected covariate
+#'
+#' @export
+#'
+#' @examples
+#' add_numbers(1, 2) ## returns 3
+#'
+
 split.opt <- function(y,
                       x,
                       newx,
@@ -731,29 +756,15 @@ split.opt <- function(y,
              }
 
            } else if(split.type == 'cluster') {
-             # cl.fdata = kmeans.fd(x, ncl=2, draw = FALSE, cluster.size = 1)
-             # clindex <- cl.fdata$cluster
-             # lev = levels(newx)
-             # splitindex = rep(NA, length(lev))
-             # splitindex[lev %in% newx[clindex==1]]<- 1
-             # splitindex[lev %in% newx[clindex==2]]<- 2
-             #
-             # c1 <- cl.fdata$centers[1]
-             # c2 <- cl.fdata$centers[2]
-             # centroids <- list(c1 = c1, c2 = c2)
-             #
-
-             cl.fdata <- cluster::pam(xdist, k = 2, diss = TRUE)
-             clindex <- cl.fdata$clustering
+             cl.fdata = kmeans.fd(x, ncl=2, draw = FALSE, par.ini=list(method="exact"), cluster.size = 1)
+             clindex <- cl.fdata$cluster
              lev = levels(newx)
              splitindex = rep(NA, length(lev))
              splitindex[lev %in% newx[clindex==1]]<- 1
              splitindex[lev %in% newx[clindex==2]]<- 2
 
-             ceindex1 <- as.integer(cl.fdata$medoids[1])
-             c1 <- x[which(newx == ceindex1),]
-             ceindex2 <- as.integer(cl.fdata$medoids[2])
-             c2 <- x[which(newx == ceindex2),]
+             c1 <- cl.fdata$centers[1]
+             c2 <- cl.fdata$centers[2]
              centroids <- list(c1 = c1, c2 = c2)
            }
 

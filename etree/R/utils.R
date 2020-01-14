@@ -2,6 +2,7 @@
 # node --------------------------------------------------------------------
 
 
+
 partynode <- function(id, split = NULL, kids = NULL, surrogates = NULL, info = NULL, centroids = NULL) {
 
   if (!is.integer(id) || length(id) != 1) {
@@ -349,6 +350,7 @@ width.partynode <- function(x, ...) {
 # split -------------------------------------------------------------------
 
 
+
 partysplit <- function(varid, breaks = NULL, index = NULL, right = TRUE,
                        prob = NULL, info = NULL, centroids = NULL, basid = NULL) {
 
@@ -517,7 +519,6 @@ kidids_split <- function(split, data, vmatch = 1:length(data), obs = NULL) {
   if (!is.null(obs)) x <- x[obs]
 
   if (is.null(breaks_split(split))) {
-
     if (storage.mode(x) != "integer")
       stop("variable", " ", vmatch[varid], " ", "is not integer")
   } else {
@@ -539,7 +540,6 @@ kidids_split <- function(split, data, vmatch = 1:length(data), obs = NULL) {
     x <- index[x]
   return(x)
 }
-
 
 kidids_split_predict <- function(split, data, vmatch = 1:length(data), obs = NULL) {
 
@@ -579,7 +579,7 @@ kidids_split_predict <- function(split, data, vmatch = 1:length(data), obs = NUL
   ### empty factor levels correspond to NA and return NA here
   ### and thus the corresponding observations will be treated
   ### as missing values (surrogate or random splits):
-  if (!is.null(index) & is.null(centroids_split(split)))
+  if (!is.null(index))
     x <- index[x]
   return(x)
 }
@@ -897,8 +897,18 @@ nodeapply.partynode <- function(obj, ids = 1, FUN = NULL, ...) {
   return(rval)
 }
 
-predict.party <- function(object, newdata = NULL, split.type, nb, perm = NULL, ...)
+predict.party <- function(object, newdata = NULL, nb = 10, perm = NULL, ...)
 {
+
+  # extract basid from the first node (which is necessarily present)
+  basid_l <- nodeapply(object, by_node = TRUE, ids = 1,
+                       FUN = function(node) basid_split(split_node(node)))
+  # if basid is not null, it means we are in the coeff case; otherwise, cluster
+  if (!is.null(unlist(basid_l))){
+    split.type <- 'coeff'
+  } else {
+    split.type <- 'cluster'
+  }
 
   if(!is.null(newdata)){
 
@@ -1677,7 +1687,7 @@ class(edge_simple) <- "grapcon_generator"
                       name =  paste("edge", id_node(node), "-", i, sep = ""))
     pushViewport(sp_vp)
     if(debug) grid.rect(gp = gpar(lty = "dotted", col = 2))
-    edge_panel(node, i)
+    edge_simple(node, i)
     upViewport()
   }
 
@@ -1767,11 +1777,11 @@ plot.party <- function(x, main = NULL,
   if (pop) popViewport() else upViewport()
 }
 
-plot.constparty <- function(x, main = NULL, type = c("extended", "simple"),
+plot.constparty <- function(x, main = NULL,
                             terminal_panel = NULL, tp_args = list(),
                             inner_panel = node_inner, ip_args = list(),
                             edge_panel = edge_simple, ep_args = list(),
-                            drop_terminal = NULL, tnex = NULL,
+                            type = c("extended", "simple"), drop_terminal = NULL, tnex = NULL,
                             newpage = TRUE, pop = TRUE, gp = gpar(), ...)
 {
   ### compute default settings
@@ -1814,7 +1824,6 @@ plot.constparty <- function(x, main = NULL, type = c("extended", "simple"),
              drop_terminal = drop_terminal, tnex = tnex,
              newpage = newpage, pop = pop, gp = gp, ...)
 }
-
 
 node_barplot <- function(obj,
                          col = "black",
@@ -2386,4 +2395,3 @@ node_mvar <- function(obj, which = NULL, id = TRUE, pop = TRUE, ylines = NULL, m
   return(rval)
 }
 class(node_mvar) <- "grapcon_generator"
-
