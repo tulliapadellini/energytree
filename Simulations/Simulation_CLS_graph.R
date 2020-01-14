@@ -47,7 +47,7 @@ etree_fit <- etree(response = resp,
                    minbucket = 5,
                    alpha = 0.05,
                    R = 1000,
-                   split.type = 'cluster',
+                   split.type = 'coeff',
                    coef.split.type = 'test')
 plot(etree_fit)
 
@@ -63,13 +63,13 @@ y_pred <- predict(etree_fit)
 # Prediction with newdata
 graph.list3 <- list()
 for(i in 1:n){
-  graph.list2[[i]] <- sample_gnp(100,0.1)    #type1
-  graph.list2[[n+i]] <- sample_gnp(100,0.12)  #type2
+  graph.list3[[i]] <- sample_gnp(100,0.1)    #type1
+  graph.list3[[n+i]] <- sample_gnp(100,0.12)  #type2
 }
 graph.list4 <- list()
 for(i in 1:n){
-  graph.list2[[i]] <- sample_gnp(100,0.1)    #type1
-  graph.list2[[n+i]] <- sample_gnp(100,0.12)  #type2
+  graph.list4[[i]] <- sample_gnp(100,0.1)    #type1
+  graph.list4[[n+i]] <- sample_gnp(100,0.12)  #type2
 }
 new.cov.list <- list(graph.list3, graph.list4)
 y_pred2 <- predict(etree_fit, newdata = new.cov.list)

@@ -26,7 +26,7 @@ resp <- lapply(data, function(x) x$cls[obs])[[1]]
 
 ### Classification with a functional predictors and a numeric one ###
 #the numeric is one of the basis of another simulation of the same dataset
-foo <- fda.usc::min.basis(lapply(data, function(x) fdata(x[obs,2:129]))[[2]], numbasis = 15)
+foo <- fda.usc::optim.basis(lapply(data, function(x) fdata(x[obs,2:129]))[[2]], numbasis = 15)
 fd3 <- fda.usc::fdata2fd(foo$fdata.est,
                          type.basis = "bspline",
                          nbasis = foo$numbasis.opt)
@@ -64,7 +64,7 @@ etree_fit <- etree(response = resp,
                    minbucket = 5,
                    alpha = 0.05,
                    R = 1000,
-                   split.type = 'cluster',
+                   split.type = 'coeff',
                    coef.split.type = 'test')
 plot(etree_fit)
 
@@ -75,6 +75,20 @@ plot(etree_fit)
 
 # Prediction
 y_pred <- predict(etree_fit)
+
+# Prediction with newdata
+graph.list2 <- lapply(resp,
+                     function(c){
+                       if (c == 'Bel'){
+                         sample_gnp(100, 0.10)
+                       } else if (c == 'Cyl'){
+                         sample_gnp(100, 0.125)
+                       } else if (c == 'Fun'){
+                         sample_gnp(100, 0.15)
+                       }
+                     })
+new.cov.list <- list(lapply(data, function(x) fdata(x[obs,2:129]))[[2]], graph.list2, foo$coef[,8])
+y_pred2 <- predict(etree_fit, newdata = new.cov.list)
 
 # Error
 y <- resp

@@ -31,7 +31,7 @@ cov.list <- list(lapply(data, function(x) x$V1)[[1]], resp+rnorm(200, 0, 10))
 #ok
 
 #2) numerical variable: one of the basis of another simulation of the same dataset
-foo <- fda.usc::min.basis(lapply(data, function(x) x$V1)[[2]], numbasis = 15)
+foo <- fda.usc::optim.basis(lapply(data, function(x) x$V1)[[2]], numbasis = 15)
 fd3 <- fda.usc::fdata2fd(foo$fdata.est,
                          type.basis = "bspline",
                          nbasis = foo$numbasis.opt)
@@ -67,7 +67,7 @@ etree_fit <- etree(response = resp,
                    minbucket = 5,
                    alpha = 0.05,
                    R = 1000,
-                   split.type = 'cluster',
+                   split.type = 'coeff',
                    coef.split.type = 'test',
                    nb = n.bas)
 plot(etree_fit)
@@ -79,6 +79,12 @@ plot(etree_fit)
 
 # Prediction
 y_pred <- predict(etree_fit)
+
+# Prediction with newdata
+graph.list2 <- lapply(conn.prob, function(p){sample_gnp(100, p)})
+new.cov.list <- list(lapply(data, function(x) x$V1)[[2]], graph.list2, foo$coef[,15])
+y_pred2 <- predict(etree_fit, newdata = new.cov.list)
+
 
 # Error
 y <- resp
