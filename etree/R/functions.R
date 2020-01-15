@@ -31,7 +31,15 @@
 #'  ## returns 3
 #'
 
-etree <- function(response, covariates, case.weights = NULL, minbucket = 1, alpha = 0.05, R = 1000, split.type = 'coeff', coef.split.type = 'test', nb = 5) {
+etree <- function(response,
+                  covariates,
+                  case.weights = NULL,
+                  minbucket = 1,
+                  alpha = 0.05,
+                  R = 1000,
+                  split.type = 'coeff',
+                  coef.split.type = 'test',
+                  nb = 5) {
 
   # Check whether covariates is a list
   if(!is.list(covariates)) stop("Argument 'covariates' must be provided as a list")
@@ -126,9 +134,13 @@ etree <- function(response, covariates, case.weights = NULL, minbucket = 1, alph
 #' Compute predictions based on an Energy Tree Fit.
 #'
 #' @param object object of class party.
-#' @param newdata an optional list of variables used to make predictions. If omitted, the fitted values are used.
+#' @param newdata an optional list of variables used to make predictions. Each element of the list is a different variable. If omitted, the fitted values are used.
+#' @param nb number of basis to use for fdata covariates if \code{split.type = "coeff"} has been used in the fitting process. Default value is 10.
 #' @param perm an optional character vector of variable names. Splits of nodes with a primary split in any of these variables will be permuted (after dealing with surrogates). Note that surrogate split in the \code{perm} variables will no be permuted.
 #' @param ... additional arguments.
+#'
+#' @details
+#' \code{predict} computes predictions for the object given as output by the \code{etree} call. \code{newdata}, if present, is automatically treated with the same \code{split.type} used in \code{etree}.
 #'
 #' @export
 #'
@@ -137,8 +149,18 @@ etree <- function(response, covariates, case.weights = NULL, minbucket = 1, alph
 #'
 
 
-predict.party <- function(object, newdata = NULL, split.type, nb, perm = NULL, ...)
+predict.party <- function(object, newdata = NULL, nb = 10, perm = NULL, ...)
 {
+
+  # extract basid from the first node (which is necessarily present)
+  basid_l <- nodeapply(object, by_node = TRUE, ids = 1,
+                       FUN = function(node) basid_split(split_node(node)))
+  # if basid is not null, it means we are in the coeff case; otherwise, cluster
+  if (!is.null(unlist(basid_l))){
+    split.type <- 'coeff'
+  } else {
+    split.type <- 'cluster'
+  }
 
   if(!is.null(newdata)){
 
@@ -250,6 +272,7 @@ predict.party <- function(object, newdata = NULL, split.type, nb, perm = NULL, .
   predict_party(object, fitted, newdata, ...)
 }
 
+
 #' Visualization of Energy Trees
 #'
 #' \code{plot} method for \code{party} objects with extended facilities for plugging in panel functions.
@@ -278,11 +301,11 @@ predict.party <- function(object, newdata = NULL, split.type, nb, perm = NULL, .
 #' ## returns 3
 #'
 
-plot.constparty <- function(x, main = NULL, type = c("extended", "simple"),
+plot.constparty <- function(x, main = NULL,
                             terminal_panel = NULL, tp_args = list(),
                             inner_panel = node_inner, ip_args = list(),
                             edge_panel = edge_simple, ep_args = list(),
-                            drop_terminal = NULL, tnex = NULL,
+                            type = c("extended", "simple"), drop_terminal = NULL, tnex = NULL,
                             newpage = TRUE, pop = TRUE, gp = gpar(), ...)
 {
   ### compute default settings
@@ -326,6 +349,8 @@ plot.constparty <- function(x, main = NULL, type = c("extended", "simple"),
              newpage = newpage, pop = pop, gp = gp, ...)
 }
 
+
+# growtree ----------------------------------------------------------------
 
 growtree <- function(id = 1L,
                      response,
@@ -614,6 +639,19 @@ findsplit <- function(response,
 
 # Split point search ------------------------------------------------------
 
+#' Find Split Value
+#'
+#' Computes optimal split value
+#'
+#' @param y response variable
+#' @param x selected covariate
+#'
+#' @export
+#'
+#' @examples
+#' add_numbers(1, 2) ## returns 3
+#'
+
 split.opt <- function(y,
                       x,
                       newx,
@@ -869,9 +907,13 @@ compute.dissimilarity.cl <- function(centroid, x,
          fdata      = metric.lp(fdata1 = x, fdata2 = centroid, lp=lp),
          list       = {
            if(all(sapply(x, class) == 'igraph')){
-             adj_matrices <- lapply(x, as_adjacency_matrix)
-             d <- nd.csd(adj_matrices) #continuous spectral density for the moment
-             return(as.matrix(d$D))
+             adj_data <- lapply(x, as_adjacency_matrix)
+             adj_centroid <- as_adjacency_matrix(centroid)
+             dist_centroid <- sapply(adj_data, function(i){
+               d <- nd.csd(list(i, adj_centroid))
+               d$D
+             })
+             return(dist_centroid)
            } else if (all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
              k.fun = function(i, centroid) TDA::wasserstein(x[[i]], centroid)
              k.fun = Vectorize(k.fun)

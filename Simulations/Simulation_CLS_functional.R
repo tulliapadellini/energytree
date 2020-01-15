@@ -45,7 +45,7 @@ etree_fit <- etree(response = resp,
                    minbucket = 5,
                    alpha = 0.05,
                    R = 1000,
-                   split.type = 'coeff',
+                   split.type = 'cluster',
                    coef.split.type = 'test')
 plot(etree_fit)
 
@@ -77,6 +77,12 @@ ct_fit <- classif.tree(resp ~ x, data = list_all, basis.b = list(x =fvb))
 
 # Prediction
 y_pred <- predict(etree_fit)
+
+# Prediction with newdata
+new.cov.list <- list(lapply(data, function(x) fdata(x[obs,2:129]))[[3]],
+                     lapply(data, function(x) fdata(x[obs,2:129]))[[4]])
+y_pred2 <- predict(etree_fit, newdata = new.cov.list)
+
 
 # Error
 y <- resp

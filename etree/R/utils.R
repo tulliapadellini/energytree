@@ -2,6 +2,7 @@
 # node --------------------------------------------------------------------
 
 
+
 partynode <- function(id, split = NULL, kids = NULL, surrogates = NULL, info = NULL, centroids = NULL) {
 
   if (!is.integer(id) || length(id) != 1) {
@@ -349,6 +350,7 @@ width.partynode <- function(x, ...) {
 # split -------------------------------------------------------------------
 
 
+
 partysplit <- function(varid, breaks = NULL, index = NULL, right = TRUE,
                        prob = NULL, info = NULL, centroids = NULL, basid = NULL) {
 
@@ -517,7 +519,6 @@ kidids_split <- function(split, data, vmatch = 1:length(data), obs = NULL) {
   if (!is.null(obs)) x <- x[obs]
 
   if (is.null(breaks_split(split))) {
-
     if (storage.mode(x) != "integer")
       stop("variable", " ", vmatch[varid], " ", "is not integer")
   } else {
@@ -539,7 +540,6 @@ kidids_split <- function(split, data, vmatch = 1:length(data), obs = NULL) {
     x <- index[x]
   return(x)
 }
-
 
 kidids_split_predict <- function(split, data, vmatch = 1:length(data), obs = NULL) {
 
@@ -897,8 +897,18 @@ nodeapply.partynode <- function(obj, ids = 1, FUN = NULL, ...) {
   return(rval)
 }
 
-predict.party <- function(object, newdata = NULL, split.type, nb, perm = NULL, ...)
+predict.party <- function(object, newdata = NULL, nb = 10, perm = NULL, ...)
 {
+
+  # extract basid from the first node (which is necessarily present)
+  basid_l <- nodeapply(object, by_node = TRUE, ids = 1,
+                       FUN = function(node) basid_split(split_node(node)))
+  # if basid is not null, it means we are in the coeff case; otherwise, cluster
+  if (!is.null(unlist(basid_l))){
+    split.type <- 'coeff'
+  } else {
+    split.type <- 'cluster'
+  }
 
   if(!is.null(newdata)){
 
@@ -1215,7 +1225,7 @@ data_party.default <- function(party, id = 1L) {
 
   extract <- function(id) {
     if(is.null(party$fitted))
-      if(nrow(party$data) == 0) return(NULL)
+      if(length(party$data) == 0) return(NULL)
     else
       stop("cannot subset data without fitted ids")
 
@@ -1223,7 +1233,7 @@ data_party.default <- function(party, id = 1L) {
     nt <- nodeids(party, id, terminal = TRUE)
     wi <- party$fitted[["(fitted)"]] %in% nt
 
-    ret <- if (nrow(party$data) == 0)
+    ret <- if (length(party$data) == 0)
       subset(party$fitted, wi)
     else
       subset(cbind(party$data, party$fitted), wi)
@@ -1765,6 +1775,54 @@ plot.party <- function(x, main = NULL,
   }
   upViewport()
   if (pop) popViewport() else upViewport()
+}
+
+plot.constparty <- function(x, main = NULL,
+                            terminal_panel = NULL, tp_args = list(),
+                            inner_panel = node_inner, ip_args = list(),
+                            edge_panel = edge_simple, ep_args = list(),
+                            type = c("extended", "simple"), drop_terminal = NULL, tnex = NULL,
+                            newpage = TRUE, pop = TRUE, gp = gpar(), ...)
+{
+  ### compute default settings
+  type <- match.arg(type)
+  if (type == "simple") {
+    x <- as.simpleparty(x)
+    if (is.null(terminal_panel))
+      terminal_panel <- node_terminal
+    if (is.null(tnex)) tnex <- 1
+    if (is.null(drop_terminal)) drop_terminal <- FALSE
+    if (is.null(tp_args) || length(tp_args) < 1L) {
+      tp_args <- list(FUN = .make_formatinfo_simpleparty(x, digits = getOption("digits") - 4L, sep = "\n"))
+    } else {
+      if(is.null(tp_args$FUN)) {
+        tp_args$FUN <- .make_formatinfo_simpleparty(x, digits = getOption("digits") - 4L, sep = "\n")
+      }
+    }
+  } else {
+    if (is.null(terminal_panel)) {
+      cl <- class(x$fitted[["(response)"]])
+      if("factor" %in% cl) {
+        terminal_panel <- node_barplot
+      } else if("Surv" %in% cl) {
+        terminal_panel <- node_surv
+      } else if ("data.frame" %in% cl) {
+        terminal_panel <- node_mvar
+        if (is.null(tnex)) tnex <- 2 * NCOL(x$fitted[["(response)"]])
+      } else {
+        terminal_panel <- node_boxplot
+      }
+    }
+    if (is.null(tnex)) tnex <- 2
+    if (is.null(drop_terminal)) drop_terminal <- TRUE
+  }
+
+  plot.party(x, main = main,
+             terminal_panel = terminal_panel, tp_args = tp_args,
+             inner_panel = inner_panel, ip_args = ip_args,
+             edge_panel = edge_panel, ep_args = ep_args,
+             drop_terminal = drop_terminal, tnex = tnex,
+             newpage = newpage, pop = pop, gp = gp, ...)
 }
 
 node_barplot <- function(obj,
@@ -2337,4 +2395,3 @@ node_mvar <- function(obj, which = NULL, id = TRUE, pop = TRUE, ylines = NULL, m
   return(rval)
 }
 class(node_mvar) <- "grapcon_generator"
-
