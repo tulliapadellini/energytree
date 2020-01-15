@@ -26,7 +26,7 @@ y_pred - y_pred3
 y_pred3 - y_pred2
 
 mean((resp-y_pred)^2)
-mean((resp-y_pred2)^2)
+mean((resp-y_pred3)^2)
 
 
 
@@ -34,7 +34,7 @@ mean((resp-y_pred2)^2)
 # Graph -------------------------------------------------------------------
 
 graph.list <- list()
-n <- 5 #number of graphs of type 1 & number of graphs of type 2
+n <- 10 #number of graphs of type 1 & number of graphs of type 2
 for(i in 1:n){
   graph.list[[i]] <- sample_gnp(100,0.1)    #type1
   graph.list[[n+i]] <- sample_gnp(100,0.12)  #type2

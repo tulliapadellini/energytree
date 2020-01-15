@@ -102,7 +102,6 @@ etree <- function(response, covariates, case.weights = NULL, minbucket = 1, alph
                     split.type = split.type,
                     coef.split.type = coef.split.type,
                     nb = nb)
-  print(c('NODES', nodes))
 
   # Actually performing the splits
   fitted.obs <- fitted_node(nodes, data = newcovariates)
@@ -718,30 +717,32 @@ split.opt <- function(y,
              }
 
            } else if(split.type == 'cluster') {
-             cl.fdata = kmeans.fd(x, ncl=2, draw = FALSE, cluster.size = 1)
-             clindex <- cl.fdata$cluster
-             lev = levels(newx)
-             splitindex = rep(NA, length(lev))
-             splitindex[lev %in% newx[clindex==1]]<- 1
-             splitindex[lev %in% newx[clindex==2]]<- 2
-
-             c1 <- cl.fdata$centers[1]
-             c2 <- cl.fdata$centers[2]
-             centroids <- list(c1 = c1, c2 = c2)
-
-
-             # cl.fdata <- cluster::pam(xdist, k = 2, diss = TRUE)
-             # clindex <- cl.fdata$clustering
+             # cl.fdata = kmeans.fd(x, ncl=2, draw = FALSE, cluster.size = 1)
+             # clindex <- cl.fdata$cluster
              # lev = levels(newx)
              # splitindex = rep(NA, length(lev))
              # splitindex[lev %in% newx[clindex==1]]<- 1
              # splitindex[lev %in% newx[clindex==2]]<- 2
              #
-             # ceindex1 <- as.integer(cl.fdata$medoids[1])
-             # c1 <- x[which(newx == ceindex1),]
-             # ceindex2 <- as.integer(cl.fdata$medoids[2])
-             # c2 <- x[which(newx == ceindex2),]
+             # c1 <- cl.fdata$centers[1]
+             # c2 <- cl.fdata$centers[2]
              # centroids <- list(c1 = c1, c2 = c2)
+
+
+             cl.fdata <- cluster::pam(xdist, k = 2, diss = TRUE)
+             clindex <- cl.fdata$clustering
+             lev = levels(newx)
+             splitindex = rep(NA, length(lev))
+             splitindex[lev %in% newx[clindex==1]]<- 1
+             splitindex[lev %in% newx[clindex==2]]<- 2
+
+             ceindex1 <- cl.fdata$medoids[1]
+
+             c1 <- x[ceindex1,]
+             ceindex2 <- as.integer(cl.fdata$medoids[2])
+
+             c2 <- x[ceindex2,]
+             centroids <- list(c1 = c1, c2 = c2)
 
            }
 
@@ -795,19 +796,22 @@ split.opt <- function(y,
              }
 
            } else if(split.type == 'cluster') {
+            # rownames(xdist) = colnames(xdist) = NULL
              cl.graph <- cluster::pam(xdist, k = 2, diss = TRUE)
              clindex <- cl.graph$clustering
              lev = levels(newx)
+
              splitindex = rep(NA, length(lev))
              splitindex[lev %in% newx[clindex==1]]<- 1
              splitindex[lev %in% newx[clindex==2]]<- 2
 
              ceindex1 <- as.integer(cl.graph$medoids[1])
+
              c1 <- x[[which(newx == ceindex1)]]
              ceindex2 <- as.integer(cl.graph$medoids[2])
+
              c2 <- x[[which(newx == ceindex2)]]
              centroids <- list(c1 = c1, c2 = c2)
-             #the which part is necessary since ceindex (pam medoids indices) go from 1 to the TOTAL number of observations
            }
 
 
