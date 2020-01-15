@@ -718,30 +718,30 @@ split.opt <- function(y,
              }
 
            } else if(split.type == 'cluster') {
-             # cl.fdata = kmeans.fd(x, ncl=2, draw = FALSE, cluster.size = 1)
-             # clindex <- cl.fdata$cluster
-             # lev = levels(newx)
-             # splitindex = rep(NA, length(lev))
-             # splitindex[lev %in% newx[clindex==1]]<- 1
-             # splitindex[lev %in% newx[clindex==2]]<- 2
-             #
-             # c1 <- cl.fdata$centers[1]
-             # c2 <- cl.fdata$centers[2]
-             # centroids <- list(c1 = c1, c2 = c2)
-             #
-
-             cl.fdata <- cluster::pam(xdist, k = 2, diss = TRUE)
-             clindex <- cl.fdata$clustering
+             cl.fdata = kmeans.fd(x, ncl=2, draw = FALSE, cluster.size = 1)
+             clindex <- cl.fdata$cluster
              lev = levels(newx)
              splitindex = rep(NA, length(lev))
              splitindex[lev %in% newx[clindex==1]]<- 1
              splitindex[lev %in% newx[clindex==2]]<- 2
 
-             ceindex1 <- as.integer(cl.fdata$medoids[1])
-             c1 <- x[which(newx == ceindex1),]
-             ceindex2 <- as.integer(cl.fdata$medoids[2])
-             c2 <- x[which(newx == ceindex2),]
+             c1 <- cl.fdata$centers[1]
+             c2 <- cl.fdata$centers[2]
              centroids <- list(c1 = c1, c2 = c2)
+
+
+             # cl.fdata <- cluster::pam(xdist, k = 2, diss = TRUE)
+             # clindex <- cl.fdata$clustering
+             # lev = levels(newx)
+             # splitindex = rep(NA, length(lev))
+             # splitindex[lev %in% newx[clindex==1]]<- 1
+             # splitindex[lev %in% newx[clindex==2]]<- 2
+             #
+             # ceindex1 <- as.integer(cl.fdata$medoids[1])
+             # c1 <- x[which(newx == ceindex1),]
+             # ceindex2 <- as.integer(cl.fdata$medoids[2])
+             # c2 <- x[which(newx == ceindex2),]
+             # centroids <- list(c1 = c1, c2 = c2)
 
            }
 
@@ -884,9 +884,10 @@ compute.dissimilarity.cl <- function(centroid, x,
          fdata      = metric.lp(fdata1 = x, fdata2 = centroid, lp=lp),
          list       = {
            if(all(sapply(x, class) == 'igraph')){
-             adj_matrices <- lapply(x, as_adjacency_matrix)
+
+             adj_matrices <- lapply(c(list(centroid), x), as_adjacency_matrix)
              d <- nd.csd(adj_matrices) #continuous spectral density for the moment
-             return(as.matrix(d$D))
+             return(as.matrix(d$D)[-1, 1])
            } else if (all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
              k.fun = function(i, centroid) TDA::wasserstein(x[[i]], centroid)
              k.fun = Vectorize(k.fun)
