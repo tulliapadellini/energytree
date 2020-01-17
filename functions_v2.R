@@ -739,3 +739,24 @@ graph.shell <- function(graph.list, shell.limit = NULL){
 
 }
 
+
+
+# Detect split.type -------------------------------------------------------
+
+det_split.type <- function(object){
+
+  # check that object has class party
+  stopifnot(inherits(object, 'party'))
+
+  # extract basid from the first node (which is necessarily present)
+  basid_list <- nodeapply(object, by_node = TRUE, ids = 1,
+                       FUN = function(node) basid_split(split_node(node)))
+  # if basid is not null, it means we are in the coeff case; otherwise, cluster
+  if (!is.null(unlist(basid_list))){
+    return(split.type = 'coeff')
+  } else {
+    return(split.type = 'cluster')
+  }
+
+}
+

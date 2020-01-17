@@ -10,7 +10,7 @@
 party <- function(node, data, fitted = NULL, terms = NULL, names = NULL, info = NULL) {
 
   stopifnot(inherits(node, "partynode"))
-  stopifnot(inherits(data, "list"))
+  #stopifnot(inherits(data, "list"))   #give rise to problems for classif plots
   ### make sure all split variables are there
   ids <- nodeids(node)[!nodeids(node) %in% nodeids(node, terminal = TRUE)]
   varids <- unique(unlist(nodeapply(node, ids = ids, FUN = function(x)
@@ -242,15 +242,7 @@ nodeapply.partynode <- function(obj, ids = 1, FUN = NULL, ...) {
 predict.party <- function(object, newdata = NULL, nb = 10, perm = NULL, ...)
 {
 
-  # extract basid from the first node (which is necessarily present)
-  basid_l <- nodeapply(object, by_node = TRUE, ids = 1,
-                       FUN = function(node) basid_split(split_node(node)))
-  # if basid is not null, it means we are in the coeff case; otherwise, cluster
-  if (!is.null(unlist(basid_l))){
-    split.type <- 'coeff'
-  } else {
-    split.type <- 'cluster'
-  }
+  split.type <- det_split.type(object)
 
   if(!is.null(newdata)){
 

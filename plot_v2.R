@@ -181,6 +181,8 @@ edge_simple <- function(obj, digits = 3, abbreviate = FALSE,
 {
   meta <- obj$data
 
+  split.type <- det_split.type(obj)
+
   justfun <- function(i, split) {
     myjust <- if(mean(nchar(split)) > justmin) {
       match.arg(just, c("alternate", "increasing", "decreasing", "equal"))
@@ -207,8 +209,18 @@ edge_simple <- function(obj, digits = 3, abbreviate = FALSE,
       tr <- suppressWarnings(try(parse(text = paste("phantom(0)", split)), silent = TRUE))
       if(!inherits(tr, "try-error")) split <- tr
     }
-    grid.rect(y = y, gp = gpar(fill = fill, col = 0), width = unit(1, "strwidth", split))
-    grid.text(split, y = y, just = "center")
+    if (split.type == 'coeff'){
+      grid.rect(y = y, gp = gpar(fill = fill, col = 0), width = unit(1, "strwidth", split))
+      grid.text(split, y = y, just = "center")
+    } else {
+      # the number of obs in each kid node is calculated as the number of commas
+      # appearing in split (which is a string where the levels are separated by
+      # commas), plus one
+      n_kid <- as.character(length(regmatches(split, gregexpr(",", split))) + 1)
+      n_kid <- paste('n =', n_kid)
+      grid.rect(y = y, gp = gpar(fill = fill, col = 0), width = unit(1, "strwidth", n_kid))
+      grid.text(n_kid, y = y, just = "center")
+    }
   }
 }
 class(edge_simple) <- "grapcon_generator"
@@ -297,7 +309,7 @@ class(edge_simple) <- "grapcon_generator"
                       name =  paste("edge", id_node(node), "-", i, sep = ""))
     pushViewport(sp_vp)
     if(debug) grid.rect(gp = gpar(lty = "dotted", col = 2))
-    edge_simple(node, i)
+    edge_panel(node, i)
     upViewport()
   }
 

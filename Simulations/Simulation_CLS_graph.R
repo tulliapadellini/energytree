@@ -20,7 +20,7 @@ graph.list <- list()
 n <- 5 #number of graphs of type 1 & number of graphs of type 2
 for(i in 1:n){
   graph.list[[i]] <- sample_gnp(100,0.1)    #type1
-  graph.list[[n+i]] <- sample_gnp(100,0.12)  #type2
+  graph.list[[n+i]] <- sample_gnp(100,0.11)  #type2
 }
 
 # Response
@@ -33,14 +33,14 @@ cov.list <- list(graph.list)
 graph.list2 <- list()
 for(i in 1:n){
   graph.list2[[i]] <- sample_gnp(100,0.1)    #type1
-  graph.list2[[n+i]] <- sample_gnp(100,0.12)  #type2
+  graph.list2[[n+i]] <- sample_gnp(100,0.11)  #type2
 }
 cov.list <- list(graph.list, graph.list2)
 
 
 # Model fitting -----------------------------------------------------------
 
-### REGRESSION ENERGY TREE ###
+### CLASSIFICATION ENERGY TREE ###
 etree_fit <- etree(response = resp,
                    covariates = cov.list,
                    case.weights = NULL,
