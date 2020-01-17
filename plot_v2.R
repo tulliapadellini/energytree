@@ -216,7 +216,7 @@ edge_simple <- function(obj, digits = 3, abbreviate = FALSE,
       # the number of obs in each kid node is calculated as the number of commas
       # appearing in split (which is a string where the levels are separated by
       # commas), plus one
-      n_kid <- as.character(length(regmatches(split, gregexpr(",", split))) + 1)
+      n_kid <- as.character(lengths(regmatches(split, gregexpr(",", split))) + 1)
       n_kid <- paste('n =', n_kid)
       grid.rect(y = y, gp = gpar(fill = fill, col = 0), width = unit(1, "strwidth", n_kid))
       grid.text(n_kid, y = y, just = "center")
