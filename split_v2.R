@@ -1,3 +1,6 @@
+# split -------------------------------------------------------------------
+
+
 
 partysplit <- function(varid, breaks = NULL, index = NULL, right = TRUE,
                        prob = NULL, info = NULL, centroids = NULL, basid = NULL) {
@@ -227,7 +230,7 @@ kidids_split_predict <- function(split, data, vmatch = 1:length(data), obs = NUL
   ### empty factor levels correspond to NA and return NA here
   ### and thus the corresponding observations will be treated
   ### as missing values (surrogate or random splits):
-  if (!is.null(index))
+  if (!is.null(index) & is.null(centroids_split(split)))
     x <- index[x]
   return(x)
 }

@@ -1,9 +1,4 @@
 
-# Loading the libraries
-library(cluster)
-library(fda.usc)
-
-
 
 # Main function -----------------------------------------------------------
 
@@ -58,7 +53,14 @@ etree <- function(response,
 
       return(foo)
 
-    } else {
+    } else if(class(j) == 'list' & all(sapply(j, function(x) attributes(x)$names) == 'diagram')){
+
+      foo <- as.factor(1:length(response))
+
+      return(foo)
+
+    }
+    else {
 
       return(j)
 
@@ -186,8 +188,10 @@ growtree <- function(id = 1L,
 
          },
 
-         list = if(FALSE){
-           #attributes(x[[1]])$names == 'diagram'
+         list = if(all(sapply(covariates$cov[[varid]], function(x) attributes(x)$names) == 'diagram')){
+
+           kidids <- na.exclude(index)
+
          } else if(all(sapply(covariates$cov[[varid]], class) == 'igraph')){
 
            if(split.type == 'coeff'){
@@ -362,9 +366,10 @@ findsplit <- function(response,
 
          },
 
-         list = if(FALSE){
-           #attributes(v[[1]])$names == 'diagram'
+         list = if(all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
+
            return(sp = partysplit(varid = as.integer(xselect),
+                                  centroids = centroids,
                                   index = as.integer(splitindex),
                                   info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,])))))
 
@@ -394,18 +399,6 @@ findsplit <- function(response,
 
 # Split point search ------------------------------------------------------
 
-#' Find Split Value
-#'
-#' Computes optimal split value
-#'
-#' @param y response variable
-#' @param x selected covariate
-#'
-#' @export
-#'
-#' @examples
-#' add_numbers(1, 2) ## returns 3
-#'
 
 split.opt <- function(y,
                       x,
@@ -511,24 +504,41 @@ split.opt <- function(y,
              }
 
            } else if(split.type == 'cluster') {
-             cl.fdata = kmeans.fd(x, ncl=2, draw = FALSE, par.ini=list(method="exact"), cluster.size = 1)
-             clindex <- cl.fdata$cluster
+
+             cl.fdata <- cluster::pam(xdist, k = 2, diss = TRUE)
+             clindex <- cl.fdata$clustering
              lev = levels(newx)
              splitindex = rep(NA, length(lev))
              splitindex[lev %in% newx[clindex==1]]<- 1
              splitindex[lev %in% newx[clindex==2]]<- 2
 
-             c1 <- cl.fdata$centers[1]
-             c2 <- cl.fdata$centers[2]
+             ceindex1 <- cl.fdata$medoids[1]
+
+             c1 <- x[ceindex1,]
+             ceindex2 <- as.integer(cl.fdata$medoids[2])
+
+             c2 <- x[ceindex2,]
              centroids <- list(c1 = c1, c2 = c2)
+
            }
 
          },
 
-         list = if(FALSE){
-           #attributes(x[[1]])$names == "diagram"
-           cl.diagrams = cluster::pam(wass.dist, k = 2, diss = TRUE)
-           splitindex <- cl.diagrams$clustering
+         list = if(all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
+
+           cl.diag <- cluster::pam(xdist, k = 2, diss = TRUE)
+           clindex <- cl.diag$clustering
+           lev = levels(newx)
+           splitindex = rep(NA, length(lev))
+           splitindex[lev %in% newx[clindex==1]]<- 1
+           splitindex[lev %in% newx[clindex==2]]<- 2
+
+           ceindex1 <- cl.diag$medoids[1]
+           c1 <- x[[ceindex1]]
+           ceindex2 <- cl.diag$medoids[2]
+           c2 <- x[[ceindex2]]
+           centroids <- list(c1 = c1, c2 = c2)
+
 
          } else if(all(sapply(x, class) == 'igraph')){
 
@@ -643,10 +653,10 @@ compute.dissimilarity <- function(x,
              d <- nd.csd(adj_matrices) #continuous spectral density for the moment
              return(as.matrix(d$D))
            } else if(all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
-             k.fun = function(i,j) TDA::wasserstein(x[[i]], x[[j]])
+             k.fun = function(i,j) TDA::wasserstein(x[[i]]$diagram, x[[j]]$diagram)
              k.fun = Vectorize(k.fun)
              d.idx = seq_along(x)
-             outer(d.idx,d.idx, k.fun)
+             return(outer(d.idx,d.idx, k.fun))
            }
          })
 
@@ -670,22 +680,12 @@ compute.dissimilarity.cl <- function(centroid, x,
              })
              return(dist_centroid)
            } else if (all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
-             k.fun = function(i, centroid) TDA::wasserstein(x[[i]], centroid)
-             k.fun = Vectorize(k.fun)
-             d.idx = seq_along(x)
-             outer(d.idx, centroid, k.fun)
+             k.fun = function(x, centroid) TDA::wasserstein(x$diagram, centroid$diagram)
+             k.fun = Vectorize(k.fun, vectorize.args = 'x')
+             return(k.fun(x, centroid))
            }
          })
-  # list       = {
-  #   if(!is.null(attributes(x[[1]]))){
-  #   if(attributes(x[[1]])$names == "diagram"){
-  #     d1 = x[case.weights]
-  #     k.fun = function(i, j) TDA::wasserstein(d1[[i]], d1[[j]])
-  #     k.fun = Vectorize(k.fun)
-  #     d.idx = seq_along(d1)
-  #     outer(d.idx,d.idx, k.fun)
-  #   }}
-  #})
+
 
 }
 
@@ -740,7 +740,6 @@ graph.shell <- function(graph.list, shell.limit = NULL){
 }
 
 
-
 # Detect split.type -------------------------------------------------------
 
 det_split.type <- function(object){
@@ -750,7 +749,7 @@ det_split.type <- function(object){
 
   # extract basid from the first node (which is necessarily present)
   basid_list <- nodeapply(object, by_node = TRUE, ids = 1,
-                       FUN = function(node) basid_split(split_node(node)))
+                          FUN = function(node) basid_split(split_node(node)))
 
   # if basid is not null, it means we are in the coeff case; otherwise, cluster
   if (!is.null(unlist(basid_list))){
@@ -760,4 +759,5 @@ det_split.type <- function(object){
   }
 
 }
+
 
