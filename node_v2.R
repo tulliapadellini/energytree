@@ -1,8 +1,4 @@
 
-# node --------------------------------------------------------------------
-
-
-
 partynode <- function(id, split = NULL, kids = NULL, surrogates = NULL, info = NULL, centroids = NULL) {
 
   if (!is.integer(id) || length(id) != 1) {

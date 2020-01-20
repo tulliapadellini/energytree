@@ -298,8 +298,6 @@ predict.party <- function(object, newdata = NULL, nb = 10, perm = NULL, ...)
 #' @param newpage	a logical indicating whether \code{grid.newpage()} should be called.
 #' @param pop	a logical whether the viewport tree should be popped before return.
 #' @param gp graphical parameters.
-#' @param margins	numeric vector of margin sizes.
-#' @param digits number of digits to be printed.
 #' @param ... additional arguments.
 #'
 #' @export

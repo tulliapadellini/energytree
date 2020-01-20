@@ -1,7 +1,3 @@
-# split -------------------------------------------------------------------
-
-
-
 partysplit <- function(varid, breaks = NULL, index = NULL, right = TRUE,
                        prob = NULL, info = NULL, centroids = NULL, basid = NULL) {
 

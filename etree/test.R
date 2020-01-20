@@ -34,8 +34,8 @@ mean((resp-y_pred2)^2)
 graph.list <- list()
 n <- 5 #number of graphs of type 1 & number of graphs of type 2
 for(i in 1:n){
-  graph.list[[i]] <- sample_gnp(100,0.1)    #type1
-  graph.list[[n+i]] <- sample_gnp(100,0.12)  #type2
+  graph.list[[i]] <- igraph::sample_gnp(100,0.1)    #type1
+  graph.list[[n+i]] <- igraph::sample_gnp(100,0.12)  #type2
 }
 
 # Response
