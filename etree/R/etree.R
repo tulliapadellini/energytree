@@ -12,11 +12,9 @@
 #' @import graphics
 #' @importFrom stats model.frame terms approxfun density ecdf getCall dist var
 #' model.response model.weights predict quantile weighted.mean knots na.exclude
-#' @importFrom fda.usc optim.basis kmeans.fd metric.lp
-#' @importFrom utils capture.output combn
-#' @importFrom igraph sample_gnp ecount as_adjacency_matrix coreness
-#' @importFrom NetworkDistance nd.csd
+#' @importFrom utils capture.output
 #' @importFrom grDevices gray.colors
+#' @importFrom survival survfit
 #'
 #' @docType package
 #' @name etree

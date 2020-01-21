@@ -2399,3 +2399,89 @@ node_mvar <- function(obj, which = NULL, id = TRUE, pop = TRUE, ylines = NULL, m
   return(rval)
 }
 class(node_mvar) <- "grapcon_generator"
+
+
+
+# other -------------------------------------------------------------------
+
+.make_formatinfo_simpleparty <- function(x, digits = getOption("digits") - 4, sep = "")
+{
+  ## digit processing
+  digits <- max(c(0, digits))
+  digits2 <- max(c(0, digits - 2))
+
+  ## type of predictions
+  y <- node_party(x)$info$prediction
+  yclass <- class(y)[1]
+  if(yclass == "ordered") yclass <- "factor"
+  if(!(yclass %in% c("survfit", "factor"))) yclass <- "numeric"
+
+  ## type of weights
+  n <- node_party(x)$info$n
+  if(is.null(names(n))) {
+    wdigits <- 0
+    wsym <- "n"
+  } else {
+    if(names(n) == "w") {
+      wdigits <- max(c(0, digits - 2))
+      wsym <- "w"
+    } else {
+      wdigits <- 0
+      wsym <- "n"
+    }
+  }
+
+  ## compute terminal node labels
+  FUN <- function(info) {
+    yhat <- info$prediction
+    if (yclass == "survfit") {
+      yhat <- .median_survival_time(yhat)
+      yclass <- "numeric"
+    }
+    if(yclass == "numeric") yhat <- format(round(yhat, digits = digits), nsmall = digits)
+    w <- info$n
+    yerr <- if(is.null(info$error)) "" else paste(", err = ",
+                                                  format(round(info$error, digits = digits2), nsmall = digits2),
+                                                  names(info$error), sep = "")
+    rval <- paste(yhat, sep,
+                  " (", wsym, " = ", format(round(w, digits = wdigits), nsmall = wdigits),
+                  yerr, ")", sep = "")
+    unlist(strsplit(rval, "\n"))
+  }
+  return(FUN)
+}
+
+
+### length(x) == 1 will lead to sample.int instead of sample;
+### see example(sample)
+.resample <- function(x, ...) x[sample.int(length(x), ...)]
+
+.median_survival_time <- function(x) {
+  minmin <- function(y, xx) {
+    if (any(!is.na(y) & y==.5)) {
+      if (any(!is.na(y) & y <.5))
+        .5*(min(xx[!is.na(y) & y==.5]) + min(xx[!is.na(y) & y<.5]))
+      else
+        .5*(min(xx[!is.na(y) & y==.5]) + max(xx[!is.na(y) & y==.5]))
+    } else   min(xx[!is.na(y) & y<=.5])
+  }
+  med <- suppressWarnings(minmin(x$surv, x$time))
+  return(med)
+}
+
+### get the recursive index
+### obj is of class "partynode"
+.get_path <- function(obj, i) {
+
+  idx <- c()
+  recFun <- function(node, i) {
+    if (id_node(node) == i) return(NULL)
+    idx <<- c(idx, which(names(unclass(node)) == "kids"))
+    kid <- sapply(kids_node(node), id_node)
+    nextid <- max(which(kid <= i))
+    idx <<- c(idx, nextid)
+    return(recFun(node[[nextid]], i))
+  }
+  out <- recFun(obj, i)
+  return(idx)
+}

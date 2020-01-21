@@ -44,7 +44,7 @@ for(i in 1:n){
 cov.list <- list(graph.list)
 
 
-resp <- sapply(graph.list, ecount) #number of edges in each graph
+resp <- sapply(graph.list, igraph::ecount) #number of edges in each graph
 
 # Model fitting -----------------------------------------------------------
 

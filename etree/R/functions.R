@@ -16,7 +16,7 @@
 #' \code{split.type} defines the type of the split when covariates are "complex" (i.e. they are not numeric or factor). Possible values are:
 #' \itemize{
 #' \item \code{coeff}: in this case, complex variables are transformed using variable-specific representation: basis expansion for functional data, shell distribution for graphs, and ??? for persistence diagrams.
-#' \item \code{cluster}: in this case, variables are maintained in their original form, and at each split units are assigned to the nearest of two centroids. Centroids calculation and units assignment are performed using \code{kmeans.fd} from \code{fda.usc} for functional data, and \code{pam} from \code{cluster} for graphs and persistence diagrams.
+#' \item \code{cluster}: in this case, variables are maintained in their original form, and at each split units are assigned to the nearest of two centroids. Centroids calculation and units assignment are performed using \code{pam} from \code{cluster}.
 #' }
 #' \code{coeff.split.type} defines the type of the split when \code{split.type = "coeff"}, i.e. it affects the output only when there is a coefficient representation. When \code{split.type = "coeff"}, an energy test of independence is performed between the response variable and each representation component to find the most associated component. Then, the split point is searched among the ordered coefficients of that component in two possible ways:
 #' \itemize{
@@ -668,9 +668,9 @@ split.opt <- function(y,
            } else{
              comb <- do.call("c", lapply(1:(length(lev) - 1),
                                          ### TBC: isn't this just floor(length(lev)/2) ??
-                                         function(x)combn(lev,
-                                                          x,
-                                                          simplify = FALSE)))
+                                         function(x) utils::combn(lev,
+                                                                  x,
+                                                                  simplify = FALSE)))
              xlogp <- sapply(comb, function(q) mychisqtest(x %in% q, y))
              splitpoint <- comb[[which.min(xlogp)]]
            }
@@ -894,11 +894,11 @@ compute.dissimilarity <- function(x,
          integer    = as.matrix(dist(x)),
          matrix     = as.matrix(dist(x)),
          data.frame = as.matrix(dist(x)),
-         fdata      = metric.lp(x, lp=lp),
+         fdata      = fda.usc::metric.lp(x, lp=lp),
          list       = {
            if(all(sapply(x, class) == 'igraph')){
-             adj_matrices <- lapply(x, as_adjacency_matrix)
-             d <- nd.csd(adj_matrices) #continuous spectral density for the moment
+             adj_matrices <- lapply(x, igraph::as_adjacency_matrix)
+             d <- NetworkDistance::nd.csd(adj_matrices) #continuous spectral density for the moment
              return(as.matrix(d$D))
            } else if(all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
              k.fun = function(i,j) TDA::wasserstein(x[[i]]$diagram, x[[j]]$diagram)
@@ -917,13 +917,13 @@ compute.dissimilarity.cl <- function(centroid, x,
                                      lp = 2){
 
   switch(class(x),
-         fdata      = metric.lp(fdata1 = x, fdata2 = centroid, lp=lp),
+         fdata      = fda.usc::metric.lp(fdata1 = x, fdata2 = centroid, lp=lp),
          list       = {
            if(all(sapply(x, class) == 'igraph')){
-             adj_data <- lapply(x, as_adjacency_matrix)
-             adj_centroid <- as_adjacency_matrix(centroid)
+             adj_data <- lapply(x, igraph::as_adjacency_matrix)
+             adj_centroid <- igraph::as_adjacency_matrix(centroid)
              dist_centroid <- sapply(adj_data, function(i){
-               d <- nd.csd(list(i, adj_centroid))
+               d <- NetworkDistance::nd.csd(list(i, adj_centroid))
                d$D
              })
              return(dist_centroid)
@@ -947,7 +947,7 @@ graph.shell <- function(graph.list, shell.limit = NULL){
   n.graphs <- length(graph.list)
 
   # Shell distribution for each graph
-  table.shell <- lapply(graph.list, function(g){table(coreness(g))})
+  table.shell <- lapply(graph.list, function(g){table(igraph::coreness(g))})
 
   # Maximum shell index
   max.shell <- do.call(max, lapply(table.shell,
