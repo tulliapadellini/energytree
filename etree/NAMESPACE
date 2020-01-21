@@ -23,3 +23,24 @@ importFrom(stats,var)
 importFrom(stats,weighted.mean)
 importFrom(utils,capture.output)
 importFrom(utils,combn)
+
+
+
+S3method("data_party", "default")
+S3method("predict_party", "default")
+
+S3method("[[", "extree_data")
+S3method("model.frame", "extree_data")
+
+## methods for class partynode
+S3method("[", "partynode")
+S3method("[[", "partynode")
+S3method("as.list", "partynode")
+S3method("as.partynode", "partynode")
+S3method("depth", "partynode")
+S3method("is.terminal", "partynode")
+S3method("length", "partynode")
+S3method("nodeapply", "partynode")
+S3method("nodeids", "partynode")
+S3method("print", "partynode")
+S3method("width", "partynode")
