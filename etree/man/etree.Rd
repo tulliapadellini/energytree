@@ -37,10 +37,11 @@ etree(
 \item{nb}{number of basis to use for fdata covariates if \code{split.type = "coeff"}.}
 }
 \description{
-The etree package allows to build regression/classification conditional inference trees.
-The splitting procedure is carried out by means of energy tests, thus allowing for covariates of mixed type.
-Current implementation covers the case of functions, graphs and persistence diagrams,
-as well as standard categorical and numerical values, as covariates.
+The etree package allows to build regression/classification conditional
+inference trees. The splitting procedure is carried out by means of energy
+tests, thus allowing for covariates of mixed type. Current implementation
+covers the case of functions, graphs and persistence diagrams, as well as
+standard categorical and numerical values, as covariates.
 
 Fits an energy tree for classification/regression using mixed type data.
 }
@@ -48,7 +49,7 @@ Fits an energy tree for classification/regression using mixed type data.
 \code{split.type} defines the type of the split when covariates are "complex" (i.e. they are not numeric or factor). Possible values are:
 \itemize{
 \item \code{coeff}: in this case, complex variables are transformed using variable-specific representation: basis expansion for functional data, shell distribution for graphs, and ??? for persistence diagrams.
-\item \code{cluster}: in this case, variables are maintained in their original form, and at each split units are assigned to the nearest of two centroids. Centroids calculation and units assignment are performed using \code{kmeans.fd} from \code{fda.usc} for functional data, and \code{pam} from \code{cluster} for graphs and persistence diagrams.
+\item \code{cluster}: in this case, variables are maintained in their original form, and at each split units are assigned to the nearest of two centroids. Centroids calculation and units assignment are performed using \code{pam} from \code{cluster}.
 }
 \code{coeff.split.type} defines the type of the split when \code{split.type = "coeff"}, i.e. it affects the output only when there is a coefficient representation. When \code{split.type = "coeff"}, an energy test of independence is performed between the response variable and each representation component to find the most associated component. Then, the split point is searched among the ordered coefficients of that component in two possible ways:
 \itemize{

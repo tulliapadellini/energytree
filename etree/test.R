@@ -28,6 +28,8 @@ mean((resp-y_pred2)^2)
 
 
 
+plot(etree_fit)
+
 
 # graphs ------------------------------------------------------------------
 
@@ -49,7 +51,7 @@ resp <- sapply(graph.list, igraph::ecount) #number of edges in each graph
 # Model fitting -----------------------------------------------------------
 
 ### REGRESSION ENERGY TREE ###
-etree_fit <- etree(response = resp,
+etree_fit <- etree(response = as.factor(rep(c(1,2), c(5,5))),
                    covariates = cov.list,
                    case.weights = NULL,
                    minbucket = 5,
@@ -65,7 +67,7 @@ y_pred - y_pred2
 mean((resp-y_pred)^2)
 mean((resp-y_pred2)^2)
 
-
+plot(etree_fit)
 
 # diagrams ----------------------------------------------------------------
 

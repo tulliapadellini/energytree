@@ -317,9 +317,13 @@ surrogates_node <- function(node) {
   node$surrogates
 }
 
+
 is.terminal <- function(x, ...)
   UseMethod("is.terminal")
 
+
+
+#' @export
 is.terminal.partynode <- function(x, ...) {
   kids <- is.null(kids_node(x))
   split <- is.null(split_node(x))
@@ -332,14 +336,17 @@ is.terminal.partynode <- function(x, ...) {
 ## depth <- function(x, ...)
 ##     UseMethod("depth")
 
+#' @export
 depth.partynode <- function(x, root = FALSE, ...) {
   if (is.terminal(x)) return(as.integer(root))
   max(sapply(kids_node(x), depth, root = root)) + 1L
 }
 
+
 width <- function(x, ...)
   UseMethod("width")
 
+#' @export
 width.partynode <- function(x, ...) {
   if (is.terminal(x)) return(1)
   sum(sapply(kids_node(x), width.partynode))
@@ -1240,6 +1247,7 @@ data_party.default <- function(party, id = 1L) {
 width.party <- function(x, ...) {
   width(node_party(x), ...)
 }
+
 
 depth.party <- function(x, root = FALSE, ...) {
   depth(node_party(x), root = root, ...)

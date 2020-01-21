@@ -7,13 +7,13 @@
 \method{plot}{constparty}(
   x,
   main = NULL,
-  type = c("extended", "simple"),
   terminal_panel = NULL,
   tp_args = list(),
   inner_panel = node_inner,
   ip_args = list(),
   edge_panel = edge_simple,
   ep_args = list(),
+  type = c("extended", "simple"),
   drop_terminal = NULL,
   tnex = NULL,
   newpage = TRUE,
@@ -27,8 +27,6 @@
 
 \item{main}{an optional title for the plot.}
 
-\item{type}{a character specifying the complexity of the plot: \code{extended} tries to visualize the distribution of the response variable in each terminal node whereas \code{simple} only gives some summary information.}
-
 \item{terminal_panel}{an optional panel function of the form \code{function(node)} plotting the terminal nodes. Alternatively, a panel generating function of class "\code{grapcon_generator}" that is called with arguments \code{x} and \code{tp_args} to set up a panel function. By default, an appropriate panel function is chosen depending on the scale of the dependent variable.}
 
 \item{tp_args}{a list of arguments passed to \code{terminal_panel} if this is a "\code{grapcon_generator}" object.}
@@ -41,6 +39,8 @@
 
 \item{ep_args}{a list of arguments passed to \code{edge_panel} if this is a "\code{grapcon_generator}" object.}
 
+\item{type}{a character specifying the complexity of the plot: \code{extended} tries to visualize the distribution of the response variable in each terminal node whereas \code{simple} only gives some summary information.}
+
 \item{drop_terminal}{a logical indicating whether all terminal nodes should be plotted at the bottom.}
 
 \item{tnex}{a numeric value giving the terminal node extension in relation to the inner nodes.}
@@ -52,10 +52,6 @@
 \item{gp}{graphical parameters.}
 
 \item{...}{additional arguments.}
-
-\item{margins}{numeric vector of margin sizes.}
-
-\item{digits}{number of digits to be printed.}
 }
 \description{
 \code{plot} method for \code{party} objects with extended facilities for plugging in panel functions.

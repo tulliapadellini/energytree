@@ -4,12 +4,14 @@
 \alias{predict.party}
 \title{Energy Tree Predictions}
 \usage{
-\method{predict}{party}(object, newdata = NULL, split.type, nb, perm = NULL, ...)
+\method{predict}{party}(object, newdata = NULL, nb = 10, perm = NULL, ...)
 }
 \arguments{
 \item{object}{object of class party.}
 
-\item{newdata}{an optional list of variables used to make predictions. If omitted, the fitted values are used.}
+\item{newdata}{an optional list of variables used to make predictions. Each element of the list is a different variable. If omitted, the fitted values are used.}
+
+\item{nb}{number of basis to use for fdata covariates if \code{split.type = "coeff"} has been used in the fitting process. Default value is 10.}
 
 \item{perm}{an optional character vector of variable names. Splits of nodes with a primary split in any of these variables will be permuted (after dealing with surrogates). Note that surrogate split in the \code{perm} variables will no be permuted.}
 
@@ -17,6 +19,9 @@
 }
 \description{
 Compute predictions based on an Energy Tree Fit.
+}
+\details{
+\code{predict} computes predictions for the object given as output by the \code{etree} call. \code{newdata}, if present, is automatically treated with the same \code{split.type} used in \code{etree}.
 }
 \examples{
  ## returns 3
