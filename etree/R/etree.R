@@ -7,7 +7,6 @@
 #' standard categorical and numerical values, as covariates.
 #'
 #'
-#' @import grid
 #' @import partykit
 #' @import graphics
 #' @importFrom stats model.frame terms approxfun density ecdf getCall dist var
