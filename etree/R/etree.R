@@ -7,8 +7,12 @@
 #' standard categorical and numerical values, as covariates.
 #'
 #'
-#' @import partykit
+#' @rawNamespace import(partykit, except = c(partynode, as.partynode.list,
+#'   kidids_node, fitted_node, party, predict.party, predict_party.default,
+#'   predict_party.constparty, data_party.default, edge_simple, partysplit,
+#'   kidids_split))
 #' @import graphics
+#' @import grid
 #' @importFrom stats model.frame terms approxfun density ecdf getCall dist var
 #' model.response model.weights predict quantile weighted.mean knots na.exclude
 #' @importFrom utils capture.output
