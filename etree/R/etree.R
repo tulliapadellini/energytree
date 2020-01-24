@@ -10,7 +10,7 @@
 #' @rawNamespace import(partykit, except = c(partynode, as.partynode.list,
 #'   kidids_node, fitted_node, party, predict.party, predict_party.default,
 #'   predict_party.constparty, data_party.default, edge_simple, partysplit,
-#'   kidids_split))
+#'   kidids_split, node_barplot, node_boxplot, node_surv, node_ecdf, node_mvar))
 #' @import graphics
 #' @import grid
 #' @importFrom stats model.frame terms approxfun density ecdf getCall dist var
