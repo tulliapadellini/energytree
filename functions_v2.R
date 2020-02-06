@@ -649,8 +649,19 @@ compute.dissimilarity <- function(x,
          fdata      = metric.lp(x, lp=lp),
          list       = {
            if(all(sapply(x, class) == 'igraph')){
-             adj_matrices <- lapply(x, as_adjacency_matrix)
-             d <- nd.csd(adj_matrices) #continuous spectral density for the moment
+             if(all(sapply(x, function(i) {
+               is.null(edge.attributes(i)$weight)
+               #if attribute weight is null for all the graphs, the graph
+               #covariate is not weighted
+             }))){
+               adj_data <- lapply(x, as_adjacency_matrix)
+             } else { #otherwise, it is weighted
+               adj_data <- lapply(x, function(i) {
+                 as_adjacency_matrix(i, attr = 'weight')
+               })
+             }
+             #d is obtained in the same way in the two cases:
+             d <- nd.edd(adj_data)
              return(as.matrix(d$D))
            } else if(all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
              k.fun = function(i,j) TDA::wasserstein(x[[i]]$diagram, x[[j]]$diagram)
@@ -672,10 +683,22 @@ compute.dissimilarity.cl <- function(centroid, x,
          fdata      = metric.lp(fdata1 = x, fdata2 = centroid, lp=lp),
          list       = {
            if(all(sapply(x, class) == 'igraph')){
-             adj_data <- lapply(x, as_adjacency_matrix)
-             adj_centroid <- as_adjacency_matrix(centroid)
+             if(all(sapply(x, function(i) {
+               is.null(edge.attributes(i)$weight)
+               #if attribute weight is null for all the graphs, the graph
+               #covariate is not weighted
+             }))){
+               adj_data <- lapply(x, as_adjacency_matrix)
+               adj_centroid <- as_adjacency_matrix(centroid)
+             } else { #otherwise, it is weighted
+               adj_data <- lapply(x, function(i) {
+                 as_adjacency_matrix(i, attr = 'weight')
+               })
+               adj_centroid <- as_adjacency_matrix(centroid, attr = 'weight')
+             }
+             #dist_centroid is obtained in the same way in the two cases:
              dist_centroid <- sapply(adj_data, function(i){
-               d <- nd.csd(list(i, adj_centroid))
+               d <- nd.edd(list(i, adj_centroid))
                d$D
              })
              return(dist_centroid)
