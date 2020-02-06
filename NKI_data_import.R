@@ -3,7 +3,7 @@
 # Function to import the data ---------------------------------------------
 
 generate_dataset <- function(data_folder = 'NKI_Rockland/',
-                             y_filename = 'clinical_information.txt',
+                             y_filename = 'NKI_clinical_information.txt',
                              y_column = 'WASI_FULL_4',
                              output_filename = 'NKIdata.RData',
                              output_folder = ".",
@@ -35,8 +35,14 @@ generate_dataset <- function(data_folder = 'NKI_Rockland/',
   # Ids for the patients who have response, DTI and noGSR fcMRI
   id_final <- Reduce(intersect, list(id_y, id_dti, id_fcmri_nogsr))
 
-  # Dataset initialization
-  data_out <- list(y = y_df$WASI_FULL_4)
+  # Sort ids
+  id_final <- sort(id_final)
+
+  # Sort y_df
+  y_df <- y_df[order(y_df$Subject),]
+
+  # Dataset initialization (response only for id_final)
+  data_out <- list(y = y_df[[y_column]][y_df$Subject %in% id_final])
 
   # Retrieve all the files' names for the DTI matrices
   dti_filenames <- sapply(id_final, function(id){
@@ -65,14 +71,14 @@ generate_dataset <- function(data_folder = 'NKI_Rockland/',
 
 
 
-# Data import -------------------------------------------------------------
+# Example -------------------------------------------------------------
 
-nki <- generate_dataset(data_folder = 'NKI_Rockland/',
-                        y_filename = 'clinical_information.txt',
-                        y_column = 'WASI_FULL_4',
-                        output_filename = 'NKIdata.RData',
-                        output_folder = ".",
-                        ext_save = FALSE)
+# nki <- generate_dataset(data_folder = 'NKI_Rockland/',
+#                         y_filename = 'NKI_clinical_information.txt',
+#                         y_column = 'WASI_FULL_4',
+#                         output_filename = 'NKIdata.RData',
+#                         output_folder = ".",
+#                         ext_save = FALSE)
 
 
 
@@ -80,59 +86,59 @@ nki <- generate_dataset(data_folder = 'NKI_Rockland/',
 
 ### DTI ###
 
-# DTI_region_names_full_file comparison
-dti_full_files <- list.files(pattern='_DTI_region_names_full_file.txt', full.names = FALSE)
-comp_full_files <- sapply(dti_full_files, FUN = function(dti) {
-  all.equal(readLines('1013090_DTI_region_names_full_file.txt'), readLines(dti))
-}
-)
-comp_full_files
-#many differences
-
-# DTI_region_names_abbrev_file comparison
-dti_abbrev_files <- list.files(pattern='_DTI_region_names_abbrev_file.txt', full.names = FALSE)
-comp_abbrev_files <- sapply(dti_abbrev_files, FUN = function(dti) {
-  all.equal(readLines('1013090_DTI_region_names_abbrev_file.txt'), readLines(dti))
-}
-)
-all(comp_abbrev_files)
-#all equal
-
-# DTI_region_xyz_centers_file comparison
-dti_xyz_files <- list.files(pattern='_DTI_region_xyz_centers_file.txt', full.names = FALSE)
-comp_xyz_files <- sapply(dti_xyz_files, FUN = function(dti) {
-  all.equal(readLines('1013090_DTI_region_xyz_centers_file.txt'), readLines(dti))
-}
-)
-all(comp_xyz_files)
-#all equal
+# # DTI_region_names_full_file comparison
+# dti_full_files <- list.files(pattern='_DTI_region_names_full_file.txt', full.names = FALSE)
+# comp_full_files <- sapply(dti_full_files, FUN = function(dti) {
+#   all.equal(readLines('1013090_DTI_region_names_full_file.txt'), readLines(dti))
+# }
+# )
+# comp_full_files
+# #many differences
+#
+# # DTI_region_names_abbrev_file comparison
+# dti_abbrev_files <- list.files(pattern='_DTI_region_names_abbrev_file.txt', full.names = FALSE)
+# comp_abbrev_files <- sapply(dti_abbrev_files, FUN = function(dti) {
+#   all.equal(readLines('1013090_DTI_region_names_abbrev_file.txt'), readLines(dti))
+# }
+# )
+# all(comp_abbrev_files)
+# #all equal
+#
+# # DTI_region_xyz_centers_file comparison
+# dti_xyz_files <- list.files(pattern='_DTI_region_xyz_centers_file.txt', full.names = FALSE)
+# comp_xyz_files <- sapply(dti_xyz_files, FUN = function(dti) {
+#   all.equal(readLines('1013090_DTI_region_xyz_centers_file.txt'), readLines(dti))
+# }
+# )
+# all(comp_xyz_files)
+# #all equal
 
 
 ### fRMI (noGSR) ###
 
-# fcRMI_region_names_full_file comparison
-fcmri_full_files <- list.files(pattern='_fcMRI_noGSR_region_names_full_file.txt', full.names = FALSE)
-comp_full_files <- sapply(fcmri_full_files, FUN = function(fcmri) {
-  all.equal(readLines('1013090_fcMRI_noGSR_region_names_full_file.txt'), readLines(fcmri))
-}
-)
-comp_full_files
-#many differences
-
-# fcMRI_noGSR_region_names_abbrev_file comparison
-fcmri_abbrev_files <- list.files(pattern='_fcMRI_noGSR_region_names_abbrev_file.txt', full.names = FALSE)
-comp_abbrev_files <- sapply(fcmri_abbrev_files, FUN = function(fcmri) {
-  all.equal(readLines('1013090_fcMRI_noGSR_region_names_abbrev_file.txt'), readLines(fcmri))
-}
-)
-all(comp_abbrev_files)
-#all equal
-
-# fcMRI_noGSR_region_xyz_centers_file comparison
-fcmri_xyz_files <- list.files(pattern='_fcMRI_noGSR_region_xyz_centers_file.txt', full.names = FALSE)
-comp_xyz_files <- sapply(fcmri_xyz_files, FUN = function(fcmri) {
-  all.equal(readLines('1013090_fcMRI_noGSR_region_xyz_centers_file.txt'), readLines(fcmri))
-}
-)
-all(comp_xyz_files)
-#all equal
+# # fcRMI_region_names_full_file comparison
+# fcmri_full_files <- list.files(pattern='_fcMRI_noGSR_region_names_full_file.txt', full.names = FALSE)
+# comp_full_files <- sapply(fcmri_full_files, FUN = function(fcmri) {
+#   all.equal(readLines('1013090_fcMRI_noGSR_region_names_full_file.txt'), readLines(fcmri))
+# }
+# )
+# comp_full_files
+# #many differences
+#
+# # fcMRI_noGSR_region_names_abbrev_file comparison
+# fcmri_abbrev_files <- list.files(pattern='_fcMRI_noGSR_region_names_abbrev_file.txt', full.names = FALSE)
+# comp_abbrev_files <- sapply(fcmri_abbrev_files, FUN = function(fcmri) {
+#   all.equal(readLines('1013090_fcMRI_noGSR_region_names_abbrev_file.txt'), readLines(fcmri))
+# }
+# )
+# all(comp_abbrev_files)
+# #all equal
+#
+# # fcMRI_noGSR_region_xyz_centers_file comparison
+# fcmri_xyz_files <- list.files(pattern='_fcMRI_noGSR_region_xyz_centers_file.txt', full.names = FALSE)
+# comp_xyz_files <- sapply(fcmri_xyz_files, FUN = function(fcmri) {
+#   all.equal(readLines('1013090_fcMRI_noGSR_region_xyz_centers_file.txt'), readLines(fcmri))
+# }
+# )
+# all(comp_xyz_files)
+# #all equal
