@@ -894,11 +894,22 @@ compute.dissimilarity <- function(x,
          integer    = as.matrix(dist(x)),
          matrix     = as.matrix(dist(x)),
          data.frame = as.matrix(dist(x)),
-         fdata      = fda.usc::metric.lp(x, lp=lp),
+         fdata      = metric.lp(x, lp=lp),
          list       = {
            if(all(sapply(x, class) == 'igraph')){
-             adj_matrices <- lapply(x, igraph::as_adjacency_matrix)
-             d <- NetworkDistance::nd.csd(adj_matrices) #continuous spectral density for the moment
+             if(all(sapply(x, function(i) {
+               is.null(edge.attributes(i)$weight)
+               #if attribute weight is null for all the graphs, the graph
+               #covariate is not weighted
+             }))){
+               adj_data <- lapply(x, igraph::as_adjacency_matrix)
+             } else { #otherwise, it is weighted
+               adj_data <- lapply(x, function(i) {
+                 igraph::as_adjacency_matrix(i, attr = 'weight')
+               })
+             }
+             #d is obtained in the same way in the two cases:
+             d <- NetworkDistance::nd.extremal(adj_data, k = 15)
              return(as.matrix(d$D))
            } else if(all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
              k.fun = function(i,j) TDA::wasserstein(x[[i]]$diagram, x[[j]]$diagram)
@@ -917,13 +928,25 @@ compute.dissimilarity.cl <- function(centroid, x,
                                      lp = 2){
 
   switch(class(x),
-         fdata      = fda.usc::metric.lp(fdata1 = x, fdata2 = centroid, lp=lp),
+         fdata      = metric.lp(fdata1 = x, fdata2 = centroid, lp=lp),
          list       = {
            if(all(sapply(x, class) == 'igraph')){
-             adj_data <- lapply(x, igraph::as_adjacency_matrix)
-             adj_centroid <- igraph::as_adjacency_matrix(centroid)
+             if(all(sapply(x, function(i) {
+               is.null(edge.attributes(i)$weight)
+               #if attribute weight is null for all the graphs, the graph
+               #covariate is not weighted
+             }))){
+               adj_data <- lapply(x, igraph::as_adjacency_matrix)
+               adj_centroid <- igraph::as_adjacency_matrix(centroid)
+             } else { #otherwise, it is weighted
+               adj_data <- lapply(x, function(i) {
+                 igraph::as_adjacency_matrix(i, attr = 'weight')
+               })
+               adj_centroid <- igraph::as_adjacency_matrix(centroid, attr = 'weight')
+             }
+             #dist_centroid is obtained in the same way in the two cases:
              dist_centroid <- sapply(adj_data, function(i){
-               d <- NetworkDistance::nd.csd(list(i, adj_centroid))
+               d <- NetworkDistance::nd.extremal(list(i, adj_centroid), k = 15)
                d$D
              })
              return(dist_centroid)
@@ -936,6 +959,7 @@ compute.dissimilarity.cl <- function(centroid, x,
 
 
 }
+
 
 
 
