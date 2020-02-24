@@ -661,7 +661,7 @@ compute.dissimilarity <- function(x,
                })
              }
              #d is obtained in the same way in the two cases:
-             d <- nd.edd(adj_data)
+             d <- nd.extremal(adj_data, k = 15)
              return(as.matrix(d$D))
            } else if(all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
              k.fun = function(i,j) TDA::wasserstein(x[[i]]$diagram, x[[j]]$diagram)
@@ -698,7 +698,7 @@ compute.dissimilarity.cl <- function(centroid, x,
              }
              #dist_centroid is obtained in the same way in the two cases:
              dist_centroid <- sapply(adj_data, function(i){
-               d <- nd.edd(list(i, adj_centroid))
+               d <- nd.extremal(list(i, adj_centroid), k = 15)
                d$D
              })
              return(dist_centroid)
