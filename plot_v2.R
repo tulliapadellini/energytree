@@ -212,14 +212,21 @@ edge_simple <- function(obj, digits = 3, abbreviate = FALSE,
     if (split.type == 'coeff'){
       grid.rect(y = y, gp = gpar(fill = fill, col = 0), width = unit(1, "strwidth", split))
       grid.text(split, y = y, just = "center")
-    } else {
-      # the number of obs in each kid node is calculated as the number of commas
-      # appearing in split (which is a string where the levels are separated by
-      # commas), plus one
-      n_kid <- as.character(lengths(regmatches(split, gregexpr(",", split))) + 1)
-      n_kid <- paste('n =', n_kid)
-      grid.rect(y = y, gp = gpar(fill = fill, col = 0), width = unit(1, "strwidth", n_kid))
-      grid.text(n_kid, y = y, just = "center")
+    } else { #cluster
+      if(any(grep(">", split) > 0) | any(grep("<", split) > 0)) {
+        #meaning the split is wrt a numerical variable
+        grid.rect(y = y, gp = gpar(fill = fill, col = 0), width = unit(1, "strwidth", split))
+        grid.text(split, y = y, just = "center")
+      } else {
+        # the number of obs in each kid node is calculated as the number of commas
+        # appearing in split (which is a string where the levels are separated by
+        # commas), plus one
+        n_kid <- as.character(lengths(regmatches(split, gregexpr(",", split))) + 1)
+        n_kid <- paste('n =', n_kid)
+        grid.rect(y = y, gp = gpar(fill = fill, col = 0), width = unit(1, "strwidth", n_kid))
+        grid.text(n_kid, y = y, just = "center")
+
+      }
     }
   }
 }
