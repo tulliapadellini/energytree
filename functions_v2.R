@@ -437,8 +437,8 @@ split.opt <- function(y,
          numeric    = {
 
            s  <- sort(x)
-           comb = sapply(s[2:(length(s)-1)], function(j) x<j)
-           #first and last one are excluded (trivial partitions)
+           comb = sapply(s[2:length(s)], function(j) x<j)
+           #first one is excluded since it only return FALSEs
            xp.value <- apply(comb, 2, function(q) independence.test(x = q, y = y))
            if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
              splitindex <- s[which.max(xp.value[1,])]
@@ -451,7 +451,7 @@ split.opt <- function(y,
          integer    = {
 
            s  <- sort(x)
-           comb = sapply(s[2:(length(s)-1)], function(j) x<j)
+           comb = sapply(s[2:length(s)], function(j) x<j)
            xp.value <- apply(comb, 2, function(q) independence.test(x = q, y = y))
            if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
              splitindex <- s[which.max(xp.value[1,])]
@@ -654,14 +654,14 @@ compute.dissimilarity <- function(x,
                #if attribute weight is null for all the graphs, the graph
                #covariate is not weighted
              }))){
-               adj_data <- lapply(x, as_adjacency_matrix)
+               adj_data <- lapply(x, igraph::as_adjacency_matrix)
              } else { #otherwise, it is weighted
                adj_data <- lapply(x, function(i) {
-                 as_adjacency_matrix(i, attr = 'weight')
+                 igraph::as_adjacency_matrix(i, attr = 'weight')
                })
              }
              #d is obtained in the same way in the two cases:
-             d <- nd.extremal(adj_data, k = 15)
+             d <- NetworkDistance::nd.centrality(adj_data, mode = 'Degree', directed = TRUE)
              return(as.matrix(d$D))
            } else if(all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
              k.fun = function(i,j) TDA::wasserstein(x[[i]]$diagram, x[[j]]$diagram)
@@ -688,17 +688,17 @@ compute.dissimilarity.cl <- function(centroid, x,
                #if attribute weight is null for all the graphs, the graph
                #covariate is not weighted
              }))){
-               adj_data <- lapply(x, as_adjacency_matrix)
-               adj_centroid <- as_adjacency_matrix(centroid)
+               adj_data <- lapply(x, igraph::as_adjacency_matrix)
+               adj_centroid <- igraph::as_adjacency_matrix(centroid)
              } else { #otherwise, it is weighted
                adj_data <- lapply(x, function(i) {
-                 as_adjacency_matrix(i, attr = 'weight')
+                 igraph::as_adjacency_matrix(i, attr = 'weight')
                })
-               adj_centroid <- as_adjacency_matrix(centroid, attr = 'weight')
+               adj_centroid <- igraph::as_adjacency_matrix(centroid, attr = 'weight')
              }
              #dist_centroid is obtained in the same way in the two cases:
              dist_centroid <- sapply(adj_data, function(i){
-               d <- nd.extremal(list(i, adj_centroid), k = 15)
+               d <- NetworkDistance::nd.centrality(list(i, adj_centroid), mode = 'Degree', directed = TRUE)
                d$D
              })
              return(dist_centroid)
@@ -711,6 +711,7 @@ compute.dissimilarity.cl <- function(centroid, x,
 
 
 }
+
 
 
 
@@ -765,16 +766,16 @@ graph.shell <- function(graph.list, shell.limit = NULL){
 
 # Detect split.type -------------------------------------------------------
 
-det_split.type <- function(object){
+split.type_det <- function(object){
 
-  # check that object has class party
+  # Check that object has class party
   stopifnot(inherits(object, 'party'))
 
-  # extract basid from the first node (which is necessarily present)
+  # Extract basid from the first node (which is necessarily present)
   basid_list <- nodeapply(object, by_node = TRUE, ids = 1,
                           FUN = function(node) basid_split(split_node(node)))
 
-  # if basid is not null, it means we are in the coeff case; otherwise, cluster
+  # If basid is not null, it means we are in the coeff case; otherwise, cluster
   if (!is.null(unlist(basid_list))){
     return(split.type = 'coeff')
   } else {
@@ -782,5 +783,44 @@ det_split.type <- function(object){
   }
 
 }
+
+
+# Selected features analysis --------------------------------------------------
+
+# Determine the variables selected for splitting
+sel.features_det <- function(object){
+
+  # Check that object has class party
+  stopifnot(inherits(object, 'party'))
+
+  # Find *internal* nodes' ids
+  ids <- nodeids(object)[!nodeids(object) %in% nodeids(object, terminal = TRUE)]
+
+  # Retrieve variables' id for each split
+  varids <- unique(unlist(nodeapply(object, ids = ids,
+                                    FUN = function(x){
+                                      varid_split(split_node(x))
+                                    })))
+
+  # Return variables' ids
+  return(varids)
+}
+
+
+# Analysis
+sel.features_analyze <- function(object_list){
+
+  # Determine selected features for each object
+  lapply(object_list,
+         FUN = function(object){
+           sel.features_det(object)
+         })
+
+  # Plot
+
+  # Table?
+
+}
+
 
 

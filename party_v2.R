@@ -242,7 +242,7 @@ nodeapply.partynode <- function(obj, ids = 1, FUN = NULL, ...) {
 predict.party <- function(object, newdata = NULL, nb = 10, perm = NULL, ...)
 {
 
-  split.type <- det_split.type(object)
+  split.type <- split.type_det(object)
 
   if(!is.null(newdata)){
 
