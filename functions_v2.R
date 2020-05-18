@@ -775,11 +775,11 @@ split.type_det <- function(object){
   basid_list <- nodeapply(object, by_node = TRUE, ids = 1,
                           FUN = function(node) basid_split(split_node(node)))
 
-  # If basid is not null, it means we are in the coeff case; otherwise, cluster
+  # If basid is not null, it means we are in the coeff case
   if (!is.null(unlist(basid_list))){
     return(split.type = 'coeff')
   } else {
-    return(split.type = 'cluster')
+    return(split.type = 'other') #other means cluster or 'traditional' covariate
   }
 
 }

@@ -181,7 +181,7 @@ edge_simple <- function(obj, digits = 3, abbreviate = FALSE,
 {
   meta <- obj$data
 
-  split.type <- det_split.type(obj)
+  split.type <- split.type_det(obj)
 
   justfun <- function(i, split) {
     myjust <- if(mean(nchar(split)) > justmin) {
@@ -204,7 +204,8 @@ edge_simple <- function(obj, digits = 3, abbreviate = FALSE,
     split <- character_split(split_node(node), meta, digits = digits)$levels
     y <- justfun(i, split)
     split <- split[i]
-    # try() because the following won't work for split = "< 10 Euro", for example.
+    print(split)
+    # try() because the following won't work for split = "< 10 Euro", for ex.
     if(any(grep(">", split) > 0) | any(grep("<", split) > 0)) {
       tr <- suppressWarnings(try(parse(text = paste("phantom(0)", split)), silent = TRUE))
       if(!inherits(tr, "try-error")) split <- tr
@@ -212,15 +213,17 @@ edge_simple <- function(obj, digits = 3, abbreviate = FALSE,
     if (split.type == 'coeff'){
       grid.rect(y = y, gp = gpar(fill = fill, col = 0), width = unit(1, "strwidth", split))
       grid.text(split, y = y, just = "center")
-    } else { #cluster
+    } else { #all the other cases: cluster or 'traditional' covariate
       if(any(grep(">", split) > 0) | any(grep("<", split) > 0)) {
         #meaning the split is wrt a numerical variable
+        # group with split.type == 'coeff'?
         grid.rect(y = y, gp = gpar(fill = fill, col = 0), width = unit(1, "strwidth", split))
         grid.text(split, y = y, just = "center")
-      } else {
-        # the number of obs in each kid node is calculated as the number of commas
-        # appearing in split (which is a string where the levels are separated by
-        # commas), plus one
+      } else { #cluster
+        #print(split)
+        #the number of obs in each kid node is calculated as the number of
+        #commas appearing in split (which is a string where the levels are
+        #separated by commas), plus one
         n_kid <- as.character(lengths(regmatches(split, gregexpr(",", split))) + 1)
         n_kid <- paste('n =', n_kid)
         grid.rect(y = y, gp = gpar(fill = fill, col = 0), width = unit(1, "strwidth", n_kid))
