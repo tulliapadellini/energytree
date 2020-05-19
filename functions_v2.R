@@ -36,7 +36,7 @@ etree <- function(response,
 
       } else if(split.type == "cluster"){
 
-        foo <- as.factor(1:length(response))
+        foo <- as.factor(paste0('cluster',1:length(response)))
 
       }
 
@@ -48,14 +48,14 @@ etree <- function(response,
       if(split.type == "coeff"){
         foo <- graph.shell(j)
       } else if(split.type == "cluster"){
-        foo <- as.factor(1:length(response))
+        foo <- as.factor(paste0('cluster',1:length(response)))
       }
 
       return(foo)
 
     } else if(class(j) == 'list' & all(sapply(j, function(x) attributes(x)$names) == 'diagram')){
 
-      foo <- as.factor(1:length(response))
+      foo <- as.factor(paste0('cluster',1:length(response)))
 
       return(foo)
 
@@ -591,11 +591,14 @@ split.opt <- function(y,
              splitindex[lev %in% newx[clindex==2]]<- 2
 
              ceindex1 <- as.integer(cl.graph$medoids[1])
-             c1 <- x[[which(newx == ceindex1)]]
+             c1 <- x[[which(as.integer(sub('cluster','',newx)) == ceindex1)]]
              ceindex2 <- as.integer(cl.graph$medoids[2])
-             c2 <- x[[which(newx == ceindex2)]]
+             c2 <- x[[which(as.integer(sub('cluster','',newx)) == ceindex2)]]
              centroids <- list(c1 = c1, c2 = c2)
-             #the which part is necessary since ceindex (pam medoids indices) go from 1 to the TOTAL number of observations
+             #the which part is necessary since ceindex (pam medoids indices) go
+             #from 1 to the TOTAL number of observations, while newx contains
+             #only the observations that belong to this node
+             #sub is necessary to retrieve the index 'N' from 'clusterN'
            }
 
 
