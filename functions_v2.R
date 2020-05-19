@@ -512,10 +512,10 @@ split.opt <- function(y,
              splitindex[lev %in% newx[clindex==1]]<- 1
              splitindex[lev %in% newx[clindex==2]]<- 2
 
-             ceindex1 <- as.integer(cl.fdata$medoids[1])
-             c1 <- x[ceindex1,]
-             ceindex2 <- as.integer(cl.fdata$medoids[2])
-             c2 <- x[ceindex2,]
+             medindex1 <- cl.fdata$id.med[1]
+             c1 <- x[medindex1,]
+             medindex2 <- cl.fdata$id.med[2]
+             c2 <- x[medindex2,]
              centroids <- list(c1 = c1, c2 = c2)
 
            }
@@ -531,10 +531,10 @@ split.opt <- function(y,
            splitindex[lev %in% newx[clindex==1]]<- 1
            splitindex[lev %in% newx[clindex==2]]<- 2
 
-           ceindex1 <- as.integer(cl.diag$medoids[1])
-           c1 <- x[[ceindex1]]
-           ceindex2 <- as.integer(cl.diag$medoids[2])
-           c2 <- x[[ceindex2]]
+           medindex1 <- cl.diag$id.med[1]
+           c1 <- x[[medindex1]]
+           medindex2 <- cl.diag$id.med[2]
+           c2 <- x[[medindex2]]
            centroids <- list(c1 = c1, c2 = c2)
 
 
@@ -588,15 +588,11 @@ split.opt <- function(y,
              splitindex[lev %in% newx[clindex==1]]<- 1
              splitindex[lev %in% newx[clindex==2]]<- 2
 
-             ceindex1 <- as.integer(cl.graph$medoids[1])
-             c1 <- x[[which(as.integer(sub('cluster','',newx)) == ceindex1)]]
-             ceindex2 <- as.integer(cl.graph$medoids[2])
-             c2 <- x[[which(as.integer(sub('cluster','',newx)) == ceindex2)]]
+             medindex1 <- cl.graph$id.med[1]
+             c1 <- x[[medindex1]]
+             medindex2 <- cl.graph$id.med[2]
+             c2 <- x[[medindex2]]
              centroids <- list(c1 = c1, c2 = c2)
-             #the which part is necessary since ceindex (pam medoids indices) go
-             #from 1 to the TOTAL number of observations, while newx contains
-             #only the observations that belong to this node
-             #(sub is necessary to retrieve the index 'N' from 'clusterN')
            }
 
 
