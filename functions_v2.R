@@ -768,15 +768,27 @@ split.type_det <- function(object){
   # Check that object has class party
   stopifnot(inherits(object, 'party'))
 
-  # Extract basid from the first node (which is necessarily present)
-  basid_list <- nodeapply(object, by_node = TRUE, ids = 1,
-                          FUN = function(node) basid_split(split_node(node)))
-
-  # If basid is not null, it means we are in the coeff case
-  if (!is.null(unlist(basid_list))){
+  # If none of the newcovariates is factor, split.type cannot be 'cluster'
+  if(!any(sapply(object$data, class) == 'factor')){
     return(split.type = 'coeff')
+  }
+
+  # Otherwise, there is at least one factor -> retrieve varid for factors
+  factor_newcov <- as.integer(which(sapply(object$data, class) == 'factor'))
+
+  # If the first level for at least one factor contains the string 'cluster',
+  # then is.cluster_TRUE = TRUE
+  is.cluster_TRUE <- any(sapply(factor_newcov,
+                                function(f_id){
+                                  grepl('cluster',
+                                        levels(object$data[[f_id]])[1])
+                                }))
+
+  # If is.cluster_TRUE, then 'cluster'; otherwise, 'coeff'
+  if (is.cluster_TRUE){
+    return(split.type = 'cluster')
   } else {
-    return(split.type = 'other') #other means cluster or 'traditional' covariate
+    return(split.type = 'coeff')
   }
 
 }
