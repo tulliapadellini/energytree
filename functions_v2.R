@@ -512,11 +512,9 @@ split.opt <- function(y,
              splitindex[lev %in% newx[clindex==1]]<- 1
              splitindex[lev %in% newx[clindex==2]]<- 2
 
-             ceindex1 <- cl.fdata$medoids[1]
-
+             ceindex1 <- as.integer(cl.fdata$medoids[1])
              c1 <- x[ceindex1,]
              ceindex2 <- as.integer(cl.fdata$medoids[2])
-
              c2 <- x[ceindex2,]
              centroids <- list(c1 = c1, c2 = c2)
 
@@ -533,9 +531,9 @@ split.opt <- function(y,
            splitindex[lev %in% newx[clindex==1]]<- 1
            splitindex[lev %in% newx[clindex==2]]<- 2
 
-           ceindex1 <- cl.diag$medoids[1]
+           ceindex1 <- as.integer(cl.diag$medoids[1])
            c1 <- x[[ceindex1]]
-           ceindex2 <- cl.diag$medoids[2]
+           ceindex2 <- as.integer(cl.diag$medoids[2])
            c2 <- x[[ceindex2]]
            centroids <- list(c1 = c1, c2 = c2)
 
@@ -598,7 +596,7 @@ split.opt <- function(y,
              #the which part is necessary since ceindex (pam medoids indices) go
              #from 1 to the TOTAL number of observations, while newx contains
              #only the observations that belong to this node
-             #sub is necessary to retrieve the index 'N' from 'clusterN'
+             #(sub is necessary to retrieve the index 'N' from 'clusterN')
            }
 
 
