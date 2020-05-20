@@ -357,7 +357,7 @@ predict.party <- function(object, newdata = NULL, nb = 10, perm = NULL, ...)
 predict_party <- function(party, id, newdata = NULL, ...)
   UseMethod("predict_party")
 
-### do nothing expect returning the fitted ids
+### do nothing except returning the fitted ids
 predict_party.default <- function(party, id, newdata = NULL, FUN = NULL, ...) {
 
   if (length(list(...)) > 1)
