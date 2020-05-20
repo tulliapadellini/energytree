@@ -180,7 +180,6 @@ edge_simple <- function(obj, digits = 3, abbreviate = FALSE,
                         fill = "white")
 {
   meta <- obj$data
-
   split.type <- split.type_det(obj)
 
   justfun <- function(i, split) {
@@ -201,37 +200,27 @@ edge_simple <- function(obj, digits = 3, abbreviate = FALSE,
 
   ### panel function for simple edge labelling
   function(node, i) {
-    split <- character_split(split_node(node), meta, digits = digits)$levels
-    y <- justfun(i, split)
-    split <- split[i]
-    print(split)
+    split_couple <- character_split(split_node(node), meta, digits = digits)$levels
+    y <- justfun(i, split_couple)
+    split <- split_couple[i]
     # try() because the following won't work for split = "< 10 Euro", for ex.
-    if(any(grep(">", split) > 0) | any(grep("<", split) > 0)) {
+    if(any(grep(">", split) > 0) || any(grep("<", split) > 0)) {
       tr <- suppressWarnings(try(parse(text = paste("phantom(0)", split)), silent = TRUE))
       if(!inherits(tr, "try-error")) split <- tr
     }
-    if (split.type == 'coeff'){
+    if (split.type == 'cluster'){ #cluster -> edge: nobs in the kidnode
+      #the number of obs in each kid node is calculated as the number of
+      #commas appearing in split (which is a string where the levels are
+      #separated by commas), plus one
+      n_kid <- as.character(lengths(regmatches(split, gregexpr(",", split))) + 1)
+      n_kid <- paste('n =', n_kid)
+      grid.rect(y = y, gp = gpar(fill = fill, col = 0), width = unit(1, "strwidth", n_kid))
+      grid.text(n_kid, y = y, just = "center")
+    } else { #all the others -> edge: 'split'
       grid.rect(y = y, gp = gpar(fill = fill, col = 0), width = unit(1, "strwidth", split))
       grid.text(split, y = y, just = "center")
-    } else { #all the other cases: cluster or 'traditional' covariate
-      if(any(grep(">", split) > 0) | any(grep("<", split) > 0)) {
-        #meaning the split is wrt a numerical variable
-        # group with split.type == 'coeff'?
-        grid.rect(y = y, gp = gpar(fill = fill, col = 0), width = unit(1, "strwidth", split))
-        grid.text(split, y = y, just = "center")
-      } else { #cluster
-        #print(split)
-        #the number of obs in each kid node is calculated as the number of
-        #commas appearing in split (which is a string where the levels are
-        #separated by commas), plus one
-        n_kid <- as.character(lengths(regmatches(split, gregexpr(",", split))) + 1)
-        n_kid <- paste('n =', n_kid)
-        grid.rect(y = y, gp = gpar(fill = fill, col = 0), width = unit(1, "strwidth", n_kid))
-        grid.text(n_kid, y = y, just = "center")
-
-      }
     }
-  }
+    }
 }
 class(edge_simple) <- "grapcon_generator"
 
