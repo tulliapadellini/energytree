@@ -414,17 +414,28 @@ split.opt <- function(y,
 
          factor     = {
 
+           # Drop unused levels
            lev <- levels(x[drop = TRUE])
+
            if (length(lev) == 2) {
              splitpoint <- lev[1]
+             #the split point is simply given by the first level
            } else{
-             comb <- do.call("c", lapply(1:(length(lev) - 1),
-                                         ### TBC: isn't this just floor(length(lev)/2) ??
-                                         function(x)combn(lev,
-                                                          x,
-                                                          simplify = FALSE)))
-             xlogp <- sapply(comb, function(q) mychisqtest(x %in% q, y))
-             splitpoint <- comb[[which.min(xlogp)]]
+             # Combination of all the levels
+             comb <- do.call("c",
+                             lapply(1:(length(lev) - 1),
+                                    function(ntaken) combn(x = lev,
+                                                           m = ntaken,
+                                                           simplify = FALSE)))
+             xp.value <- sapply(comb,
+                                function(q) independence.test(x %in% q, y))
+
+             if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
+               splitpoint <- comb[[which.max(xp.value[1,])]]
+             } else {
+               splitpoint <- comb[[which.min(xp.value[2,])]]
+             }
+
            }
 
            # split into two groups (setting groups that do not occur to NA)
