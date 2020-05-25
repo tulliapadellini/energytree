@@ -42,6 +42,12 @@ etree <- function(response,
 
       return(foo)
 
+    } else if(class(j) == 'list' & all(sapply(j, function(x) attributes(x)$names) == 'diagram')){
+
+      foo <- as.factor(paste0('cluster',1:length(response)))
+
+      return(foo)
+
     } else if(class(j) == 'list' &
               all(sapply(j, class) == 'igraph')){
 
@@ -53,14 +59,7 @@ etree <- function(response,
 
       return(foo)
 
-    } else if(class(j) == 'list' & all(sapply(j, function(x) attributes(x)$names) == 'diagram')){
-
-      foo <- as.factor(paste0('cluster',1:length(response)))
-
-      return(foo)
-
-    }
-    else {
+    } else {
 
       return(j)
 
@@ -152,6 +151,20 @@ growtree <- function(id = 1L,
   kidids <- c()
   switch(class(covariates$cov[[varid]]),
 
+         numeric = {
+
+           kidids[(which(covariates$cov[[varid]] <= breaks))] <- 1
+           kidids[(which(covariates$cov[[varid]] > breaks))] <- 2
+
+         },
+
+         factor = {
+
+           kidids <- na.exclude(index)[covariates$cov[[varid]]]
+           #replicate 1 in index for each level in splitpoint; 2 otherwise
+
+         },
+
          fdata = {
 
            if(split.type == 'coeff'){
@@ -166,27 +179,6 @@ growtree <- function(id = 1L,
              kidids <- na.exclude(index)
 
            }
-         },
-
-         numeric = {
-
-           kidids[(which(covariates$cov[[varid]] <= breaks))] <- 1
-           kidids[(which(covariates$cov[[varid]] > breaks))] <- 2
-
-         },
-
-         integer = {
-
-           kidids[(which(covariates$newcov[[varid]] <= breaks))] <- 1
-           kidids[(which(covariates$newcov[[varid]] > breaks))] <- 2
-
-         },
-
-         factor = {
-
-           kidids <- na.exclude(index)[covariates$cov[[varid]]]
-           #replicate 1 in index for each level in splitpoint; 2 otherwise
-
          },
 
          list = if(all(sapply(covariates$cov[[varid]], function(x) attributes(x)$names) == 'diagram')){
@@ -335,14 +327,6 @@ findsplit <- function(response,
 
          },
 
-         integer = {
-
-           return(sp = partysplit(varid = as.integer(xselect),
-                                  breaks = splitindex,
-                                  info = list(p.value = 1-(1-p)^sum(!is.na(p)))))
-
-         },
-
          factor = {
 
            return(sp = partysplit(varid = as.integer(xselect),
@@ -413,6 +397,20 @@ split.opt <- function(y,
 
   switch(class(x),
 
+         numeric    = {
+
+           s  <- sort(x)
+           comb = sapply(s[2:length(s)], function(j) x<j)
+           #first one is excluded since it only return FALSEs
+           xp.value <- apply(comb, 2, function(q) independence.test(x = q, y = y))
+           if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
+             splitindex <- s[which.max(xp.value[1,])]
+           } else {
+             splitindex <- s[which.min(xp.value[2,])]
+           }
+
+         },
+
          factor     = {
 
            # Drop unused levels
@@ -444,33 +442,6 @@ split.opt <- function(y,
            splitindex <- !(levels(x) %in% splitpoint)
            splitindex[!(levels(x) %in% lev)] <- NA_integer_
            splitindex <- splitindex + 1L
-
-         },
-
-         numeric    = {
-
-           s  <- sort(x)
-           comb = sapply(s[2:length(s)], function(j) x<j)
-           #first one is excluded since it only return FALSEs
-           xp.value <- apply(comb, 2, function(q) independence.test(x = q, y = y))
-           if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
-             splitindex <- s[which.max(xp.value[1,])]
-           } else {
-             splitindex <- s[which.min(xp.value[2,])]
-           }
-
-         },
-
-         integer    = {
-
-           s  <- sort(x)
-           comb = sapply(s[2:length(s)], function(j) x<j)
-           xp.value <- apply(comb, 2, function(q) independence.test(x = q, y = y))
-           if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
-             splitindex <- s[which.max(xp.value[1,])]
-           } else {
-             splitindex <- s[which.min(xp.value[2,])]
-           }
 
          },
 
@@ -651,11 +622,8 @@ compute.dissimilarity <- function(x,
   # Computing the dissimilarities
   switch(class(x),
          logical    = as.matrix(dist(x)),
-         factor     = as.matrix(cluster::daisy(as.data.frame(x))),
          numeric    = as.matrix(dist(x)),
-         integer    = as.matrix(dist(x)),
-         matrix     = as.matrix(dist(x)),
-         data.frame = as.matrix(dist(x)),
+         factor     = as.matrix(cluster::daisy(as.data.frame(x))),
          fdata      = metric.lp(x, lp=lp),
          list       = {
            if(all(sapply(x, class) == 'igraph')){
