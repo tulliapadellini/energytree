@@ -184,7 +184,8 @@ growtree <- function(id = 1L,
 
          factor = {
 
-           kidids <- na.exclude(index)
+           kidids <- na.exclude(index)[covariates$cov[[varid]]]
+           #replicate 1 in index for each level in splitpoint; 2 otherwise
 
          },
 
@@ -435,13 +436,14 @@ split.opt <- function(y,
              } else {
                splitpoint <- comb[[which.min(xp.value[2,])]]
              }
-
            }
 
-           # split into two groups (setting groups that do not occur to NA)
+           # Label levels with 1 if they are in splitpoint, 2 otherwise
+           # (and with NA if they do not occur)
+           #needed in growtree to split observations using their level
            splitindex <- !(levels(x) %in% splitpoint)
            splitindex[!(levels(x) %in% lev)] <- NA_integer_
-           splitindex <- splitindex - min(splitindex, na.rm = TRUE) + 1L
+           splitindex <- splitindex + 1L
 
          },
 
