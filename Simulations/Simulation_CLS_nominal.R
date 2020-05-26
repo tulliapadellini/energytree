@@ -35,16 +35,16 @@ nki2 <- nki_red[!is.na(nki_red$WASI_FULL_4),]
 resp <- nki2$Gender
 
 # Covariates
-cov.list <- list(gender <- nki2$Gender)
+cov.list <- list(gender = nki2$Gender)
 
 
 # More than one factor covariates --------------------------------------------
 
 # Covariates
-cov.list <- list(#gender <- nki2$Gender,
-                 group <- nki2$Group,
-                 hand <- nki2$Hand,
-                 operator <- nki2$Operator)
+cov.list <- list(#gender = nki2$Gender,
+                 group = nki2$Group,
+                 hand = nki2$Hand,
+                 operator = nki2$Operator)
 #in addition to having more than one covariate, also the number of levels is
 #generalized: gender has 2, group has 11, hand has 4, operator has 6
 
@@ -67,9 +67,9 @@ ttnc_red <- ttnc[newobs,]
 resp <- ttnc_red$Survived
 
 # Covariates
-cov.list <- list(class <- ttnc_red$Class,
-                 gender <- ttnc_red$Gender,
-                 age <- ttnc_red$Age)
+cov.list <- list(class = ttnc_red$Class,
+                 gender = ttnc_red$Gender,
+                 age = ttnc_red$Age)
 
 
 # Model fitting -----------------------------------------------------------
@@ -94,10 +94,10 @@ plot(etree_fit)
 y_pred <- predict(etree_fit)
 
 # Prediction with newdata (no meaningful covariates, just to see if it works)
-new.cov.list <- list(gender <- sample(nki2$Gender, replace = T),
-                     group <- sample(nki2$Group, replace = T),
-                     hand <- sample(nki2$Hand, replace = TRUE),
-                     operator <- sample(nki2$Operator, replace = TRUE))
+new.cov.list <- list(gender = sample(nki2$Gender, replace = T),
+                     group = sample(nki2$Group, replace = T),
+                     hand = sample(nki2$Hand, replace = TRUE),
+                     operator = sample(nki2$Operator, replace = TRUE))
 y_pred2 <- predict(etree_fit, newdata = new.cov.list)
 
 
