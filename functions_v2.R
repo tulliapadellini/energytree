@@ -151,6 +151,13 @@ growtree <- function(id = 1L,
   kidids <- c()
   switch(class(covariates$cov[[varid]]),
 
+         integer = {
+
+           kidids[(which(covariates$newcov[[varid]] <= breaks))] <- 1
+           kidids[(which(covariates$newcov[[varid]] > breaks))] <- 2
+
+         },
+
          numeric = {
 
            kidids[(which(covariates$cov[[varid]] <= breaks))] <- 1
@@ -319,6 +326,14 @@ findsplit <- function(response,
   # Returning the split point
   switch(class(x),
 
+         integer = {
+
+           return(sp = partysplit(varid = as.integer(xselect),
+                                  breaks = splitindex,
+                                  info = list(p.value = 1-(1-p)^sum(!is.na(p)))))
+
+         },
+
          numeric = {
 
            return(sp = partysplit(varid = as.integer(xselect),
@@ -396,6 +411,19 @@ split.opt <- function(y,
                       wass.dist = NULL){
 
   switch(class(x),
+
+         integer    = {
+
+           s  <- sort(x)
+           comb = sapply(s[2:length(s)], function(j) x<j)
+           xp.value <- apply(comb, 2, function(q) independence.test(x = q, y = y))
+           if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
+             splitindex <- s[which.max(xp.value[1,])]
+           } else {
+             splitindex <- s[which.min(xp.value[2,])]
+           }
+
+         },
 
          numeric    = {
 
@@ -622,16 +650,19 @@ compute.dissimilarity <- function(x,
   # Computing the dissimilarities
   switch(class(x),
          logical    = as.matrix(dist(x)),
+         integer    = as.matrix(dist(x)),
          numeric    = as.matrix(dist(x)),
          factor     = as.matrix(cluster::daisy(as.data.frame(x))),
          fdata      = metric.lp(x, lp=lp),
          list       = {
            if(all(sapply(x, class) == 'igraph')){
-             if(all(sapply(x, function(i) {
-               is.null(edge.attributes(i)$weight)
-               #if attribute weight is null for all the graphs, the graph
-               #covariate is not weighted
-             }))){
+             if(all(sapply(x,
+                           function(i) {
+                             is.null(edge.attributes(i)$weight)
+                             #if attribute weight is null for all the graphs,
+                             #the graph covariate is not weighted
+                             })
+                    )){
                adj_data <- lapply(x, igraph::as_adjacency_matrix)
              } else { #otherwise, it is weighted
                adj_data <- lapply(x, function(i) {
