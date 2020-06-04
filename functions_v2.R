@@ -167,8 +167,9 @@ growtree <- function(id = 1L,
 
          factor = {
 
-           kidids <- na.exclude(index)[covariates$cov[[varid]]]
+           kidids <- index[covariates$cov[[varid]]]
            #replicate 1 in index for each level in splitpoint; 2 otherwise
+           #no need for na.exclude()
 
          },
 
@@ -450,7 +451,7 @@ split.opt <- function(y,
            } else{
              # Combination of all the levels
              comb <- do.call("c",
-                             lapply(1:(length(lev) - 1),
+                             lapply(1:(length(lev) - 2),
                                     function(ntaken) combn(x = lev,
                                                            m = ntaken,
                                                            simplify = FALSE)))
@@ -469,7 +470,7 @@ split.opt <- function(y,
            #needed in growtree to split observations using their level
            splitindex <- !(levels(x) %in% splitpoint)
            splitindex[!(levels(x) %in% lev)] <- NA_integer_
-           splitindex <- splitindex + 1L
+           splitindex <- splitindex - min(splitindex, na.rm = TRUE) + 1L
 
          },
 
