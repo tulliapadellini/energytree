@@ -67,7 +67,15 @@ etree <- function(response,
   }
   )
 
+  # Covariates name
   names(newcovariates) <- 1:length(newcovariates)
+  if(!is.null(names(covariates))){
+    names(newcovariates) <- names(covariates)
+  } else {
+    warning('No names available for covariates. Numbers are used instead.')
+
+  }
+
 
   # Distances
   cov.distance <- lapply(covariates, compute.dissimilarity)
