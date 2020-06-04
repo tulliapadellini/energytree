@@ -60,16 +60,17 @@ names(ttnc)[2] <- "Gender"
 
 # Reduce dataset (for computational reasons)
 set.seed(12345)
-newobs <- sample(1:(dim(ttnc)[1]), size = 100, replace = FALSE)
+nobs <- 100
+newobs <- sample(1:(dim(ttnc)[1]), size = nobs, replace = FALSE)
 ttnc_red <- ttnc[newobs,]
 
 # Response
 resp <- ttnc_red$Survived
 
 # Covariates
-cov.list <- list(class = ttnc_red$Class,
-                 gender = ttnc_red$Gender,
-                 age = ttnc_red$Age)
+cov.list <- list(Class = ttnc_red$Class,
+                 Gender = ttnc_red$Gender,
+                 Age = ttnc_red$Age)
 
 
 # Model fitting -----------------------------------------------------------
