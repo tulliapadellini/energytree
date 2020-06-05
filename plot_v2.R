@@ -177,12 +177,13 @@ node_terminal <- function(obj,
 }
 class(node_terminal) <- "grapcon_generator"
 
-edge_simple <- function(obj, digits = 3, abbreviate = FALSE,
-                        justmin = Inf, just = c("alternate", "increasing", "decreasing", "equal"),
+edge_simple <- function(obj, digits = 3, abbreviate = FALSE, justmin = Inf,
+                        just = c("alternate", "increasing", "decreasing",
+                                 "equal"),
                         fill = "white")
 {
   meta <- obj$data
-  split.type <- split.type_det(obj)
+  split.type <- attr(obj, 'split.type')
 
   justfun <- function(i, split) {
     myjust <- if(mean(nchar(split)) > justmin) {
@@ -202,11 +203,13 @@ edge_simple <- function(obj, digits = 3, abbreviate = FALSE,
 
   ### panel function for simple edge labelling
   function(node, i) {
+    this.split.type <- attr(split_node(node), 'this.split.type')
     split_couple <- character_split(split_node(node), meta, digits = digits)$levels
     y <- justfun(i, split_couple)
     split <- split_couple[i]
 
     if (any(grep(">", split) > 0) || any(grep("<", split) > 0)) {
+      # coeff or numeric/integer -> edge: parsed split
 
       #parse to turn '<=' into the symbol 'less than or equal to'
       #try() because parse(...) won't work for split = "< 10 Euro", for ex.
@@ -217,7 +220,8 @@ edge_simple <- function(obj, digits = 3, abbreviate = FALSE,
       grid.rect(y = y, gp = gpar(fill = fill, col = 0), width = unit(1.5, "strwidth", split))
       grid.text(split, y = y, just = "center")
 
-    } else if (split.type == 'cluster'){ #cluster -> edge: nobs in the kidnode
+    } else if (!is.null(this.split.type) && this.split.type == 'cluster'){
+      #cluster -> edge: nobs in the kidnode
 
       #the number of obs in each kid node is calculated as the number of
       #commas appearing in split (which is a string where the levels are
@@ -228,7 +232,8 @@ edge_simple <- function(obj, digits = 3, abbreviate = FALSE,
       grid.rect(y = y, gp = gpar(fill = fill, col = 0), width = unit(1, "strwidth", n_kid))
       grid.text(n_kid, y = y, just = "center")
 
-    } else { #all the others -> edge: 'split'
+    } else {
+      #all the others -> edge: split
 
       grid.rect(y = y, gp = gpar(fill = fill, col = 0), width = unit(1, "strwidth", split))
       grid.text(split, y = y, just = "center")

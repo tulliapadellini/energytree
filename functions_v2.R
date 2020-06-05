@@ -24,6 +24,7 @@ etree <- function(response,
 
   # New list of covariates (needed here to build the df used by party)
   newcovariates = lapply(covariates, function(j){
+
     if(class(j) == 'fdata'){
 
       if(split.type == "coeff"){
@@ -36,7 +37,7 @@ etree <- function(response,
 
       } else if(split.type == "cluster"){
 
-        foo <- as.factor(paste0('cluster',1:length(response)))
+        foo <- as.factor(1:length(response))
 
       }
 
@@ -44,17 +45,20 @@ etree <- function(response,
 
     } else if(class(j) == 'list' & all(sapply(j, function(x) attributes(x)$names) == 'diagram')){
 
-      foo <- as.factor(paste0('cluster',1:length(response)))
-
+      foo <- as.factor(1:length(response))
       return(foo)
 
     } else if(class(j) == 'list' &
               all(sapply(j, class) == 'igraph')){
 
       if(split.type == "coeff"){
+
         foo <- graph.shell(j)
+
       } else if(split.type == "cluster"){
-        foo <- as.factor(paste0('cluster',1:length(response)))
+
+        foo <- as.factor(1:length(response))
+
       }
 
       return(foo)
@@ -64,16 +68,14 @@ etree <- function(response,
       return(j)
 
     }
-  }
-  )
+  })
 
   # Covariates name
-  names(newcovariates) <- 1:length(newcovariates)
   if(!is.null(names(covariates))){
     names(newcovariates) <- names(covariates)
   } else {
     warning('No names available for covariates. Numbers are used instead.')
-
+    names(newcovariates) <- 1:length(newcovariates)
   }
 
 
@@ -101,14 +103,16 @@ etree <- function(response,
   fitted.obs <- fitted_node(nodes, data = newcovariates)
 
   # Returning a rich constparty object
-  ret <- party(nodes,
+  obj <- party(nodes,
                data = newcovariates,
                fitted = data.frame("(fitted)" = fitted.obs,
                                    "(response)" = response,
                                    check.names = FALSE),
                terms = terms(response ~ ., data = newcovariates))
+  etree_obj <- as.constparty(obj)
+  attr(etree_obj, 'split.type') <- split.type     #used in predict.party
 
-  return(etree = as.constparty(ret))
+  return(etree_obj)
 
 }
 
@@ -366,21 +370,28 @@ findsplit <- function(response,
                                     basid = as.integer(bselect),
                                     breaks = splitindex,
                                     info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,])))))
-           } else if(split.type == 'cluster'){
-             return(sp = partysplit(varid = as.integer(xselect),
-                                    centroids = centroids,
-                                    index = as.integer(splitindex),
-                                    info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,])))))
-           }
 
+           } else if(split.type == 'cluster'){
+
+             sp = partysplit(varid = as.integer(xselect),
+                             centroids = centroids,
+                             index = as.integer(splitindex),
+                             info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,]))))
+             attr(sp, 'this.split.type') <- 'cluster'   #used in edge.simple
+             return(sp)
+
+           }
          },
 
          list = if(all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
 
-           return(sp = partysplit(varid = as.integer(xselect),
-                                  centroids = centroids,
-                                  index = as.integer(splitindex),
-                                  info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,])))))
+           #only cluster
+           sp = partysplit(varid = as.integer(xselect),
+                           centroids = centroids,
+                           index = as.integer(splitindex),
+                           info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,]))))
+           attr(sp, 'this.split.type') <- 'cluster'   #used in edge.simple
+           return(sp)
 
          } else if(all(sapply(x, class) == 'igraph')){
 
@@ -393,15 +404,15 @@ findsplit <- function(response,
 
            } else if(split.type == 'cluster') {
 
-             return(sp = partysplit(varid = as.integer(xselect),
-                                    centroids = centroids,
-                                    index = as.integer(splitindex),
-                                    info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,])))))
+             sp = partysplit(varid = as.integer(xselect),
+                             centroids = centroids,
+                             index = as.integer(splitindex),
+                             info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,]))))
+             attr(sp, 'this.split.type') <- 'cluster'   #used in edge.simple
+             return(sp)
 
            }
-         }
-
-  )
+         })
 }
 
 
@@ -781,38 +792,6 @@ graph.shell <- function(graph.list, shell.limit = NULL){
 
 }
 
-
-# Detect split.type -------------------------------------------------------
-
-split.type_det <- function(object){
-
-  # Check that object has class party
-  stopifnot(inherits(object, 'party'))
-
-  # If none of the newcovariates is factor, split.type cannot be 'cluster'
-  if(!any(sapply(object$data, class) == 'factor')){
-    return(split.type = 'coeff')
-  }
-
-  # Otherwise, there is at least one factor -> retrieve varid for factors
-  factor_newcov <- as.integer(which(sapply(object$data, class) == 'factor'))
-
-  # If the first level for at least one factor contains the string 'cluster',
-  # then is.cluster_TRUE = TRUE
-  is.cluster_TRUE <- any(sapply(factor_newcov,
-                                function(f_id){
-                                  grepl('cluster',
-                                        levels(object$data[[f_id]])[1])
-                                }))
-
-  # If is.cluster_TRUE, then 'cluster'; otherwise, 'coeff'
-  if (is.cluster_TRUE){
-    return(split.type = 'cluster')
-  } else {
-    return(split.type = 'coeff')
-  }
-
-}
 
 
 # Selected features analysis --------------------------------------------------
