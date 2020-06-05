@@ -72,3 +72,62 @@ y_fitted <- predict(etree_fit)
 
 # Predicted values
 y_pred <- predict(etree_fit, newdata = cov.list)
+
+
+
+##### NEW #####
+
+# Mixed covariates -----------------------------------------------------------
+
+# Response
+resp <- nki$y
+
+# Graph covariates
+nki_str <- lapply(nki$structural,
+                  function(g) igraph::graph_from_adjacency_matrix(g, weighted = T))
+nki_fun <- lapply(nki$functional,
+                  function(g) igraph::graph_from_adjacency_matrix(g, weighted = T))
+
+# Import clinical information
+NKI_clinical <- read.csv("NKI_clinical_information.txt")
+
+# Select individuals who also have structural and functional matrices
+sel_id <- names(nki$structural)
+sel_idx <- (NKI_clinical$Subject %in% sel_id)
+#remark: already done for str, fun and wasi coming from nki
+
+# Covariates list
+cov.list <- list(SCM = nki_str,
+                 FCM = nki_fun,
+                 Gender = NKI_clinical$Gender[sel_idx],
+                 Age = NKI_clinical$Age[sel_idx])
+
+# Fit
+set.seed(2948)
+etree_fit <- etree(response = resp,
+                   covariates = cov.list,
+                   case.weights = NULL,
+                   minbucket = 5,
+                   alpha = 0.5,
+                   R = 1000,
+                   split.type = 'cluster',
+                   coef.split.type = 'test')
+
+# Plot
+plot(etree_fit)
+
+# Fitted values
+y_fitted <- predict(etree_fit)
+
+# Mean Error Prediction
+(MEP_etree <- (sum((resp-y_fitted)^2)/length(resp))/(var(resp)))
+
+# Root Mean Square Error
+(MEP_etree <- sqrt(sum((resp-y_fitted)^2)/length(resp)))
+
+# Mean Square Percentage Error
+(MEP_etree <- sum(((resp-y_fitted)/resp)^2)/length(resp))
+
+# Predicted values
+y_pred <- predict(etree_fit, newdata = cov.list)
+
