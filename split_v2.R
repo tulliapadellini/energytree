@@ -158,9 +158,10 @@ kidids_split <- function(split, data, vmatch = 1:length(data), obs = NULL) {
   varid <- varid_split(split)
   basid <- basid_split(split)
   class(data) <- "list" ### speed up
-  if(!is.null(basid)){ #means we are in the coeff case
+
+  if(!is.null(basid)){ #coeff
     x <- data[[vmatch[varid]]][,basid]
-  } else { #means we are in the cluster case
+  } else {
     x <- data[[vmatch[varid]]]
   }
   if (!is.null(obs)) x <- x[obs]
@@ -193,12 +194,10 @@ kidids_split_predict <- function(split, data, vmatch = 1:length(data), obs = NUL
   varid <- varid_split(split)
   basid <- basid_split(split)
   class(data) <- "list" ### speed up
-  if(!is.null(basid)){ #means we are in the coeff case
-    #here (compared to split.type_det), it makes sense to use basid because we
-    #are referring to the single split (and not to the whole party object)
-    x <- data[[vmatch[varid]]][,basid]
 
-  } else { #means we are in the cluster case
+  if(!is.null(basid)){ #coeff
+    x <- data[[vmatch[varid]]][,basid]
+  } else {
     x <- data[[vmatch[varid]]]
   }
   if (!is.null(obs)) x <- x[obs]

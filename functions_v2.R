@@ -690,7 +690,7 @@ compute.dissimilarity <- function(x,
                })
              }
              #d is obtained in the same way in the two cases:
-             d <- NetworkDistance::nd.centrality(adj_data, mode = 'Degree', directed = TRUE)
+             d <- NetworkDistance::nd.extremal(adj_data, k = 15)
              return(as.matrix(d$D))
            } else if(all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
              k.fun = function(i,j) TDA::wasserstein(x[[i]]$diagram, x[[j]]$diagram)
