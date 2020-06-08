@@ -78,7 +78,6 @@ etree <- function(response,
     names(newcovariates) <- 1:length(newcovariates)
   }
 
-
   # Distances
   cov.distance <- lapply(covariates, compute.dissimilarity)
 
@@ -219,10 +218,6 @@ growtree <- function(id = 1L,
            }
          }
   )
-
-  # If all the observations belong to the same node, no split is done
-  if (all(kidids == 1) | all(kidids == 2))
-    return(partynode(id = id))
 
   # Initialization of the kid nodes
   kids <- vector(mode = "list", length = max(kidids, na.rm = TRUE))
