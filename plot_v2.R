@@ -63,13 +63,28 @@ node_inner <- function(obj, id = TRUE, pval = TRUE, abbreviate = FALSE, fill = "
     yell <- sqrt(xell * (1-xell))
 
     lab <- extract_label(node)
-    fill <- rep(fill, length.out = 2L)
+
+    # Fill node box color based on covariates type
+    cov.type <- attr(meta[[lab[1]]], 'cov.type')
+    fill[1] <- if(!is.null(cov.type)){
+      switch(cov.type,
+             fdata   = 'khaki1',
+             diagram = 'wheat',
+             graph   = 'darkseagreen1')
+    } else {
+      switch(class(meta[[lab[1]]]),
+             logical = 'mistyrose',
+             integer = 'lightsalmon',
+             numeric = 'lightsalmon',
+             factor  = 'aliceblue')
+    }
+
+    # Fill node id number box with a gray lighter than lightgray
+    fill[2] <- 'gray96'
 
     grid.polygon(x = unit(c(xell, rev(xell)), "npc"),
                  y = unit(c(yell, -yell)+0.5, "npc"),
                  gp = gpar(fill = fill[1]))
-    #change fill based on the covariate type: print(class(meta[[varlab]]))
-    #surely helps, but it is the type of newcov, not cov (check)
 
     ## FIXME: something more general instead of pval ?
     grid.text(lab[1L], y = unit(1.5 + 0.5 * (lab[2L] != ""), "lines"))

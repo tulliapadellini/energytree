@@ -41,11 +41,13 @@ etree <- function(response,
 
       }
 
+      attr(foo, 'cov.type') <- 'fdata'
       return(foo)
 
     } else if(class(j) == 'list' & all(sapply(j, function(x) attributes(x)$names) == 'diagram')){
 
       foo <- as.factor(1:length(response))
+      attr(foo, 'cov.type') <- 'diagram'
       return(foo)
 
     } else if(class(j) == 'list' &
@@ -61,6 +63,7 @@ etree <- function(response,
 
       }
 
+      attr(foo, 'cov.type') <- 'graph'
       return(foo)
 
     } else {
