@@ -341,7 +341,8 @@ findsplit <- function(response,
 
            return(sp = partysplit(varid = as.integer(xselect),
                                   breaks = splitindex,
-                                  info = list(p.value = 1-(1-p)^sum(!is.na(p)))))
+                                  info = list(p.value = 1-(1-p)^sum(!is.na(p))),
+                                  right = TRUE))
 
          },
 
@@ -349,7 +350,8 @@ findsplit <- function(response,
 
            return(sp = partysplit(varid = as.integer(xselect),
                                   breaks = splitindex,
-                                  info = list(p.value = 1-(1-p)^sum(!is.na(p)))))
+                                  info = list(p.value = 1-(1-p)^sum(!is.na(p))),
+                                  right = TRUE))
 
          },
 
@@ -367,6 +369,7 @@ findsplit <- function(response,
              return(sp = partysplit(varid = as.integer(xselect),
                                     basid = as.integer(bselect),
                                     breaks = splitindex,
+                                    right = TRUE,
                                     info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,])))))
 
            } else if(split.type == 'cluster'){
@@ -398,6 +401,7 @@ findsplit <- function(response,
              return(sp = partysplit(varid = as.integer(xselect),
                                     basid = as.integer(bselect),
                                     breaks = splitindex,
+                                    right = TRUE,
                                     info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,])))))
 
            } else if(split.type == 'cluster') {
@@ -433,7 +437,7 @@ split.opt <- function(y,
          integer    = {
 
            s  <- sort(x)
-           comb = sapply(s[2:length(s)], function(j) x<j)
+           comb = sapply(s[-length(s)], function(j) x <= j)
            xp.value <- apply(comb, 2, function(q) independence.test(x = q, y = y))
            if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
              splitindex <- s[which.max(xp.value[1,])]
@@ -446,7 +450,7 @@ split.opt <- function(y,
          numeric    = {
 
            s  <- sort(x)
-           comb = sapply(s[2:length(s)], function(j) x<j)
+           comb = sapply(s[-length(s)], function(j) x <= j)
            #first one is excluded since it only return FALSEs
            xp.value <- apply(comb, 2, function(q) independence.test(x = q, y = y))
            if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
@@ -506,7 +510,7 @@ split.opt <- function(y,
              }
              sel.coeff = x1[,bselect]
              s  <- sort(sel.coeff)
-             comb = sapply(s[1:(length(s)-1)], function(j) sel.coeff<=j)
+             comb = sapply(s[-length(s)], function(j) sel.coeff <= j)
 
              if(coef.split.type == 'variance'){
 
@@ -583,7 +587,7 @@ split.opt <- function(y,
              }
              sel.coeff = x1[,bselect]
              s  <- sort(sel.coeff)
-             comb = sapply(s[1:(length(s)-1)], function(j) sel.coeff<=j)
+             comb = sapply(s[-length(s)], function(j) sel.coeff <= j)
 
              if(coef.split.type == 'variance'){
 
