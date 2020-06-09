@@ -5,7 +5,7 @@
 etree <- function(response,
                   covariates,
                   case.weights = NULL,
-                  minbucket = 1,
+                  minbucket = 5,
                   alpha = 0.05,
                   R = 1000,
                   split.type = 'coeff',
@@ -134,11 +134,7 @@ growtree <- function(id = 1L,
                      coef.split.type = 'test',
                      nb) {
 
-  # For less than <minbucket> observations, stop here
-  if (sum(case.weights) < minbucket)
-    return(partynode(id = id))
-
-  # Finding the best split (variable selection & split point search)
+  # Find the best split (variable selection & split point search)
   split <- findsplit(response = response,
                      covariates = covariates,
                      alpha = alpha,
@@ -230,6 +226,10 @@ growtree <- function(id = 1L,
     # selecting observations for the current node
     w <- case.weights
     w[kidids != kidid] <- 0
+
+    # For less than <minbucket> observations, stop here
+    if (sum(w) < minbucket)
+      return(partynode(id = id))
 
     # getting next node id
     if (kidid > 1) {
