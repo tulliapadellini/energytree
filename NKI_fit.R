@@ -123,11 +123,48 @@ y_fitted <- predict(etree_fit)
 (MEP_etree <- (sum((resp-y_fitted)^2)/length(resp))/(var(resp)))
 
 # Root Mean Square Error
-(MEP_etree <- sqrt(sum((resp-y_fitted)^2)/length(resp)))
+(RMSE_etree <- sqrt(sum((resp-y_fitted)^2)/length(resp)))
 
 # Mean Square Percentage Error
-(MEP_etree <- sum(((resp-y_fitted)/resp)^2)/length(resp))
+(MSPE_etree <- sum(((resp-y_fitted)/resp)^2)/length(resp))
 
 # Predicted values
 y_pred <- predict(etree_fit, newdata = cov.list)
 
+
+# CV evaluation ---------------------------------------------------------------
+
+# Loading caret (Classification And REgression Training) package
+library(caret)
+
+# Folds
+set.seed(12345)
+folds <- caret::createFolds(resp, k = 10, list = TRUE, returnTrain = FALSE)
+
+# Cross-validation: fit without fold and predict on fold (x10)
+e_cv <- lapply(folds,
+               function(f){
+                 etree_fit <- etree(response = resp[-f],
+                                    covariates = lapply(cov.list,
+                                                        function(c){
+                                                          c[-f]
+                                                        }),
+                                    case.weights = NULL,
+                                    minbucket = 5,
+                                    alpha = 0.5,
+                                    R = 1000,
+                                    split.type = 'cluster',
+                                    coef.split.type = 'test')
+                 y_pred <- predict(etree_fit, newdata = lapply(cov.list,
+                                                               function(c){
+                                                                 c[f]
+                                                               }))
+                 list(e_fit = etree_fit,
+                      e_pred = y_pred,
+                      e_resp = resp[f],
+                      e_summ = defaultSummary(data.frame(obs = resp[f],
+                                                         pred = y_pred)))
+               })
+
+# Summary performance measures
+(e_cv_summ <- sapply(e_cv, function(e) e$e_summ))
