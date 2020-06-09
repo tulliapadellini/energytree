@@ -87,7 +87,7 @@ etree <- function(response,
   # Large list with covariates, newcovariates and distances
   covariates.large = list('cov' = covariates, 'newcov' = newcovariates, 'dist' = cov.distance)
 
-  # Growing the tree (finds the split rules)
+  # Grow the tree (finds the split rules)
   nodes <- growtree(id = 1L,
                     response = response,
                     covariates = covariates.large,
@@ -101,10 +101,10 @@ etree <- function(response,
                     nb = nb)
   print(c('NODES', nodes))
 
-  # Actually performing the splits
+  # Actually perform the splits
   fitted.obs <- fitted_node(nodes, data = newcovariates)
 
-  # Returning a rich constparty object
+  # Return a rich constparty object
   obj <- party(nodes,
                data = newcovariates,
                fitted = data.frame("(fitted)" = fitted.obs,
@@ -120,7 +120,7 @@ etree <- function(response,
 
 
 
-# growtree ----------------------------------------------------------------
+# Grow the tree ---------------------------------------------------------------
 
 growtree <- function(id = 1L,
                      response,
@@ -157,7 +157,7 @@ growtree <- function(id = 1L,
   breaks <- split$breaks
   index <- split$index
 
-  # Assigning the ids to the observations
+  # Assign the ids to the observations
   kidids <- c()
   switch(class(covariates$cov[[varid]]),
 
@@ -221,9 +221,10 @@ growtree <- function(id = 1L,
   # Initialization of the kid nodes
   kids <- vector(mode = "list", length = max(kidids, na.rm = TRUE))
 
-  # Giving birth to the kid nodes
+  # Give birth to the kid nodes
   for (kidid in 1:length(kids)) {
-    # selecting observations for the current node
+
+    # Select observations for the current kid node
     w <- case.weights
     w[kidids != kidid] <- 0
 
@@ -231,22 +232,23 @@ growtree <- function(id = 1L,
     if (sum(w) < minbucket)
       return(partynode(id = id))
 
-    # getting next node id
+    # Previous maximum id (to later set the id for the current kid node)
     if (kidid > 1) {
-      myid <- max(nodeids(kids[[kidid - 1]]))
+      prev_id <- max(nodeids(kids[[kidid - 1]]))
     } else{
-      myid <- id
+      prev_id <- id
     }
 
-    # starting recursion on this kid node
+    # Start recursion on this kid node: initialization
     covariates.updated <- list()
     covariates.updated$cov <- lapply(covariates$cov, function(cov) subset(cov, as.logical(w)))
     covariates.updated$newcov <- lapply(covariates$newcov, function(cov) subset(cov, as.logical(w)))
     covariates.updated$dist <- lapply(covariates$dist, function(cov) subset(cov, subset = as.logical(w), select = which(w == 1)))
 
+    # Recursion
     kids[[kidid]] <-
       growtree(
-        id = as.integer(myid + 1),
+        id = as.integer(prev_id + 1),
         response = subset(response, as.logical(w)),
         covariates = covariates.updated,
         case.weights = rep(1L, sum(w, na.rm = TRUE)),
@@ -269,7 +271,7 @@ growtree <- function(id = 1L,
 
 
 
-# Find split --------------------------------------------------------------
+# Find the split --------------------------------------------------------------
 
 findsplit <- function(response,
                       covariates,
@@ -329,12 +331,12 @@ findsplit <- function(response,
                          coef.split.type = coef.split.type,
                          nb = nb)
 
-  # Separately saving split.objs outputs
+  # Separately save split.objs outputs
   splitindex <- split.objs$splitindex
   bselect <- split.objs$bselect
   centroids <- split.objs$centroids
 
-  # Returning the split point
+  # Return the split point
   switch(class(x),
 
          integer = {
@@ -649,12 +651,11 @@ independence.test <- function(x,
                               R = 1000,
                               lp = c(2,2)) {
 
-  # Computing the dissimilarities within x and y
+  # Compute the dissimilarities within x and y
   d1 = compute.dissimilarity(x, lp = lp[1])
   d2 = compute.dissimilarity(y, lp = lp[2])
 
   # Distance correlation test
-  #set.seed(12345)
   ct <- energy::dcor.test(d1, d2, R = R)
   if (!is.na(ct$statistic)) {
     return(c(ct$statistic, ct$p.value))

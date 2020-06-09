@@ -144,6 +144,7 @@ folds <- caret::createFolds(resp, k = 10, list = TRUE, returnTrain = FALSE)
 # Cross-validation: fit without fold and predict on fold (x10)
 e_cv <- lapply(folds,
                function(f){
+                 set.seed(123)
                  etree_fit <- etree(response = resp[-f],
                                     covariates = lapply(cov.list,
                                                         function(c){

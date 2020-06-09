@@ -42,9 +42,9 @@ graph.list <- lapply(resp,
                        if (c == 'Bel'){
                          sample_gnp(100, 0.10)
                        } else if (c == 'Cyl'){
-                         sample_gnp(100, 0.125)
+                         sample_gnp(100, 0.115)
                        } else if (c == 'Fun'){
-                         sample_gnp(100, 0.15)
+                         sample_gnp(100, 0.13)
                        }
                      })
 
