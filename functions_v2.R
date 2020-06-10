@@ -318,9 +318,10 @@ findsplit <- function(response,
   # Stop criterion
   if (min(adj_p) > alpha) return(NULL)
 
-  # Variable selection
+  # Variable selection (based on original p-values)
   if (length(which(p[2,] == min(p[2,], na.rm = T))) > 1) {
-    xselect <- which.max(p[1,])    # in case of multiple minima, take that with the highest test statistic
+    xselect <- which.max(p[1,])
+    #in case of multiple minima, take that with the highest test statistic
   } else{
     xselect <- which.min(p[2,])
   }
@@ -353,7 +354,7 @@ findsplit <- function(response,
 
            return(sp = partysplit(varid = as.integer(xselect),
                                   breaks = splitindex,
-                                  info = list(p.value = 1-(1-p)^sum(!is.na(p))),
+                                  info = list(p.value = p),
                                   right = TRUE))
 
          },
@@ -362,7 +363,7 @@ findsplit <- function(response,
 
            return(sp = partysplit(varid = as.integer(xselect),
                                   breaks = splitindex,
-                                  info = list(p.value = 1-(1-p)^sum(!is.na(p))),
+                                  info = list(p.value = p),
                                   right = TRUE))
 
          },
@@ -371,7 +372,7 @@ findsplit <- function(response,
 
            return(sp = partysplit(varid = as.integer(xselect),
                                   index = splitindex,
-                                  info = list(p.value = 1-(1-p)^sum(!is.na(p)))))
+                                  info = list(p.value = p)))
 
          },
 
@@ -382,14 +383,14 @@ findsplit <- function(response,
                                     basid = as.integer(bselect),
                                     breaks = splitindex,
                                     right = TRUE,
-                                    info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,])))))
+                                    info = list(p.value = p)))
 
            } else if(split.type == 'cluster'){
 
              sp = partysplit(varid = as.integer(xselect),
                              centroids = centroids,
                              index = as.integer(splitindex),
-                             info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,]))))
+                             info = list(p.value = p))
              attr(sp, 'this.split.type') <- 'cluster'   #used in edge.simple
              return(sp)
 
@@ -402,7 +403,7 @@ findsplit <- function(response,
            sp = partysplit(varid = as.integer(xselect),
                            centroids = centroids,
                            index = as.integer(splitindex),
-                           info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,]))))
+                           info = list(p.value = p))
            attr(sp, 'this.split.type') <- 'cluster'   #used in edge.simple
            return(sp)
 
@@ -414,14 +415,14 @@ findsplit <- function(response,
                                     basid = as.integer(bselect),
                                     breaks = splitindex,
                                     right = TRUE,
-                                    info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,])))))
+                                    info = list(p.value = p)))
 
            } else if(split.type == 'cluster') {
 
              sp = partysplit(varid = as.integer(xselect),
                              centroids = centroids,
                              index = as.integer(splitindex),
-                             info = list(p.value = 1-(1-p[2,])^sum(!is.na(p[2,]))))
+                             info = list(p.value = p))
              attr(sp, 'this.split.type') <- 'cluster'   #used in edge.simple
              return(sp)
 
