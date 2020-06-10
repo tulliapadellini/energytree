@@ -10,6 +10,7 @@ etree <- function(response,
                   R = 1000,
                   split.type = 'coeff',
                   coef.split.type = 'test',
+                  p.adjust.method = 'fdr',
                   nb = 5) {
 
   # Check whether covariates is a list
@@ -98,6 +99,7 @@ etree <- function(response,
                     n.var = n.var,
                     split.type = split.type,
                     coef.split.type = coef.split.type,
+                    p.adjust.method = p.adjust.method,
                     nb = nb)
   print(c('NODES', nodes))
 
@@ -130,8 +132,9 @@ growtree <- function(id = 1L,
                      alpha,
                      R,
                      n.var,
-                     split.type = 'coeff',
-                     coef.split.type = 'test',
+                     split.type,
+                     coef.split.type,
+                     p.adjust.method,
                      nb) {
 
   # Find the best split (variable selection & split point search)
@@ -142,6 +145,7 @@ growtree <- function(id = 1L,
                      lp = rep(2, 2),
                      split.type = split.type,
                      coef.split.type = coef.split.type,
+                     p.adjust.method = p.adjust.method,
                      nb = nb)
 
   # If no split is found, stop here
@@ -252,12 +256,13 @@ growtree <- function(id = 1L,
         response = subset(response, as.logical(w)),
         covariates = covariates.updated,
         case.weights = rep(1L, sum(w, na.rm = TRUE)),
-        minbucket,
-        alpha,
-        R,
+        minbucket = minbucket,
+        alpha = alpha,
+        R = R,
         n.var = n.var,
         split.type = split.type,
         coef.split.type = coef.split.type,
+        p.adjust.method = p.adjust.method,
         nb = nb)
   }
 
@@ -277,20 +282,23 @@ findsplit <- function(response,
                       covariates,
                       alpha,
                       R,
-                      lp = rep(2,2),
-                      split.type = 'coeff',
-                      coef.split.type = 'test',
+                      lp,
+                      split.type,
+                      coef.split.type,
+                      p.adjust.method,
                       nb) {
 
   # Number of original covariates
   n.cov = length(covariates$cov)
 
   print('one round again')
-  # Performing an independence test between the response and each covariate
+
+  # Independence test between the response and each covariate
   p = lapply(covariates$dist,
              function(cov.dist) {
-               #set.seed(12345)
-               ct <- energy::dcor.test(cov.dist, compute.dissimilarity(response), R = R)
+               ct <- energy::dcor.test(cov.dist,
+                                       compute.dissimilarity(response),
+                                       R = R)
                if (!is.na(ct$statistic)) {
                  return(c(ct$statistic, ct$p.value))
                } else{
@@ -299,14 +307,16 @@ findsplit <- function(response,
              }
   )
 
+  # Create matrix with test stats and p-values; check if p-values are all NULL
   p = t(matrix(unlist(p), ncol = 2, byrow = T))
   rownames(p) <- c("statistic", "p-value")
   if (all(is.na(p[2,]))) return(NULL)
 
-  # Bonferroni correction
-  minp <- min(p[2,], na.rm = TRUE)
-  minp <- 1 - (1 - minp) ^ sum(!is.na(p[2,]))
-  if (minp > alpha) return(NULL)
+  # Multiple testing correction
+  adj_p <- p.adjust(p[,2], method = p.adjust.method)
+
+  # Stop criterion
+  if (min(adj_p) > alpha) return(NULL)
 
   # Variable selection
   if (length(which(p[2,] == min(p[2,], na.rm = T))) > 1) {
