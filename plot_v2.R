@@ -198,7 +198,6 @@ edge_simple <- function(obj, digits = 3, abbreviate = FALSE, justmin = Inf,
                         fill = "white")
 {
   meta <- obj$data
-  split.type <- attr(obj, 'split.type')
 
   justfun <- function(i, split) {
     myjust <- if(mean(nchar(split)) > justmin) {
@@ -218,6 +217,9 @@ edge_simple <- function(obj, digits = 3, abbreviate = FALSE, justmin = Inf,
 
   ### panel function for simple edge labelling
   function(node, i) {
+    #attempt to retrieve nobs for the kidnodes, instead of using regmatches etc:
+    #print(nodeapply(obj, ids = id_node(node), FUN = function(n) nrow(n$data), by_node = FALSE))
+    #would only take to be able to retrieve kidnodes' ids, instead of id_node(node)
     this.split.type <- attr(split_node(node), 'this.split.type')
     split_couple <- character_split(split_node(node), meta, digits = digits)$levels
     y <- justfun(i, split_couple)

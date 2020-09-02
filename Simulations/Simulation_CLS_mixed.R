@@ -42,9 +42,9 @@ graph.list <- lapply(resp,
                        if (c == 'Bel'){
                          sample_gnp(100, 0.10)
                        } else if (c == 'Cyl'){
-                         sample_gnp(100, 0.115)
+                         sample_gnp(100, 0.11)
                        } else if (c == 'Fun'){
-                         sample_gnp(100, 0.13)
+                         sample_gnp(100, 0.12)
                        }
                      })
 
@@ -64,10 +64,10 @@ etree_fit <- etree(response = resp,
                    minbucket = 5,
                    alpha = 0.05,
                    R = 1000,
-                   split.type = 'coeff',
+                   split.type = 'cluster',
                    coef.split.type = 'test')
-plot(etree_fit)
 
+plot(etree_fit, main = 'Classification - Method: cluster')
 
 # Prediction --------------------------------------------------------------
 

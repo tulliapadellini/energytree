@@ -43,7 +43,7 @@ cov.list <- list(lapply(data, function(x) x$V1)[[1]], foo$coef[,15])
 
 # Normalization of resp to make it the connection probability of each graph
 norm01 <- function(x){(x-min(x))/(max(x)-min(x))}
-conn.prob <- norm01(resp)
+conn.prob <- norm01(resp + rnorm(length(resp), 0, 7))
 
 # Avoiding too low connection probabilities
 conn.prob[which(conn.prob < 0.05)] <- conn.prob[which(conn.prob < 0.05)] + 0.1
@@ -52,7 +52,7 @@ conn.prob[which(conn.prob < 0.05)] <- conn.prob[which(conn.prob < 0.05)] + 0.1
 graph.list <- lapply(conn.prob, function(p){sample_gnp(100, p)})
 
 # Covariates for the full mixed model
-cov.list <- list(lapply(data, function(x) x$V1)[[1]], graph.list, foo$coef[,15])
+cov.list <- list(lapply(data, function(x) x$V1)[[1]], graph.list, resp+rnorm(200, 0, 8))
 
 
 # Model fitting -----------------------------------------------------------
@@ -67,10 +67,10 @@ etree_fit <- etree(response = resp,
                    minbucket = 5,
                    alpha = 0.05,
                    R = 1000,
-                   split.type = 'cluster',
+                   split.type = 'coeff',
                    coef.split.type = 'test',
                    nb = n.bas)
-plot(etree_fit)
+plot(etree_fit, main = 'Regression - Method: coeff')
 
 
 # Prediction --------------------------------------------------------------
