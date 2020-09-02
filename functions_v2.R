@@ -77,6 +77,11 @@ etree <- function(response,
   # Covariates name
   if(!is.null(names(covariates))){
     names(newcovariates) <- names(covariates)
+    #control if any name is void, i.e. if it is ''
+    no_name <- which(sapply(names(covariates), function(n) n == '', USE.NAMES = FALSE))
+    names(newcovariates) <- replace(names(newcovariates),
+                                    no_name,
+                                    as.factor(1:length(no_name)))
   } else {
     warning('No names available for covariates. Numbers are used instead.')
     names(newcovariates) <- 1:length(newcovariates)
@@ -313,7 +318,7 @@ findsplit <- function(response,
   if (all(is.na(p[2,]))) return(NULL)
 
   # Multiple testing correction
-  adj_p <- p.adjust(p[,2], method = p.adjust.method)
+  adj_p <- p.adjust(p[2,], method = p.adjust.method)
 
   # Stop criterion
   if (min(adj_p) > alpha) return(NULL)
@@ -704,7 +709,7 @@ compute.dissimilarity <- function(x,
                })
              }
              #d is obtained in the same way in the two cases:
-             d <- NetworkDistance::nd.extremal(adj_data, k = 15)
+             d <- NetworkDistance::nd.edd(adj_data)
              return(as.matrix(d$D))
            } else if(all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
              k.fun = function(i,j) TDA::wasserstein(x[[i]]$diagram, x[[j]]$diagram)
