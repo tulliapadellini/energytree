@@ -3,18 +3,21 @@
 # Load packages and functions ---------------------------------------------
 
 library(fda.usc)
-library(roahd)
 library(energy)
 library(entropy)
 library(partykit)
 library(cluster)
 library(igraph)
 library(NetworkDistance)
+library(ggparty)
+library(checkmate)
 source("functions_v2.R")
 source("node_v2.R")
 source("split_v2.R")
 source("party_v2.R")
 source("plot_v2.R")
+source("ggparty_v1.R")
+source("get_plot_data_v1.R")
 source("NKI_data_import.R")
 
 
@@ -50,7 +53,8 @@ etree_fit <- etree(response = resp,
                    alpha = 0.5,
                    R = 1000,
                    split.type = 'cluster',
-                   coef.split.type = 'test')
+                   coef.split.type = 'test',
+                   p.adjust.method = 'fdr')
 
 # Plot
 plot(etree_fit)
@@ -89,7 +93,8 @@ nki_fun <- lapply(nki$functional,
                   function(g) igraph::graph_from_adjacency_matrix(g, weighted = T))
 
 # Import clinical information
-NKI_clinical <- read.csv("NKI_clinical_information.txt")
+NKI_clinical <- read.csv("NKI_clinical_information.txt",
+                         stringsAsFactors = TRUE)
 
 # Select individuals who also have structural and functional matrices
 sel_id <- names(nki$structural)
@@ -132,6 +137,68 @@ y_fitted <- predict(etree_fit)
 y_pred <- predict(etree_fit, newdata = cov.list)
 
 
+# ggplot ----------------------------------------------------------------------
+
+## Basic ##
+ggparty(etree_fit) +
+  geom_edge() +
+  geom_edge_label() +
+  geom_node_splitvar() +
+  geom_node_info()
+
+## More advanced ##
+
+# Function to plot asterisks instead of pvalues
+asterisk_sign <- function(p_value) {
+  if (p_value < 0.05) return(c("***"))
+  if (p_value < 0.1) return(c("**"))
+  if (p_value < 0.2) return(c("*"))
+  else return("")
+}
+
+# Main call
+gg <- ggparty(etree_fit,
+              terminal_space = 0.25,
+              add_vars = list(nodedata_resp =
+                                function(data, node){
+                                  list(data_party(node)$'(response)')
+                                }))
+gg +
+  # Plot edges
+  geom_edge(size = 1) +
+  # Edges' labels
+  geom_edge_label(colour = "gray48", size = 4) +
+  #geom_edge_label(mapping = aes(label = nodesize), colour = "gray48", size = 4) +
+  # Boxplots for terminal nodes
+  geom_node_plot(gglist = list(geom_boxplot(aes(x = '', y = resp)),
+                               # 'resp' comes from 'nodedata_resp'
+                               labs(x = '', y = 'Response'),
+                               theme_bw(base_size = 10)),
+                 ids = "terminal",
+                 shared_axis_labels = TRUE) +
+  # Inner nodes' labels
+  geom_node_label(aes(col = splitvar),
+                  # label nodes with ID, split variable and pvalue
+                  line_list = list(aes(label = paste("Node", id)),
+                                   aes(label = splitvar),
+                                   aes(label = asterisk_sign(p.value))),
+                  # set graphical parameters for each line
+                  line_gpar = list(list(size = 8, col = "black", fontface = "bold"),
+                                   list(size = 12),
+                                   list(size = 8)),
+                  ids = "inner") +
+  # Terminal nodes' labels
+  geom_node_label(aes(label = paste0("Node ", id, ", N = ", nodesize)),
+                  fontface = "bold",
+                  ids = "terminal",
+                  size = 3,
+                  # 0.01 nudge_y to be above the node plot
+                  nudge_y = 0.01,
+                  # 0.005 nudge_x to center terminal nodes' labels
+                  nudge_x = 0.005) +
+  theme(legend.position = "none")
+
+
 # CV evaluation ---------------------------------------------------------------
 
 # Loading caret (Classification And REgression Training) package
@@ -169,3 +236,15 @@ e_cv <- lapply(folds,
 
 # Summary performance measures
 (e_cv_summ <- sapply(e_cv, function(e) e$e_summ))
+
+# Other performance metrics
+library(MLmetrics)
+e_perf <- sapply(e_cv,
+                function(fold){
+                  pred <- mean(fold$e_resp)
+                  true <- fold$e_resp
+                  out <- rbind(MAPE = MLmetrics::MAPE(pred, true),
+                               RMSPE = MLmetrics::RMSPE(pred, true),
+                               NRMSE = MLmetrics::RMSE(pred, true)/mean(resp))
+                })
+apply(e_perf, 1, mean)
