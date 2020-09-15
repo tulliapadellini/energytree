@@ -141,7 +141,7 @@ etree_mu_grid <- lapply(mu_grid,
                                                                 minbucket = 10,
                                                                 alpha = 0.05,
                                                                 R = 1000,
-                                                                split.type = 'cluster',
+                                                                split.type = 'coeff',
                                                                 coef.split.type = 'test',
                                                                 p.adjust.method = 'fdr')
                                                     },
@@ -151,12 +151,53 @@ etree_mu_grid <- lapply(mu_grid,
                         })
 
 
-# Power
+### Power ###
+
+# Power calculation
 etree_power <- sapply(etree_mu_grid,
                       function(thismu_varsel) {
+                        #proportion of not-null values
                         pow = 1 - sum(sapply(thismu_varsel, is.null)) / n_sim
                         return(pow)
                       })
+names(etree_power) <- as.character(mu_grid)
+
+# Plot
+plot(y = etree_power, x = names(etree_power), ylab = 'Simulated Power',
+     xlab = expression(mu), main = 'Energy Trees', type = 'l')
+abline(h = 0.05, lty = 2)
 
 
+### Conditional probability ###
 
+# Index of x3, that is the discriminating covariate
+dis_var_idx <- as.integer(which(names(etree_sim_cov2[[1]]) == 'x3'))
+
+# Conditional probability calculation
+etree_cp <- sapply(etree_mu_grid,
+                      function(thismu_varsel) {
+                        #variables' id (only when a variable is selected)
+                        var_ifsel = unlist(thismu_varsel[!sapply(thismu_varsel,
+                                                                 is.null)])
+                        #number of times a variable is selected
+                        n_var_ifsel = length(var_ifsel)
+                        #proportion of times the correct variable is selected
+                        cp = sum(var_ifsel == dis_var_idx) / n_var_ifsel
+                        return(cp)
+                      })
+names(etree_cp) <- as.character(mu_grid)
+
+# Plot
+plot(y = etree_cp, x = names(etree_cp), ylab = 'Conditional Probability of Correct Split', xlab = expression(mu), main = 'Energy Trees', type = 'l')
+
+
+### Side-by-side plot ###
+old_par = par()
+par(mfrow = c(1, 2), pty = 's')
+#first plot: power
+plot(y = etree_power, x = names(etree_power), ylab = 'Simulated Power',
+     xlab = expression(mu), type = 'l')
+abline(h = 0.05, lty = 2)
+#second plot: conditional probability
+plot(y = etree_cp, x = names(etree_cp), ylab = 'Conditional Probability of Correct Split', xlab = expression(mu), type = 'l')
+par(old_par)
