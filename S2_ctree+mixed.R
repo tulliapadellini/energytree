@@ -58,18 +58,18 @@ for(i in 1:n_sim){
   # Graph: Erdos-Renyi (1959) model with same connection prob
   x5 <- lapply(1:n_obs, function(j) igraph::sample_gnp(100, 0.2))
   # Graph: Small-World model (Watts-Strogatz, 1998) with same rewiring prob
-  #x6 <- list(lapply(1:n_obs, function(j) igraph::sample_smallworld(1, 100, 5, 0.1)))
+  x6 <- lapply(1:n_obs, function(j) igraph::sample_smallworld(1, 100, 5, 0.1))
   # Graph: Preferential Attachment model (Barabasi-Albert, 1999)
-  #x7 <- list(lapply(1:n_obs, function(j) igraph::sample_pa(100)))
+  x7 <- lapply(1:n_obs, function(j) igraph::sample_pa(100))
   # Functional: Ornstein-Uhlenbeck random process
   x8 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 20), sigma = 'OrnsteinUhlenbeck')
   # Functional: Wiener random process
-  #x9 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 20), sigma = 'brownian')
+  x9 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 20), sigma = 'brownian')
   # Covariates list for this simulation
   etree_sim_cov[[i]] <- list(x1 = x1, x2 = x2,
                          x3 = x3, x4 = x4,
-                         x5 = x5, #x6 = x6, x7 = x7,
-                         x8 = x8)#, x9 = x9)
+                         x5 = x5, x6 = x6, x7 = x7,
+                         x8 = x8, x9 = x9)
   print(i)
 }
 
@@ -93,7 +93,7 @@ etree_first_var <- pbmapply(resp = etree_sim_resp,
                                         covariates = covs,
                                         case.weights = NULL,
                                         minbucket = 10,
-                                        alpha = 0.05,
+                                        alpha = 1,
                                         R = 1000,
                                         split.type = 'cluster',
                                         coef.split.type = 'test',
@@ -106,6 +106,8 @@ barplot(table(etree_first_var))
 
 # Proportions
 prop.table(table(etree_first_var))
+library(xtable)
+xtable(prop.table(table(etree_first_var)), digits = 4)
 
 
 # Power and conditional probability (growing association) ---------------------

@@ -57,7 +57,7 @@ for(i in 1:n_sim){
   x6 <- c(rep(0, n_obs/2),
           rep(1, n_obs/2))
   # Covariates list for this simulation
-  ctree_sim[[i]] <- list(x1 = x1, x2 = x2, x3 = x3, x5 = x5, x6 = x6)
+  ctree_sim_cov[[i]] <- list(x1 = x1, x2 = x2, x3 = x3, x5 = x5, x6 = x6)
 }
 
 # Response simulations
@@ -80,7 +80,7 @@ ctree_first_var <- pbmapply(resp = ctree_sim_resp,
                                         covariates = covs,
                                         case.weights = NULL,
                                         minbucket = 10,
-                                        alpha = 0.05,
+                                        alpha = 1,
                                         R = 1000,
                                         split.type = 'cluster',
                                         coef.split.type = 'test',
@@ -93,6 +93,8 @@ barplot(table(ctree_first_var))
 
 # Proportions
 prop.table(table(ctree_first_var))
+xtable(t(prop.table(table(ctree_first_var))*100))
+xtable(prop.table(table(ctree_first_var)), digits = 4)
 
 
 # Power and conditional probability (growing association) ---------------------
