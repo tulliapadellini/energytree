@@ -23,7 +23,7 @@ source("party_v2.R")
 source("plot_v2.R")
 source("ggparty_v1.R")
 source("get_plot_data_v1.R")
-source('etree_sel.R') #starts to fit an etree, but only return the first var's id
+source('etree_sim_fun.R')
 
 
 # Data simulation -------------------------------------------------------------
