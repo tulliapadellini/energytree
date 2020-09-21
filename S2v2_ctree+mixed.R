@@ -72,6 +72,10 @@ onegraph_power_sim <- powercp_sim(covariates = onegraph,
                                   minbucket = 10,
                                   alpha = 0.05)
 
+# Save
+save(onegraph_power_sim, file = 'sim/onegraph_power_sim.RData')
+
+
 ##### S2.02: Functional #####
 
 # Dataset
@@ -95,6 +99,10 @@ onefunctional_power_sim <- powercp_sim(covariates = onefunctional,
                                        minbucket = 10,
                                        alpha = 0.05)
 
+# Save
+save(onefunctional_power_sim, file = 'sim/onefunctional_power_sim.RData')
+
+
 
 ##### S2.03: Persistence #####
 
@@ -115,6 +123,10 @@ onepersistence_power_sim <- powercp_sim(covariates = onepersistence,
                                         split.type = c('coeff', 'cluster'),
                                         minbucket = 10,
                                         alpha = 0.05)
+
+# Save
+save(onepersistence_power_sim, file = 'sim/onepersistence_power_sim.RData')
+
 
 
 # First section: one-type structured covariates -------------------------------
@@ -158,6 +170,10 @@ graph_powercp_sim <- powercp_sim(covariates = graph_cov,
                                   minbucket = 10,
                                   alpha = 0.05)
 
+# Save
+save(graph_indep_sim, file = 'sim/graph_indep_sim.RData')
+save(graph_powercp_sim, file = 'sim/graph_powercp_sim.RData')
+
 
 ##### S2.B: Functional #####
 
@@ -197,6 +213,9 @@ functional_powercp_sim <- powercp_sim(covariates = functional_cov,
                                       minbucket = 10,
                                       alpha = 0.05)
 
+# Save
+save(functional_indep_sim, file = 'sim/functional_indep_sim.RData')
+save(functional_powercp_sim, file = 'sim/functional_powercp_sim.RData')
 
 
 ##### S2.C: Persistence #####
@@ -231,6 +250,10 @@ persistence_powercp_sim <- powercp_sim(covariates = persistence_cov,
                                        split.type = c('coeff', 'cluster'),
                                        minbucket = 10,
                                        alpha = 0.05)
+
+# Save
+save(persistence_indep_sim, file = 'sim/persistence_indep_sim.RData')
+save(persistence_powercp_sim, file = 'sim/persistence_powercp_sim.RData')
 
 
 
@@ -274,6 +297,9 @@ mixed_indep_sim <- indep_sim(covariates = mixed_cov,
                              response = indep_resp,
                              split.type = c('coeff', 'cluster'))
 
+# Save
+save(mixed_indep_sim, file = 'sim/mixed_indep_sim.RData')
+
 
 ##### S2.E: Response associated with a numeric covariate #####
 
@@ -303,6 +329,9 @@ assnum_powercp_sim <- powercp_sim(covariates = assnum_cov,
                                   split.type = c('coeff', 'cluster'),
                                   minbucket = 10,
                                   alpha = 0.05)
+
+# Save
+save(assnum_powercp_sim, file = 'sim/assnum_powercp_sim.RData')
 
 
 ##### S2.F: Response associated with a nominal covariate #####
@@ -334,6 +363,9 @@ assnom_powercp_sim <- powercp_sim(covariates = assnom_cov,
                                   minbucket = 10,
                                   alpha = 0.05)
 
+# Save
+save(assnom_powercp_sim, file = 'sim/assnom_powercp_sim.RData')
+
 
 ##### S2.G: Response associated with a graph covariate #####
 
@@ -363,6 +395,9 @@ assgph_powercp_sim <- powercp_sim(covariates = assgph_cov,
                                   split.type = c('coeff', 'cluster'),
                                   minbucket = 10,
                                   alpha = 0.05)
+
+# Save
+save(assgph_powercp_sim, file = 'sim/assgph_powercp_sim.RData')
 
 
 ##### S2.H: Response associated with a functional covariate #####
@@ -395,6 +430,9 @@ assfun_powercp_sim <- powercp_sim(covariates = assfun_cov,
                                   minbucket = 10,
                                   alpha = 0.05)
 
+# Save
+save(assfun_powercp_sim, file = 'sim/assfun_powercp_sim.RData')
+
 
 ##### S2.I: Response associated with a persistence covariate #####
 
@@ -423,4 +461,8 @@ assper_powercp_sim <- powercp_sim(covariates = assper_cov,
                                   split.type = c('coeff', 'cluster'),
                                   minbucket = 10,
                                   alpha = 0.05)
+
+# Save
+save(assper_powercp_sim, file = 'sim/assper_powercp_sim.RData')
+
 
