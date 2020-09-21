@@ -11,7 +11,6 @@ library(partykit)
 library(cluster)
 library(igraph)
 library(NetworkDistance)
-library(ggparty)
 library(checkmate)
 library(pbapply)
 
@@ -21,8 +20,6 @@ source("node_v2.R")
 source("split_v2.R")
 source("party_v2.R")
 source("plot_v2.R")
-source("ggparty_v1.R")
-source("get_plot_data_v1.R")
 source('etree_sim_fun.R')
 
 # Initialization --------------------------------------------------------------
@@ -99,18 +96,20 @@ functional_cov <- list()
 for(i in 1:n_sim){
   set.seed(i)
   # Gaussian random process
-  x1 <- c(fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 20), sigma = 1),
-          #obs in the second class have trend equal to 1
-          fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 20), mu = rep(1, 20), sigma = 1))
+  x1 <- c(fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), sigma = 1),
+          #second half have a mean equal to 3 so that they are well differentiated
+          fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), mu = rep(3, 20),
+                               sigma = 1))
   # Wiener random process
-  x2 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 20), sigma = 'brownian')
+  x2 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 100), sigma = 'brownian')
   # Ornstein-Uhlenbeck random process
-  x3 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 20), sigma = 'OrnsteinUhlenbeck')
+  x3 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 100), sigma = 'OrnsteinUhlenbeck',
+                             par.list = list(theta = 1)) #theta to diff from x2
   # Fractional brownian random process (H = 0.8)
-  x4 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 20), sigma = 'fbrownian',
-                             par.list = list(H = 0.8))
+  x4 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 100), sigma = 'fbrownian',
+                             par.list = list(H = 0.8)) #H to diff from x2
   # Gaussian random process with exponential variogram
-  x5 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 20), sigma = 'vexponential')
+  x5 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 100), sigma = 'vexponential')
   # Covariates list
   functional_cov[[i]] <- list(x1 = x1, x2 = x2, x3 = x3, x4 = x4, x5 = x5)
 }
@@ -191,8 +190,9 @@ for(i in 1:n_sim){
   x3 <- c(lapply(1:(n_obs/2), function(j) igraph::sample_gnp(100, 0.05)),
           lapply(1:(n_obs/2), function(j) igraph::sample_gnp(100, 0.95)))
   # Functional: Gaussian process
-  x4 <- c(fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 20), sigma = 1),
-          fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 20), mu = rep(1, 20), sigma = 1))
+  x4 <- c(fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), sigma = 1),
+          fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), mu = rep(3, 20),
+                               sigma = 1))
   # Persistence:
   x5 #covariate that had obs divided into two classes in S2.C
   # Covariates list
@@ -219,7 +219,7 @@ for(i in 1:n_sim){
   # Graph: Erdos-Renyi (1959) model
   x3 <- lapply(1:n_obs, function(j) igraph::sample_gnp(100, 0.05))
   # Functional: Gaussian process
-  x4 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 20), sigma = 1)
+  x4 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 100), sigma = 1)
   # Persistence:
   x5 #covariate that had obs divided into two classes in S2.C, but w/o division
   # Covariates list
@@ -249,7 +249,7 @@ for(i in 1:n_sim){
   # Graph: Erdos-Renyi (1959) model
   x3 <- lapply(1:n_obs, function(j) igraph::sample_gnp(100, 0.05))
   # Functional: Gaussian process
-  x4 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 20), sigma = 1)
+  x4 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 100), sigma = 1)
   # Persistence:
   x5 #covariate that had obs divided into two classes in S2.C, but w/o division
   # Covariates list
@@ -279,7 +279,7 @@ for(i in 1:n_sim){
   x3 <- c(lapply(1:(n_obs/2), function(j) igraph::sample_gnp(100, 0.05)),
           lapply(1:(n_obs/2), function(j) igraph::sample_gnp(100, 0.95)))
   # Functional: Gaussian process
-  x4 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 20), sigma = 1)
+  x4 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 100), sigma = 1)
   # Persistence:
   x5 #covariate that had obs divided into two classes in S2.C, but w/o division
   # Covariates list
@@ -308,8 +308,9 @@ for(i in 1:n_sim){
   # Graph: Erdos-Renyi (1959) model
   x3 <- lapply(1:n_obs, function(j) igraph::sample_gnp(100, 0.05))
   # Functional: Gaussian process
-  x4 <- c(fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 20), sigma = 1),
-          fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 20), mu = rep(1, 20), sigma = 1))
+  x4 <- c(fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), sigma = 1),
+          fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), mu = rep(3, 20),
+                               sigma = 1))
   # Persistence:
   x5 #covariate that had obs divided into two classes in S2.C, but w/o division
   # Covariates list
@@ -338,7 +339,7 @@ for(i in 1:n_sim){
   # Graph: Erdos-Renyi (1959) model
   x3 <- lapply(1:n_obs, function(j) igraph::sample_gnp(100, 0.05))
   # Functional: Gaussian process
-  x4 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 20), sigma = 1)
+  x4 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 100), sigma = 1)
   # Persistence:
   x5 #covariate that had obs divided into two classes in S2.C
   # Covariates list
