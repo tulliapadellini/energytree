@@ -46,6 +46,77 @@ for(i in 1:n_sim){
 mu_grid = seq(0, 1, 0.05)
 
 
+# Section zero: one structured covariate at a time ----------------------------
+
+# Having only one covariate, it only makes sense to perform a power analysis.
+
+##### S2.01: Graphs #####
+
+# Dataset simulation
+onegraph <- list()
+for(i in 1:n_sim){
+  set.seed(i)
+  # Erdos-Renyi (1959) model with different connection prob for the two classes
+  x1 <- c(lapply(1:(n_obs/2), function(j) igraph::sample_gnp(100, 0.05)),
+          #0.05 is the approx value for the threshold to have a connected graph
+          lapply(1:(n_obs/2), function(j) igraph::sample_gnp(100, 0.95)))
+  # Covariates list
+  onegraph[[i]] <- list(x1 = x1)
+}
+
+# Power
+onegraph_power_sim <- powercp_sim(covariates = onegraph,
+                                  ass_cov_idx = 1,
+                                  mu_grid = mu_grid,
+                                  split.type = c('coeff', 'cluster'),
+                                  minbucket = 10,
+                                  alpha = 0.05)
+
+##### S2.02: Functional #####
+
+# Dataset
+onefunctional <- list()
+for(i in 1:n_sim){
+  set.seed(i)
+  # Gaussian random process
+  x1 <- c(fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), sigma = 1),
+          #second half have a mean equal to 3 so that they are well differentiated
+          fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), mu = rep(3, 100),
+                               sigma = 1))
+  # Covariates list
+  onefunctional[[i]] <- list(x1 = x1)
+}
+
+# Power
+onefunctional_power_sim <- powercp_sim(covariates = onefunctional,
+                                       ass_cov_idx = 1,
+                                       mu_grid = mu_grid,
+                                       split.type = c('coeff', 'cluster'),
+                                       minbucket = 10,
+                                       alpha = 0.05)
+
+
+##### S2.03: Persistence #####
+
+# Dataset
+onepersistence <- list()
+for(i in 1:n_sim){
+  set.seed(i)
+  #
+  x1 #only covariate to have obs divided into two classes
+  # Covariates list
+  persistence_cov[[i]] <- list(x1 = x1)
+}
+
+# Power
+onepersistence_power_sim <- powercp_sim(covariates = onepersistence,
+                                        ass_cov_idx = 1,
+                                        mu_grid = mu_grid,
+                                        split.type = c('coeff', 'cluster'),
+                                        minbucket = 10,
+                                        alpha = 0.05)
+
+
 # First section: one-type structured covariates -------------------------------
 
 # Here the focus is on a single type of structured covariate at a time.
@@ -55,7 +126,6 @@ mu_grid = seq(0, 1, 0.05)
 
 # Dataset simulation
 graph_cov <- list()
-set.seed(123)
 for(i in 1:n_sim){
   set.seed(i)
   # Erdos-Renyi (1959) model with different connection prob for the two classes
@@ -98,7 +168,7 @@ for(i in 1:n_sim){
   # Gaussian random process
   x1 <- c(fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), sigma = 1),
           #second half have a mean equal to 3 so that they are well differentiated
-          fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), mu = rep(3, 20),
+          fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), mu = rep(3, 100),
                                sigma = 1))
   # Wiener random process
   x2 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 100), sigma = 'brownian')
@@ -191,7 +261,7 @@ for(i in 1:n_sim){
           lapply(1:(n_obs/2), function(j) igraph::sample_gnp(100, 0.95)))
   # Functional: Gaussian process
   x4 <- c(fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), sigma = 1),
-          fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), mu = rep(3, 20),
+          fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), mu = rep(3, 100),
                                sigma = 1))
   # Persistence:
   x5 #covariate that had obs divided into two classes in S2.C
@@ -309,7 +379,7 @@ for(i in 1:n_sim){
   x3 <- lapply(1:n_obs, function(j) igraph::sample_gnp(100, 0.05))
   # Functional: Gaussian process
   x4 <- c(fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), sigma = 1),
-          fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), mu = rep(3, 20),
+          fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), mu = rep(3, 100),
                                sigma = 1))
   # Persistence:
   x5 #covariate that had obs divided into two classes in S2.C, but w/o division
