@@ -10,7 +10,8 @@ library(cluster)
 library(igraph)
 library(NetworkDistance)
 library(checkmate)
-library(pbapply)
+library(future.apply)
+future::plan(multisession)
 
 # Functions
 source("functions_v2.R")
@@ -163,24 +164,27 @@ indep_sim <- function(covariates,
                       split.type = c('coeff', 'cluster')){
 
   # First-selected variable under independence
-  indep_first_var <- lapply(split.type,
-                            function(type){
-                              pbmapply(resp = response,
-                                       covs = covariates,
-                                       function(resp, covs){
-                                         set.seed(123)
-                                         etree_sel(response = resp,
-                                                   covariates = covs,
-                                                   case.weights = NULL,
-                                                   minbucket = 10,
-                                                   alpha = 1,
-                                                   R = 1000,
-                                                   split.type = type,
-                                                   coef.split.type = 'test',
-                                                   p.adjust.method = 'fdr')
-                                       },
-                                       SIMPLIFY = TRUE)
-                            })
+  indep_first_var <- future_lapply(split.type,
+                                   function(type){
+
+                                     # etree fit for each couple of response and cov
+                                     mapply(resp = response,
+                                            covs = covariates,
+                                            function(resp, covs){
+                                              etree_sel(response = resp,
+                                                        covariates = covs,
+                                                        case.weights = NULL,
+                                                        minbucket = 10,
+                                                        alpha = 1,
+                                                        R = 1000,
+                                                        split.type = type,
+                                                        coef.split.type = 'test',
+                                                        p.adjust.method = 'fdr')
+                                            },
+                                            SIMPLIFY = TRUE)
+
+                                   },
+                                   future.seed = TRUE)
 
   # Rename results based on the split type
   names(indep_first_var) <- split.type
@@ -201,42 +205,43 @@ powercp_sim <- function(covariates, #response is built inside (based on mu)
                         minbucket = 10,
                         alpha = 0.05){
 
-  powercp_mu <- lapply(mu_grid,
-                       function(mu) {
+  powercp_mu <- future_lapply(mu_grid,
+                              function(mu) {
 
-                         set.seed(123)
-                         # Generate response based on mu
-                         resp_thismu <- list()
-                         for(i in 1:n_sim){
-                           set.seed(i)
-                           resp_thismu[[i]] <- c(rnorm(n_obs/2, mean = 0,
-                                                       sd = 1),
-                                                 rnorm(n_obs/2, mean = mu,
-                                                       sd = 1))
-                         }
+                                # Generate response based on mu
+                                resp_thismu <- list()
+                                for(i in 1:n_sim){
+                                  resp_thismu[[i]] <- c(rnorm(n_obs/2, mean = 0,
+                                                              sd = 1),
+                                                        rnorm(n_obs/2, mean = mu,
+                                                              sd = 1))
+                                }
 
-                         # First-selected variable, power and cp for this mu
-                         # (and both split.types)
-                         powercp_thismu <- lapply(split.type, function(type){
+                                # First-selected variable, power and cp for this mu
+                                # (and both split.types)
+                                powercp_thismu <- lapply(split.type, function(type){
 
-                           # First-sel variable, power and cp for this mu and type
-                           pcp_mu_type <- powercp_mu_type(covariates = covariates,
-                                                          response = resp_thismu,
-                                                          ass_cov_idx = ass_cov_idx,
-                                                          spl.type = type,
-                                                          minbucket = minbucket,
-                                                          alpha = alpha)
-                           # Return results
-                           return(pcp_mu_type)
-                         })
+                                  # First-sel variable, power and cp for this mu and type
+                                  pcp_mu_type <- powercp_mu_type(covariates = covariates,
+                                                                 response = resp_thismu,
+                                                                 ass_cov_idx = ass_cov_idx,
+                                                                 spl.type = type,
+                                                                 minbucket = minbucket,
+                                                                 alpha = alpha)
 
-                         # Rename results based on the split type
-                         names(powercp_thismu) <- split.type
+                                  # Return results
+                                  return(pcp_mu_type)
 
-                         # Return results
-                         return(powercp_thismu)
+                                })
 
-                       })
+                                # Rename results based on the split type
+                                names(powercp_thismu) <- split.type
+
+                                # Return results
+                                return(powercp_thismu)
+
+                              },
+                              future.seed = TRUE)
 
   # Rename based on mu grid values
   names(powercp_mu) <- as.character(mu_grid)
@@ -254,21 +259,21 @@ powercp_mu_type <- function(covariates,
                             alpha = 0.05){
 
   ## First-selected variable ##
-  firstvar_mu_type <- pbmapply(resp = response,
-                               covs = covariates,
-                               function(resp, covs){
-                                 set.seed(123)
-                                 etree_sel(response = resp,
-                                           covariates = covs,
-                                           case.weights = NULL,
-                                           minbucket = minbucket,
-                                           alpha = alpha,
-                                           R = 1000,
-                                           split.type = spl.type,
-                                           coef.split.type = 'test',
-                                           p.adjust.method = 'fdr')
-                               },
-                               SIMPLIFY = TRUE)
+  firstvar_mu_type <- mapply(resp = response,
+                             covs = covariates,
+                             function(resp, covs){
+                               set.seed(123)
+                               etree_sel(response = resp,
+                                         covariates = covs,
+                                         case.weights = NULL,
+                                         minbucket = minbucket,
+                                         alpha = alpha,
+                                         R = 1000,
+                                         split.type = spl.type,
+                                         coef.split.type = 'test',
+                                         p.adjust.method = 'fdr')
+                             },
+                             SIMPLIFY = TRUE)
 
   ## Power ##
   #Proportion of not-null values

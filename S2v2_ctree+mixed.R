@@ -1,26 +1,9 @@
 ### S2 - Extension of simulations from Hothorn et al. (2006) ###
 ###      to the mixed and structured case ###
 
-# Load packages and functions -------------------------------------------------
+# Load functions
+source('etree_sim_future.R')
 
-# Packages
-library(fda.usc)
-library(energy)
-library(entropy)
-library(partykit)
-library(cluster)
-library(igraph)
-library(NetworkDistance)
-library(checkmate)
-library(pbapply)
-
-# Functions
-source("functions_v2.R")
-source("node_v2.R")
-source("split_v2.R")
-source("party_v2.R")
-source("plot_v2.R")
-source('etree_sim_fun.R')
 
 # Initialization --------------------------------------------------------------
 
