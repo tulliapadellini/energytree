@@ -91,22 +91,25 @@ save(onefunctional_power_sim, file = 'sim/onefunctional_power_sim.RData')
 
 # Dataset
 onepersistence <- list()
-diag_gen = function(i){
-  set.seed(i)
-  x_data1 = lapply(rep(100, n_obs/2), function(x) TDA::circleUnif(x))
-  x_data2 = lapply(rep(50, n_obs/2), function(x) rbind(TDA::circleUnif(x), TDA::circleUnif(x)+2))
+if(FALSE){
+  diag_gen = function(i){
+    set.seed(i)
+    x_data1 = lapply(rep(100, n_obs/2), function(x) TDA::circleUnif(x))
+    x_data2 = lapply(rep(50, n_obs/2), function(x) rbind(TDA::circleUnif(x), TDA::circleUnif(x)+2))
 
-  x_data = c(x_data1, x_data2)
+    x_data = c(x_data1, x_data2)
 
-  x1 = lapply(x_data, ripsDiag, maxdimension = 1, maxscale = 3) # 6 seconds
-  #only covariate to have obs divided into two classes
-  return(list(x1=x1))
-}
+    x1 = lapply(x_data, TDA::ripsDiag, maxdimension = 1, maxscale = 3) # 6 seconds
+    #only covariate to have obs divided into two classes
+    return(list(x1=x1))
+  }
 
 # Covariates list
-persistence_cov <- pbapply::pblapply(1:n_sim, diag_gen)
+  persistence_cov <- pbmcapply::pbmclapply(1:n_sim, diag_gen, mc.cores = 20)
+  saveRDS(persistence_cov, file = "sim/persistence_x1.rds")
+}
 
-saveRDS(persistence_cov, file = "sim/persistence_x1.rds")
+persistence_cov = readRDS("sim/persistence_x1.rds")
 
 # Power
 onepersistence_power_sim <- powercp_sim(covariates = onepersistence,
@@ -213,22 +216,8 @@ save(functional_powercp_sim, file = 'sim/functional_powercp_sim.RData')
 ##### S2.C: Persistence #####
 
 # Dataset
-persistence_cov <- list()
-for(i in 1:n_sim){
-  set.seed(i)
-  #
-  x1 #only covariate to have obs divided into two classes
-  #
-  x2
-  #
-  x3
-  #
-  x4
-  #
-  x5
-  # Covariates list
-  persistence_cov[[i]] <- list(x1 = x1, x2 = x2, x3 = x3, x4 = x4, x5 = x5)
-}
+persistence_cov <- readRDS(file = "sim/persistence_allcov.rds")
+
 
 # Independence
 persistence_indep_sim <- indep_sim(covariates = persistence_cov,
@@ -278,8 +267,9 @@ for(i in 1:n_sim){
   x4 <- c(fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), sigma = 1),
           fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), mu = rep(3, 100),
                                sigma = 1))
-  # Persistence:
-  x5 #covariate that had obs divided into two classes in S2.C
+  # Persistence: #covariate that had obs divided into two classes in S2.C
+  x5 <- readRDS("sim/persistence_x1.rds")
+  x5 <- x5[[i]]
   # Covariates list
   mixed_cov[[i]] <- list(x1 = x1, x2 = x2, x3 = x3, x4 = x4, x5 = x5)
 }
@@ -309,7 +299,8 @@ for(i in 1:n_sim){
   # Functional: Gaussian process
   x4 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 100), sigma = 1)
   # Persistence:
-  x5 #covariate that had obs divided into two classes in S2.C, but w/o division
+  x5 <- readRDS("sim/persistence_x1_wodistinction.rds")  #covariate that had obs divided into two classes in S2.C, but w/o division
+  x5 <- x5[[i]]
   # Covariates list
   assnum_cov[[i]] <- list(x1 = x1, x2 = x2, x3 = x3, x4 = x4, x5 = x5)
 }
@@ -342,8 +333,8 @@ for(i in 1:n_sim){
   # Functional: Gaussian process
   x4 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 100), sigma = 1)
   # Persistence:
-  x5 #covariate that had obs divided into two classes in S2.C, but w/o division
-  # Covariates list
+  x5 <- readRDS("sim/persistence_x1_wodistinction.rds")  #covariate that had obs divided into two classes in S2.C, but w/o division
+  x5 <- x5[[i]]
   assnom_cov[[i]] <- list(x1 = x1, x2 = x2, x3 = x3, x4 = x4, x5 = x5)
 }
 
@@ -375,8 +366,8 @@ for(i in 1:n_sim){
   # Functional: Gaussian process
   x4 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 100), sigma = 1)
   # Persistence:
-  x5 #covariate that had obs divided into two classes in S2.C, but w/o division
-  # Covariates list
+  x5 <- readRDS("sim/persistence_x1_wodistinction.rds")  #covariate that had obs divided into two classes in S2.C, but w/o division
+  x5 <- x5[[i]]
   assgph_cov[[i]] <- list(x1 = x1, x2 = x2, x3 = x3, x4 = x4, x5 = x5)
 }
 
@@ -409,8 +400,8 @@ for(i in 1:n_sim){
           fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), mu = rep(3, 100),
                                sigma = 1))
   # Persistence:
-  x5 #covariate that had obs divided into two classes in S2.C, but w/o division
-  # Covariates list
+  x5 <- readRDS("sim/persistence_x1_wodistinction.rds")  #covariate that had obs divided into two classes in S2.C, but w/o division
+  x5 <- x5[[i]]
   assfun_cov[[i]] <- list(x1 = x1, x2 = x2, x3 = x3, x4 = x4, x5 = x5)
 }
 
@@ -441,7 +432,8 @@ for(i in 1:n_sim){
   # Functional: Gaussian process
   x4 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 100), sigma = 1)
   # Persistence:
-  x5 #covariate that had obs divided into two classes in S2.C
+  x5 <- readRDS("sim/persistence_x1.rds")  #covariate that had obs divided into two classes in S2.C, but w/o division
+  x5 <- x5[[i]]
   # Covariates list
   assper_cov[[i]] <- list(x1 = x1, x2 = x2, x3 = x3, x4 = x4, x5 = x5)
 }
