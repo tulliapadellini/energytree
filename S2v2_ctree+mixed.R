@@ -91,19 +91,28 @@ save(onefunctional_power_sim, file = 'sim/onefunctional_power_sim.RData')
 
 # Dataset
 onepersistence <- list()
-for(i in 1:n_sim){
+diag_gen = function(i){
   set.seed(i)
-  #
-  x1 #only covariate to have obs divided into two classes
-  # Covariates list
-  persistence_cov[[i]] <- list(x1 = x1)
+  x_data1 = lapply(rep(100, n_obs/2), function(x) TDA::circleUnif(x))
+  x_data2 = lapply(rep(50, n_obs/2), function(x) rbind(TDA::circleUnif(x), TDA::circleUnif(x)+2))
+
+  x_data = c(x_data1, x_data2)
+
+  x1 = lapply(x_data, ripsDiag, maxdimension = 1, maxscale = 3) # 6 seconds
+  #only covariate to have obs divided into two classes
+  return(list(x1=x1))
 }
+
+# Covariates list
+persistence_cov <- pbapply::pblapply(1:n_sim, diag_gen)
+
+saveRDS(persistence_cov, file = "sim/persistence_x1.rds")
 
 # Power
 onepersistence_power_sim <- powercp_sim(covariates = onepersistence,
                                         ass_cov_idx = 1,
                                         mu_grid = mu_grid,
-                                        split.type = c('coeff', 'cluster'),
+                                        split.type = c('cluster'),
                                         minbucket = 10,
                                         alpha = 0.05)
 
