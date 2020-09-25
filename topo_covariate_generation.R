@@ -49,7 +49,7 @@ if(FALSE){
     x4 = lapply(x_data4, TDA::ripsDiag, maxdimension = 1, maxscale = 3)
     x5 = lapply(x_data5, TDA::ripsDiag, maxdimension = 1, maxscale = 3)
 
-    x1 <- readRDS("sim/persistence_x1.rds")
+    x1 <- readRDS("sim/persistence_x1_small.rds")
     x1 <- x1[[i]]
 
     return(list(x1 = x1, x2 = x2, x3 = x3, x4 = x4))
