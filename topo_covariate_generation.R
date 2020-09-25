@@ -1,3 +1,11 @@
+# Number of observations
+n_obs <- 100
+
+# Number of simulations
+n_sim <- 1000
+
+
+
 if(FALSE){
   diag_gen = function(i){
     set.seed(i)
@@ -56,7 +64,7 @@ if(FALSE){
   }
 
   # Covariates list
-  persistence_cov3 <- pbmcapply::pbmclapply(1:n_sim, diag_gen3, mc.cores = 30)
+  persistence_cov3 <- pbmcapply::pbmclapply(1:n_sim, diag_gen3, mc.cores = 20)
   saveRDS(persistence_cov3, file = "sim/persistence_allcov.rds")
 }
 
