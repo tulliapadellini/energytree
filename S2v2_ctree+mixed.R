@@ -3,6 +3,7 @@
 
 # Load functions
 source('etree_sim_future.R')
+future::plan(multisession)
 
 
 # Initialization --------------------------------------------------------------
@@ -56,7 +57,7 @@ onegraph_power_sim <- powercp_sim(covariates = onegraph,
                                   alpha = 0.05)
 
 # Save
-save(onegraph_power_sim, file = 'sim/onegraph_power_sim.RData')
+save(onegraph_power_sim, file = 'sim_results/onegraph_power_sim.RData')
 
 
 ##### S2.02: Functional #####
@@ -83,7 +84,7 @@ onefunctional_power_sim <- powercp_sim(covariates = onefunctional,
                                        alpha = 0.05)
 
 # Save
-save(onefunctional_power_sim, file = 'sim/onefunctional_power_sim.RData')
+save(onefunctional_power_sim, file = 'sim_results/onefunctional_power_sim.RData')
 
 
 
@@ -120,7 +121,7 @@ onepersistence_power_sim <- powercp_sim(covariates = onepersistence,
                                         alpha = 0.05)
 
 # Save
-save(onepersistence_power_sim, file = 'sim/onepersistence_power_sim.RData')
+save(onepersistence_power_sim, file = 'sim_results/onepersistence_power_sim.RData')
 
 
 
@@ -166,8 +167,8 @@ graph_powercp_sim <- powercp_sim(covariates = graph_cov,
                                   alpha = 0.05)
 
 # Save
-save(graph_indep_sim, file = 'sim/graph_indep_sim.RData')
-save(graph_powercp_sim, file = 'sim/graph_powercp_sim.RData')
+save(graph_indep_sim, file = 'sim_results/graph_indep_sim.RData')
+save(graph_powercp_sim, file = 'sim_results/graph_powercp_sim.RData')
 
 
 ##### S2.B: Functional #####
@@ -209,8 +210,8 @@ functional_powercp_sim <- powercp_sim(covariates = functional_cov,
                                       alpha = 0.05)
 
 # Save
-save(functional_indep_sim, file = 'sim/functional_indep_sim.RData')
-save(functional_powercp_sim, file = 'sim/functional_powercp_sim.RData')
+save(functional_indep_sim, file = 'sim_results/functional_indep_sim.RData')
+save(functional_powercp_sim, file = 'sim_results/functional_powercp_sim.RData')
 
 
 ##### S2.C: Persistence #####
@@ -233,8 +234,8 @@ persistence_powercp_sim <- powercp_sim(covariates = persistence_cov,
                                        alpha = 0.05)
 
 # Save
-save(persistence_indep_sim, file = 'sim/persistence_indep_sim.RData')
-save(persistence_powercp_sim, file = 'sim/persistence_powercp_sim.RData')
+save(persistence_indep_sim, file = 'sim_results/persistence_indep_sim.RData')
+save(persistence_powercp_sim, file = 'sim_results/persistence_powercp_sim.RData')
 
 
 
@@ -280,7 +281,7 @@ mixed_indep_sim <- indep_sim(covariates = mixed_cov,
                              split.type = c('coeff', 'cluster'))
 
 # Save
-save(mixed_indep_sim, file = 'sim/mixed_indep_sim.RData')
+save(mixed_indep_sim, file = 'sim_results/mixed_indep_sim.RData')
 
 
 ##### S2.E: Response associated with a numeric covariate #####
@@ -314,7 +315,7 @@ assnum_powercp_sim <- powercp_sim(covariates = assnum_cov,
                                   alpha = 0.05)
 
 # Save
-save(assnum_powercp_sim, file = 'sim/assnum_powercp_sim.RData')
+save(assnum_powercp_sim, file = 'sim_results/assnum_powercp_sim.RData')
 
 
 ##### S2.F: Response associated with a nominal covariate #####
@@ -347,7 +348,7 @@ assnom_powercp_sim <- powercp_sim(covariates = assnom_cov,
                                   alpha = 0.05)
 
 # Save
-save(assnom_powercp_sim, file = 'sim/assnom_powercp_sim.RData')
+save(assnom_powercp_sim, file = 'sim_results/assnom_powercp_sim.RData')
 
 
 ##### S2.G: Response associated with a graph covariate #####
@@ -380,7 +381,7 @@ assgph_powercp_sim <- powercp_sim(covariates = assgph_cov,
                                   alpha = 0.05)
 
 # Save
-save(assgph_powercp_sim, file = 'sim/assgph_powercp_sim.RData')
+save(assgph_powercp_sim, file = 'sim_results/assgph_powercp_sim.RData')
 
 
 ##### S2.H: Response associated with a functional covariate #####
@@ -414,7 +415,7 @@ assfun_powercp_sim <- powercp_sim(covariates = assfun_cov,
                                   alpha = 0.05)
 
 # Save
-save(assfun_powercp_sim, file = 'sim/assfun_powercp_sim.RData')
+save(assfun_powercp_sim, file = 'sim_results/assfun_powercp_sim.RData')
 
 
 ##### S2.I: Response associated with a persistence covariate #####
@@ -447,6 +448,6 @@ assper_powercp_sim <- powercp_sim(covariates = assper_cov,
                                   alpha = 0.05)
 
 # Save
-save(assper_powercp_sim, file = 'sim/assper_powercp_sim.RData')
+save(assper_powercp_sim, file = 'sim_results/assper_powercp_sim.RData')
 
 
