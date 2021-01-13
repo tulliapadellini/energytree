@@ -801,6 +801,17 @@ graph.shell <- function(graph.list, shell.limit = NULL){
   #   all.shell.df[i, cols] = table.shell[[i]][cols]
   # }
 
+  ## Ignore non-informative columns ##
+  # Function to test if all elements of a given vector are equal for tol provided
+  zero_range <- function(x, tol = .Machine$double.eps ^ 0.5) {
+    # if only one obs, equality cannot be tested -> return FALSE
+    if(length(x) == 1) return(FALSE)
+    x <- range(x) / mean(x)
+    isTRUE(all.equal(x[1], x[2], tolerance = tol))
+  }
+  # Update all.shell.df ignoring non-informative columns
+  all.shell.df <- all.shell.df[, !as.logical(apply(all.shell.df, 2, zero_range))]
+
   # No more than 'shell.limit' indices for each graph
   if(!is.null(shell.limit) && max.shell > shell.limit){
     all.shell.df <- all.shell.df[,as.character(seq(1, shell.limit, 1))]
