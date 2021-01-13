@@ -88,6 +88,9 @@ ctree_first_var <- pbmapply(resp = ctree_sim_resp,
                             },
                             SIMPLIFY = TRUE)
 
+# Save
+save(ctree_first_var, file = 'sim_results/ctree_indep_sim.RData')
+
 # Frequency plot
 barplot(table(ctree_first_var))
 
@@ -135,6 +138,8 @@ ctree_mu_grid <- lapply(mu_grid,
 
                         })
 
+# Save
+save(ctree_mu_grid, file = 'sim_results/ctree_powercp_sim.RData')
 
 ### Power ###
 
@@ -147,15 +152,15 @@ ctree_power <- sapply(ctree_mu_grid,
                       })
 names(ctree_power) <- as.character(mu_grid)
 
-# Plot
-plot(y = ctree_power, x = names(ctree_power), ylab = 'Simulated Power',
-     xlab = expression(mu), main = 'Energy Trees', type = 'l')
-abline(h = 0.05, lty = 2)
+# Power confidence intervals
+c_int_power <- sapply(ctree_power, FUN = function(power){
+  round(power + c(-1, 1) * z * sqrt(power * (1 - power) / n), 3)
+})
 
 
 ### Conditional probability ###
 
-# Index of x3, that is the discriminating covariate
+# Index of x6, that is the discriminating covariate
 dis_var_idx <- as.integer(which(names(ctree_sim_cov[[1]]) == 'x6'))
 
 # Conditional probability calculation
@@ -172,18 +177,38 @@ ctree_cp <- sapply(ctree_mu_grid,
                    })
 names(ctree_cp) <- as.character(mu_grid)
 
-# Plot
-plot(y = ctree_cp, x = names(ctree_cp), ylab = 'Conditional Probability of Correct Split', xlab = expression(mu), main = 'Energy Trees', type = 'l')
+# CP confidence intervals
+c_int_cp <- sapply(ctree_cp, FUN = function(cp){
+  round(cp + c(-1, 1) * z * sqrt(cp * (1 - cp) / n), 3)
+})
 
 
-### Side-by-side plot ###
-old_par = par()
-par(mfrow = c(1, 2), pty = 's')
-#first plot: power
-plot(y = ctree_power, x = names(ctree_power), ylab = 'Simulated Power',
-     xlab = expression(mu), type = 'l')
-abline(h = 0.05, lty = 2)
-#second plot: conditional probability
-plot(y = ctree_cp, x = names(ctree_cp), ylab = 'Conditional Probability of Correct Split', xlab = expression(mu), type = 'l')
-par(old_par)
+### Plot ###
+
+# Setup pdf
+pdf('sim_results_plots/traditional.pdf', width = 8.4, height = 4)
+par(mfrow = c(1, 2), mar = c(4, 4, 0.5, 2) + 0.1,  pty = 's')
+
+# First plot: Power (with confidence intervals and 0.05 baseline)
+plot(y = ctree_power, x = names(ctree_power), ylab = 'Power',
+     xlab = expression(mu), type = 'l', lty = 2, ylim = c(0, 1),
+     col = rgb(56, 180, 24, maxColorValue = 255))
+polygon(c(mu_grid, rev(mu_grid)),
+        c(c_int_power[1,], rev(c_int_power[2,])),
+        col = rgb(0, 255, 6, alpha = 30, maxColorValue = 255),
+        border = NA)
+abline(h = 0.05, lty = 3, col = 'Red')
+
+# Second plot: Conditional Probability (with conf. intervals and 0.2 baseline)
+plot(y = ctree_cp, x = names(ctree_cp), ylab = 'Conditional Probability of Correct Split', xlab = expression(mu), type = 'l', lty = 2, ylim = c(0, 1),
+     col = rgb(56, 180, 24, maxColorValue = 255))
+polygon(c(mu_grid, rev(mu_grid)),
+        c(c_int_cp[1,], rev(c_int_cp[2,])),
+        col = rgb(0, 255, 6, alpha = 30, maxColorValue = 255),
+        border = NA)
+abline(h = 0.2, lty = 3, col = 'Red')
+
+# Close pdf
+dev.off()
+
 

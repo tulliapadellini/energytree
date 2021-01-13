@@ -14,10 +14,11 @@ License: GPL-3
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.0.2
-Depends:  R (>= 3.1.0), graphics, grid
+Depends: R (>= 3.1.0), graphics, grid
 Imports: energy, partykit, fda.usc, igraph, NetworkDistance, TDA, survival
 Suggests: 
     cluster,
     knitr,
     rmarkdown,
     entropy
+VignetteBuilder: knitr

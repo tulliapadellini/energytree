@@ -17,7 +17,7 @@ future::plan(multisession)
 n_obs <- 100
 
 # Number of simulations
-n_sim <- 10000
+n_sim <- 1000
 
 # Response variable for all the independence cases
 indep_resp <- list()
@@ -107,16 +107,16 @@ if(FALSE){
 
 # Covariates list
   persistence_cov <- pbmcapply::pbmclapply(1:n_sim, diag_gen, mc.cores = 20)
-  saveRDS(persistence_cov, file = "sim/persistence_x1.rds")
+  saveRDS(persistence_cov, file = "sim_data/persistence_x1.rds")
 }
 
-persistence_cov = readRDS("sim/persistence_x1.rds")
+onepersistence = readRDS("sim_data/persistence_x1.rds")
 
 # Power
 onepersistence_power_sim <- powercp_sim(covariates = onepersistence,
                                         ass_cov_idx = 1,
                                         mu_grid = mu_grid,
-                                        split.type = c('cluster'),
+                                        split.type = 'cluster',
                                         minbucket = 10,
                                         alpha = 0.05)
 
@@ -217,19 +217,19 @@ save(functional_powercp_sim, file = 'sim_results/functional_powercp_sim.RData')
 ##### S2.C: Persistence #####
 
 # Dataset
-persistence_cov <- readRDS(file = "sim/persistence_allcov.rds")
+persistence_cov <- readRDS(file = "sim_data/persistence_allcov.rds")
 
 
 # Independence
 persistence_indep_sim <- indep_sim(covariates = persistence_cov,
                                    response = indep_resp,
-                                   split.type = c('coeff', 'cluster'))
+                                   split.type = 'cluster')
 
 # Power and conditional probability
 persistence_powercp_sim <- powercp_sim(covariates = persistence_cov,
                                        ass_cov_idx = 1,
                                        mu_grid = mu_grid,
-                                       split.type = c('coeff', 'cluster'),
+                                       split.type = 'cluster',
                                        minbucket = 10,
                                        alpha = 0.05)
 
@@ -268,8 +268,8 @@ for(i in 1:n_sim){
   x4 <- c(fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), sigma = 1),
           fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), mu = rep(3, 100),
                                sigma = 1))
-  # Persistence: #covariate that had obs divided into two classes in S2.C
-  x5 <- readRDS("sim/persistence_x1.rds")
+  # Persistence:
+  x5 <- readRDS("sim_data/persistence_x1.rds")
   x5 <- x5[[i]]
   # Covariates list
   mixed_cov[[i]] <- list(x1 = x1, x2 = x2, x3 = x3, x4 = x4, x5 = x5)
@@ -278,7 +278,7 @@ for(i in 1:n_sim){
 # Independence
 mixed_indep_sim <- indep_sim(covariates = mixed_cov,
                              response = indep_resp,
-                             split.type = c('coeff', 'cluster'))
+                             split.type = 'cluster')
 
 # Save
 save(mixed_indep_sim, file = 'sim_results/mixed_indep_sim.RData')
@@ -291,8 +291,8 @@ assnum_cov <- list()
 for(i in 1:n_sim){
   set.seed(i)
   # Numeric: uniform between 0 and 1
-  x1 <- c(runif(n_obs/2, min = 0, max = 0.5),
-          runif(n_obs/2, min = 0.5, max = 1))
+  x1 <- c(runif(n_obs/2, min = 0, max = 1),
+          runif(n_obs/2, min = 2, max = 3))
   # Nominal: 0s and 1s
   x2 <- factor(rbinom(n_obs, 1, 0.5))
   # Graph: Erdos-Renyi (1959) model
@@ -300,7 +300,7 @@ for(i in 1:n_sim){
   # Functional: Gaussian process
   x4 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 100), sigma = 1)
   # Persistence:
-  x5 <- readRDS("sim/persistence_x1_wodistinction.rds")  #covariate that had obs divided into two classes in S2.C, but w/o division
+  x5 <- readRDS("sim_data/persistence_x1_wodistinction.rds")
   x5 <- x5[[i]]
   # Covariates list
   assnum_cov[[i]] <- list(x1 = x1, x2 = x2, x3 = x3, x4 = x4, x5 = x5)
@@ -310,7 +310,7 @@ for(i in 1:n_sim){
 assnum_powercp_sim <- powercp_sim(covariates = assnum_cov,
                                   ass_cov_idx = 1,
                                   mu_grid = mu_grid,
-                                  split.type = c('coeff', 'cluster'),
+                                  split.type = 'cluster',
                                   minbucket = 10,
                                   alpha = 0.05)
 
@@ -334,7 +334,7 @@ for(i in 1:n_sim){
   # Functional: Gaussian process
   x4 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 100), sigma = 1)
   # Persistence:
-  x5 <- readRDS("sim/persistence_x1_wodistinction.rds")  #covariate that had obs divided into two classes in S2.C, but w/o division
+  x5 <- readRDS("sim_data/persistence_x1_wodistinction.rds")
   x5 <- x5[[i]]
   assnom_cov[[i]] <- list(x1 = x1, x2 = x2, x3 = x3, x4 = x4, x5 = x5)
 }
@@ -343,7 +343,7 @@ for(i in 1:n_sim){
 assnom_powercp_sim <- powercp_sim(covariates = assnom_cov,
                                   ass_cov_idx = 2,
                                   mu_grid = mu_grid,
-                                  split.type = c('coeff', 'cluster'),
+                                  split.type = 'cluster',
                                   minbucket = 10,
                                   alpha = 0.05)
 
@@ -367,7 +367,7 @@ for(i in 1:n_sim){
   # Functional: Gaussian process
   x4 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 100), sigma = 1)
   # Persistence:
-  x5 <- readRDS("sim/persistence_x1_wodistinction.rds")  #covariate that had obs divided into two classes in S2.C, but w/o division
+  x5 <- readRDS("sim_data/persistence_x1_wodistinction.rds")
   x5 <- x5[[i]]
   assgph_cov[[i]] <- list(x1 = x1, x2 = x2, x3 = x3, x4 = x4, x5 = x5)
 }
@@ -376,7 +376,7 @@ for(i in 1:n_sim){
 assgph_powercp_sim <- powercp_sim(covariates = assgph_cov,
                                   ass_cov_idx = 3,
                                   mu_grid = mu_grid,
-                                  split.type = c('coeff', 'cluster'),
+                                  split.type = 'cluster',
                                   minbucket = 10,
                                   alpha = 0.05)
 
@@ -401,7 +401,7 @@ for(i in 1:n_sim){
           fda.usc::rproc2fdata(n_obs/2, seq(0, 1, len = 100), mu = rep(3, 100),
                                sigma = 1))
   # Persistence:
-  x5 <- readRDS("sim/persistence_x1_wodistinction.rds")  #covariate that had obs divided into two classes in S2.C, but w/o division
+  x5 <- readRDS("sim_data/persistence_x1_wodistinction.rds")
   x5 <- x5[[i]]
   assfun_cov[[i]] <- list(x1 = x1, x2 = x2, x3 = x3, x4 = x4, x5 = x5)
 }
@@ -410,7 +410,7 @@ for(i in 1:n_sim){
 assfun_powercp_sim <- powercp_sim(covariates = assfun_cov,
                                   ass_cov_idx = 4,
                                   mu_grid = mu_grid,
-                                  split.type = c('coeff', 'cluster'),
+                                  split.type = 'cluster',
                                   minbucket = 10,
                                   alpha = 0.05)
 
@@ -433,7 +433,7 @@ for(i in 1:n_sim){
   # Functional: Gaussian process
   x4 <- fda.usc::rproc2fdata(n_obs, seq(0, 1, len = 100), sigma = 1)
   # Persistence:
-  x5 <- readRDS("sim/persistence_x1.rds")  #covariate that had obs divided into two classes in S2.C, but w/o division
+  x5 <- readRDS("sim_data/persistence_x1.rds")
   x5 <- x5[[i]]
   # Covariates list
   assper_cov[[i]] <- list(x1 = x1, x2 = x2, x3 = x3, x4 = x4, x5 = x5)
@@ -443,7 +443,7 @@ for(i in 1:n_sim){
 assper_powercp_sim <- powercp_sim(covariates = assper_cov,
                                   ass_cov_idx = 5,
                                   mu_grid = mu_grid,
-                                  split.type = c('coeff', 'cluster'),
+                                  split.type = 'cluster',
                                   minbucket = 10,
                                   alpha = 0.05)
 
