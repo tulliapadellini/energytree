@@ -321,10 +321,10 @@ findsplit <- function(response,
   adj_p <- p.adjust(p[2,], method = p.adjust.method)
 
   # Stop criterion
-  if (min(adj_p) > alpha) return(NULL)
+  if (min(adj_p, na.rm = TRUE) > alpha) return(NULL)
 
   # Variable selection (based on original p-values)
-  if (length(which(p[2,] == min(p[2,], na.rm = T))) > 1) {
+  if (length(which(p[2,] == min(p[2,], na.rm = TRUE))) > 1) {
     xselect <- which.max(p[1,])
     #in case of multiple minima, take that with the highest test statistic
   } else{
@@ -447,7 +447,7 @@ split.opt <- function(y,
                       split.type = 'coeff',
                       coef.split.type = 'test',
                       nb,
-                      R=1000,
+                      R = 500,
                       wass.dist = NULL){
 
   switch(class(x),
@@ -494,6 +494,7 @@ split.opt <- function(y,
                                     function(ntaken) combn(x = lev,
                                                            m = ntaken,
                                                            simplify = FALSE)))
+             #todo: take only first length(lev)/2 - 1, the other are complements!
              xp.value <- sapply(comb,
                                 function(q) independence.test(x %in% q, y))
 
@@ -771,7 +772,7 @@ graph.shell <- function(graph.list, shell.limit = NULL){
   n.graphs <- length(graph.list)
 
   # Shell distribution for each graph
-  table.shell <- lapply(graph.list, function(g){table(coreness(g))})
+  table.shell <- lapply(graph.list, function(g){table(brainGraph::s_core(g))})
 
   # Maximum shell index
   max.shell <- do.call(max, lapply(table.shell,
@@ -780,8 +781,7 @@ graph.shell <- function(graph.list, shell.limit = NULL){
                                    }))
 
   # Column names for the shell df
-  col.names = as.character(seq(1, max.shell, 1))
-  #starting from 1 since we presumably only deal with connected graphs
+  col.names = as.character(seq(0, max.shell, 1))
 
   # Shell df inizialization
   all.shell.df = data.frame(matrix(
