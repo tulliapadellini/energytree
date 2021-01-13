@@ -608,7 +608,13 @@ split.opt <- function(y,
              s  <- sort(sel.coeff)
              comb = sapply(s[-length(s)], function(j) sel.coeff <= j)
 
-             if(coef.split.type == 'variance'){
+             # Check if all columns are equal
+             if(all(apply(comb, 2, identical, comb[,1]))){
+               # if TRUE, the omitted column [position length(s)] is different;
+               # when this is the case, set last included column as splitindex,
+               # as it means that breaks is set before last column
+               splitindex <- s[(length(s) - 1)]
+             } else if(coef.split.type == 'variance'){
 
                obj <- apply(comb, 2, function(c){
                  data1 <- y[c]
