@@ -160,7 +160,7 @@ kidids_split <- function(split, data, vmatch = 1:length(data), obs = NULL) {
   class(data) <- "list" ### speed up
 
   if(!is.null(basid)){ #coeff
-    x <- data[[vmatch[varid]]][,basid]
+    x <- data[[vmatch[varid]]][[as.character(basid)]]
   } else {
     x <- data[[vmatch[varid]]]
   }
@@ -196,7 +196,7 @@ kidids_split_predict <- function(split, data, vmatch = 1:length(data), obs = NUL
   class(data) <- "list" ### speed up
 
   if(!is.null(basid)){ #coeff
-    x <- data[[vmatch[varid]]][,basid]
+    x <- data[[vmatch[varid]]][[as.character(basid)]]
   } else {
     x <- data[[vmatch[varid]]]
   }

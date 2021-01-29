@@ -253,7 +253,8 @@ predict.party <- function(object, newdata = NULL, nb = 10, perm = NULL, ...)
         fd3 <- fda.usc::fdata2fd(foo$fdata.est,
                                  type.basis = "bspline",
                                  nbasis = foo$numbasis.opt)
-        foo <- t(fd3$coefs)
+        foo <- data.frame(t(fd3$coefs))
+        names(foo) <- 1:length(names(foo))
         return(foo)
 
       } else if(class(j) == 'list' &

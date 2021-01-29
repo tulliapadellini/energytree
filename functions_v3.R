@@ -34,7 +34,8 @@ etree <- function(response,
         fd3 <- fda.usc::fdata2fd(foo$fdata.est,
                                  type.basis = "bspline",
                                  nbasis = foo$numbasis.opt)
-        foo <- t(fd3$coefs)
+        foo <- data.frame(t(fd3$coefs))
+        names(foo) <- 1:length(names(foo))
 
       } else if(split.type == "cluster"){
 
@@ -216,8 +217,9 @@ growtree <- function(id = 1L,
 
            if(split.type == 'coeff'){
 
-             kidids[which(covariates$newcov[[varid]][, basid] <= breaks)] <- 1
-             kidids[which(covariates$newcov[[varid]][, basid] > breaks)] <- 2
+             kidids[which(covariates$newcov[[varid]][as.character(basid)]
+                          <= breaks)] <- 1
+             kidids[which(covariates$newcov[[varid]][as.character(basid)]
 
            } else if(split.type == 'cluster') {
 
@@ -636,7 +638,9 @@ split.opt <- function(y,
              } else{
                bselect <- as.integer(which.min(p1[2,]))
              }
-             sel.coeff = x1[,bselect]
+             # graph.shell may drop columns, so switch from index to name
+             bselect <- as.integer(names(x1)[bselect])
+             sel.coeff = x1[[as.character(bselect)]]
              s  <- sort(sel.coeff)
              comb = sapply(s[-length(s)], function(j) sel.coeff <= j)
 
