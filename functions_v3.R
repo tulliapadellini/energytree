@@ -638,7 +638,7 @@ split.opt <- function(y,
              s  <- sort(sel.coeff)
              comb = sapply(s[-length(s)], function(j) sel.coeff <= j)
 
-             # Check if all columns are equal
+             # Check if all columns of comb are equal
              if(all(apply(comb, 2, identical, comb[,1]))){
                # if TRUE, the omitted column [position length(s)] is different;
                # when this is the case, set last included column as splitindex,
