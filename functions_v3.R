@@ -338,6 +338,36 @@ findsplit <- function(response,
     xdist <- covariates$dist[[xselect]]
   }
 
+  # Control for newx not being void
+  if((split.type == 'coeff') &&
+     (class(x) == 'list') && all(sapply(x, class) == 'igraph') &&
+     (dim(newx)[2] == 0)){
+
+    # Throw warning: if x is selected (through distance) and newx is void because
+    # it had all-equal columns (after coeff exp), it means that either distance
+    # or coeff exp are not appropriate, or at least that they are uncompatible
+    warning('The selected covariate has non-informative coefficient expansion.
+            Please reconsider the choice for at least one between distance and
+            coefficient expansion. The selected covariate is ignored for the
+            time being.')
+
+    # Ignore the selected covariate and re-run findsplit
+    # in order to keep the original indices (i.e. not to create confusion), the
+    # selected covariate is not dropped, but it is instead replaced with a
+    # vector of 0s, so that it is selected no more
+    covariates$cov[[xselect]] <- rep(0, length(covariates$cov[[xselect]]))
+    split <- findsplit(response = response,
+                       covariates = covariates,
+                       alpha = alpha,
+                       R = R,
+                       lp = rep(2, 2),
+                       split.type = split.type,
+                       coef.split.type = coef.split.type,
+                       p.adjust.method = p.adjust.method,
+                       nb = nb)
+    return(split)
+  }
+
   # Split point search
   split.objs = split.opt(y = response,
                          x = x,
