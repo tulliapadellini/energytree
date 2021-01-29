@@ -828,11 +828,14 @@ graph.shell <- function(graph.list, max.shell = NULL, predicting = FALSE){
   # Shell distribution for each graph
   table.shell <- lapply(graph.list, function(g){table(brainGraph::s_core(g))})
 
-  # Maximum shell index
-  max.shell <- do.call(max, lapply(table.shell,
-                                   function(s){
-                                     as.integer(names(s))
-                                   }))
+  # Observed maximum shell index
+  obs.max.shell <- do.call(max, lapply(table.shell,
+                                       function(s){
+                                         as.integer(names(s))
+                                       }))
+
+  # If max.shell is provided, go for it; otherwise, set obs.max.shell as max.shell
+  if(is.null(max.shell)) max.shell <- obs.max.shell
 
   # Column names for the shell df
   col.names = as.character(seq(0, max.shell, 1))
@@ -846,8 +849,10 @@ graph.shell <- function(graph.list, max.shell = NULL, predicting = FALSE){
 
   # Fill in with the actual shell distibutions
   invisible(sapply(1:n.graphs, function(i){
-    cols <- names(table.shell[[i]])
-    all.shell.df[i, cols] <<- table.shell[[i]][cols] # <<- for global environment assignment
+    shells <- names(table.shell[[i]])
+    cols <- intersect(col.names, shells)
+    all.shell.df[i, cols] <<- table.shell[[i]][cols]
+    # <<- for global environment assignment
   }))
   # better a for cycle?
   # for(i in 1:n.graphs){

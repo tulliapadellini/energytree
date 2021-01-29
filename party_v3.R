@@ -239,11 +239,23 @@ nodeapply.partynode <- function(obj, ids = 1, FUN = NULL, ...) {
   return(rval)
 }
 
-predict.party <- function(object, newdata = NULL, nb = 10, perm = NULL, ...)
-{
+predict.party <- function(object, newdata = NULL, nb = 10, perm = NULL, ...){
 
+  # Retrieve split type
   split.type <- attr(object, 'split.type')
 
+  # Retrieve terminal and inner nodes' ids, plus all basid in the 'coeff' case
+  terminal <- nodeids(object, terminal = TRUE)
+  if(max(terminal) > 1L) {
+    inner <- 1L:max(terminal)
+    inner <- inner[-terminal]
+    if(split.type == "coeff"){
+      basids <<- nodeapply(object, ids = inner, by_node = TRUE,
+                          FUN = function(node) basid_split(split_node(node)))
+    }
+  }
+
+  # Coefficient expansion in the 'coeff' case
   if(!is.null(newdata)){
 
     newdata = lapply(newdata, function(j){
@@ -259,15 +271,16 @@ predict.party <- function(object, newdata = NULL, nb = 10, perm = NULL, ...)
 
       } else if(class(j) == 'list' &
                 all(sapply(j, class) == 'igraph') & split.type == "coeff"){
-        foo <- graph.shell(j)
+
+        train_max_shell <- max(unlist(basids))
+        foo <- graph.shell(j, predicting = TRUE, max.shell = train_max_shell)
         return(foo)
+
       } else {
 
         return(j)
 
-      }
-    }
-    )
+      }})
   }
 
   ### compute fitted node ids first
@@ -278,14 +291,9 @@ predict.party <- function(object, newdata = NULL, nb = 10, perm = NULL, ...)
     ### make sure all the elements in newdata have the same number of rows
     stopifnot(length(unique(sapply(newdata, NROW))) == 1L)
 
-    terminal <- nodeids(object, terminal = TRUE)
-
     if(max(terminal) == 1L) {
       rep.int(1L, unique(sapply(newdata, NROW)))
     } else {
-
-      inner <- 1L:max(terminal)
-      inner <- inner[-terminal]
 
       primary_vars <- nodeapply(object, ids = inner, by_node = TRUE, FUN = function(node) {
         varid_split(split_node(node))
