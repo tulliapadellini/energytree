@@ -220,6 +220,8 @@ growtree <- function(id = 1L,
              kidids[which(covariates$newcov[[varid]][as.character(basid)]
                           <= breaks)] <- 1
              kidids[which(covariates$newcov[[varid]][as.character(basid)]
+                          > breaks)] <- 2
+             #recall that basid is the column's name, so [as.character(basid)]
 
            } else if(split.type == 'cluster') {
 
