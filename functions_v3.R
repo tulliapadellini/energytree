@@ -491,7 +491,9 @@ split.opt <- function(y,
            s  <- sort(x)
            comb = sapply(s[-length(s)], function(j) x <= j)
            xp.value <- apply(comb, 2, function(q) independence.test(x = q, y = y))
-           if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
+           if (length(which(xp.value[2,] ==
+                            min(xp.value[2,], na.rm = T))) > 1 ||
+               all(is.na(xp.value[2,]))) {
              splitindex <- s[which.max(xp.value[1,])]
            } else {
              splitindex <- s[which.min(xp.value[2,])]
@@ -505,7 +507,9 @@ split.opt <- function(y,
            comb = sapply(s[-length(s)], function(j) x <= j)
            #first one is excluded since it only return FALSEs
            xp.value <- apply(comb, 2, function(q) independence.test(x = q, y = y))
-           if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
+           if (length(which(xp.value[2,] ==
+                            min(xp.value[2,], na.rm = T))) > 1 ||
+               all(is.na(xp.value[2,]))) {
              splitindex <- s[which.max(xp.value[1,])]
            } else {
              splitindex <- s[which.min(xp.value[2,])]
@@ -532,7 +536,9 @@ split.opt <- function(y,
              xp.value <- sapply(comb,
                                 function(q) independence.test(x %in% q, y))
 
-             if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
+             if (length(which(xp.value[2,] ==
+                              min(xp.value[2,], na.rm = T))) > 1 ||
+                 all(is.na(xp.value[2,]))) {
                splitpoint <- comb[[which.max(xp.value[1,])]]
              } else {
                splitpoint <- comb[[which.min(xp.value[2,])]]
@@ -582,7 +588,9 @@ split.opt <- function(y,
              } else if (coef.split.type == 'test'){
 
                xp.value <- apply(comb, 2, function(q) independence.test(x = q, y = y))
-               if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
+               if (length(which(xp.value[2,] ==
+                                min(xp.value[2,], na.rm = T))) > 1 ||
+                   all(is.na(xp.value[2,]))) {
                  splitindex <- s[which.max(xp.value[1,])]
                } else {
                  splitindex <- s[which.min(xp.value[2,])]
@@ -669,7 +677,9 @@ split.opt <- function(y,
              } else if (coef.split.type == 'test'){
 
                xp.value <- apply(comb, 2, function(q) independence.test(x = q, y = y))
-               if (length(which(xp.value[2,] == min(xp.value[2,], na.rm = T))) > 1) {
+               if (length(which(xp.value[2,] ==
+                                min(xp.value[2,], na.rm = T))) > 1 ||
+                   all(is.na(xp.value[2,]))) {
                  splitindex <- s[which.max(xp.value[1,])]
                } else {
                  splitindex <- s[which.min(xp.value[2,])]
