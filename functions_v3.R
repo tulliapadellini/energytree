@@ -625,6 +625,8 @@ split.opt <- function(y,
 
            if(split.type == 'coeff'){
              x1 = newx
+             # Drop non-informative (i.e. all-equal) columns
+             x1 <- x1[, !as.logical(apply(x1, 2, zero_range))]
              bselect <- 1:dim(x1)[2]
              p1 <- c()
              p1 <- sapply(bselect, function(i) independence.test(x1[, i], y, R = R))
