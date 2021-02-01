@@ -643,7 +643,9 @@ split.opt <- function(y,
              p1 <- c()
              p1 <- sapply(bselect, function(i) independence.test(x1[, i], y, R = R))
              colnames(p1) <- colnames(x1)
-             if (length(which(p1[2,] == min(p1[2,], na.rm = T))) > 1) {
+             if (length(which(p1[2,] ==
+                              min(p1[2,], na.rm = T))) > 1 ||
+                 all(is.na(p1[2,]))) {
                bselect <- as.integer(which.max(p1[1,]))
              } else{
                bselect <- as.integer(which.min(p1[2,]))
