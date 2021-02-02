@@ -381,6 +381,21 @@ findsplit <- function(response,
                          coef.split.type = coef.split.type,
                          nb = nb)
 
+  # If split.objs is VOID, ignore the selected covariate and re-run findsplit
+  if(isTRUE(split.objs$void)){
+    covariates$dist[[xselect]][] <- 0L
+    split <- findsplit(response = response,
+                       covariates = covariates,
+                       alpha = alpha,
+                       R = R,
+                       lp = rep(2, 2),
+                       split.type = split.type,
+                       coef.split.type = coef.split.type,
+                       p.adjust.method = p.adjust.method,
+                       nb = nb)
+    return(split)
+  }
+
   # Separately save split.objs outputs
   splitindex <- split.objs$splitindex
   bselect <- split.objs$bselect
@@ -639,6 +654,8 @@ split.opt <- function(y,
              x1 = newx
              # Drop non-informative (i.e. all-equal) columns
              x1 <- x1[, !as.logical(apply(x1, 2, zero_range))]
+             # Control if the df is now void; if so, return 'void'
+             if(dim(x1)[2] == 0) return(list('void' = TRUE))
              bselect <- 1:dim(x1)[2]
              p1 <- c()
              p1 <- sapply(bselect, function(i) independence.test(x1[, i], y, R = R))
