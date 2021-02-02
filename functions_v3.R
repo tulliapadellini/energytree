@@ -359,7 +359,7 @@ findsplit <- function(response,
     # in order to keep the original indices (i.e. not to create confusion), the
     # selected covariate is not dropped, but it is instead replaced with a
     # vector of 0s, so that it is selected no more
-    covariates$cov[[xselect]] <- rep(0, length(covariates$cov[[xselect]]))
+    covariates$dist[[xselect]][] <- 0L
     split <- findsplit(response = response,
                        covariates = covariates,
                        alpha = alpha,
