@@ -272,7 +272,12 @@ predict.party <- function(object, newdata = NULL, nb = 10, perm = NULL, ...){
       } else if(class(j) == 'list' &
                 all(sapply(j, class) == 'igraph') & split.type == "coeff"){
 
-        train_max_shell <- max(unlist(basids))
+        if(max(terminal) > 1L){
+          train_max_shell <- max(unlist(basids))
+          #if(is.infinite(train_max_shell)) train_max_shell <- NULL
+        } else {
+          train_max_shell <- NULL
+        }
         foo <- graph.shell(j, predicting = TRUE, max.shell = train_max_shell)
         return(foo)
 
