@@ -631,18 +631,28 @@ split.opt <- function(y,
 
            } else if(split.type == 'cluster') {
 
-             cl.fdata <- cluster::pam(xdist, k = 2, diss = TRUE)
-             clindex <- cl.fdata$clustering
-             lev = levels(newx)
-             splitindex = rep(NA, length(lev))
-             splitindex[lev %in% newx[clindex==1]]<- 1
-             splitindex[lev %in% newx[clindex==2]]<- 2
+             if(length(x) == 2){
 
-             medindex1 <- cl.fdata$id.med[1]
-             c1 <- x[medindex1,]
-             medindex2 <- cl.fdata$id.med[2]
-             c2 <- x[medindex2,]
-             centroids <- list(c1 = c1, c2 = c2)
+               splitindex <- c(1, 2)
+
+               centroids <- list(c1 = x[[1]], c2 = x[[2]])
+
+             } else {
+
+               cl.fdata <- cluster::pam(xdist, k = 2, diss = TRUE)
+               clindex <- cl.fdata$clustering
+               lev = levels(newx)
+               splitindex = rep(NA, length(lev))
+               splitindex[lev %in% newx[clindex==1]]<- 1
+               splitindex[lev %in% newx[clindex==2]]<- 2
+
+               medindex1 <- cl.fdata$id.med[1]
+               c1 <- x[medindex1,]
+               medindex2 <- cl.fdata$id.med[2]
+               c2 <- x[medindex2,]
+               centroids <- list(c1 = c1, c2 = c2)
+
+             }
 
            }
 
@@ -650,18 +660,28 @@ split.opt <- function(y,
 
          list = if(all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
 
-           cl.diag <- cluster::pam(xdist, k = 2, diss = TRUE)
-           clindex <- cl.diag$clustering
-           lev = levels(newx)
-           splitindex = rep(NA, length(lev))
-           splitindex[lev %in% newx[clindex==1]]<- 1
-           splitindex[lev %in% newx[clindex==2]]<- 2
+           if(length(x) == 2){
 
-           medindex1 <- cl.diag$id.med[1]
-           c1 <- x[[medindex1]]
-           medindex2 <- cl.diag$id.med[2]
-           c2 <- x[[medindex2]]
-           centroids <- list(c1 = c1, c2 = c2)
+             splitindex <- c(1, 2)
+
+             centroids <- list(c1 = x[[1]], c2 = x[[2]])
+
+           } else {
+
+             cl.diag <- cluster::pam(xdist, k = 2, diss = TRUE)
+             clindex <- cl.diag$clustering
+             lev = levels(newx)
+             splitindex = rep(NA, length(lev))
+             splitindex[lev %in% newx[clindex==1]]<- 1
+             splitindex[lev %in% newx[clindex==2]]<- 2
+
+             medindex1 <- cl.diag$id.med[1]
+             c1 <- x[[medindex1]]
+             medindex2 <- cl.diag$id.med[2]
+             c2 <- x[[medindex2]]
+             centroids <- list(c1 = c1, c2 = c2)
+
+           }
 
 
          } else if(all(sapply(x, class) == 'igraph')){
@@ -723,21 +743,30 @@ split.opt <- function(y,
              }
 
            } else if(split.type == 'cluster') {
-             cl.graph <- cluster::pam(xdist, k = 2, diss = TRUE)
-             clindex <- cl.graph$clustering
-             lev = levels(newx)
-             splitindex = rep(NA, length(lev))
-             splitindex[lev %in% newx[clindex==1]]<- 1
-             splitindex[lev %in% newx[clindex==2]]<- 2
 
-             medindex1 <- cl.graph$id.med[1]
-             c1 <- x[[medindex1]]
-             medindex2 <- cl.graph$id.med[2]
-             c2 <- x[[medindex2]]
-             centroids <- list(c1 = c1, c2 = c2)
+             if(length(x) == 2){
+
+               splitindex <- c(1, 2)
+
+               centroids <- list(c1 = x[[1]], c2 = x[[2]])
+
+             } else {
+
+               cl.graph <- cluster::pam(xdist, k = 2, diss = TRUE)
+               clindex <- cl.graph$clustering
+               lev = levels(newx)
+               splitindex = rep(NA, length(lev))
+               splitindex[lev %in% newx[clindex==1]]<- 1
+               splitindex[lev %in% newx[clindex==2]]<- 2
+
+               medindex1 <- cl.graph$id.med[1]
+               c1 <- x[[medindex1]]
+               medindex2 <- cl.graph$id.med[2]
+               c2 <- x[[medindex2]]
+               centroids <- list(c1 = c1, c2 = c2)
+
+             }
            }
-
-
          }
   )
 
