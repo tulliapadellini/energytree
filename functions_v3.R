@@ -11,7 +11,9 @@ etree <- function(response,
                   split.type = 'coeff',
                   coef.split.type = 'test',
                   p.adjust.method = 'fdr',
-                  nb = 5) {
+                  nb = 5,
+                  supervised = TRUE,
+                  random_covs = NULL) {
 
   # Check whether covariates is a list
   if(!is.list(covariates)) stop("Argument 'covariates' must be provided as a list")
@@ -106,8 +108,9 @@ etree <- function(response,
                     split.type = split.type,
                     coef.split.type = coef.split.type,
                     p.adjust.method = p.adjust.method,
-                    nb = nb)
-  print(c('NODES', nodes))
+                    nb = nb,
+                    random_covs = random_covs)
+  #print(c('NODES', nodes))
 
   # Actually perform the splits
   fitted.obs <- fitted_node(nodes, data = newcovariates)
@@ -116,7 +119,7 @@ etree <- function(response,
   obj <- party(nodes,
                data = newcovariates,
                fitted = data.frame("(fitted)" = fitted.obs,
-                                   "(response)" = response,
+                                   "(response)" = if(supervised) response else fitted.obs,
                                    check.names = FALSE),
                terms = terms(response ~ ., data = newcovariates))
   etree_obj <- as.constparty(obj)
@@ -141,7 +144,8 @@ growtree <- function(id = 1L,
                      split.type,
                      coef.split.type,
                      p.adjust.method,
-                     nb) {
+                     nb,
+                     random_covs) {
 
   # Find the best split (variable selection & split point search)
   split <- findsplit(response = response,
@@ -152,7 +156,8 @@ growtree <- function(id = 1L,
                      split.type = split.type,
                      coef.split.type = coef.split.type,
                      p.adjust.method = p.adjust.method,
-                     nb = nb)
+                     nb = nb,
+                     random_covs = random_covs)
 
   # If no split is found, stop here
   if (is.null(split))
@@ -272,7 +277,8 @@ growtree <- function(id = 1L,
         split.type = split.type,
         coef.split.type = coef.split.type,
         p.adjust.method = p.adjust.method,
-        nb = nb)
+        nb = nb,
+        random_covs = random_covs)
   }
 
   # Return the nodes (i.e. the split rules)
@@ -295,15 +301,22 @@ findsplit <- function(response,
                       split.type,
                       coef.split.type,
                       p.adjust.method,
-                      nb) {
+                      nb,
+                      random_covs) {
+
+  #print('one round again')
 
   # Number of original covariates
-  n.cov = length(covariates$cov)
+  n_cov = length(covariates$cov)
 
-  print('one round again')
+  # Subset of covariates to consider for splitting (not necessarily proper)
+  cov_subset <- as.integer(1:n_cov)
+  if(!is.null(random_covs)){
+    cov_subset <- sample(cov_subset, random_covs)
+  }
 
   # Independence test between the response and each covariate
-  p = lapply(covariates$dist,
+  p = lapply(covariates$dist[cov_subset],
              function(cov.dist) {
                ct <- energy::dcor.test(cov.dist,
                                        compute.dissimilarity(response),
@@ -336,6 +349,7 @@ findsplit <- function(response,
   }
 
   # Selected covariates
+  xselect <- cov_subset[xselect] #useful only if !is.null(random_covs)
   x <- covariates$cov[[xselect]]
   newx <- covariates$newcov[[xselect]]
   if(split.type == 'cluster'){
@@ -368,7 +382,8 @@ findsplit <- function(response,
                        split.type = split.type,
                        coef.split.type = coef.split.type,
                        p.adjust.method = p.adjust.method,
-                       nb = nb)
+                       nb = nb,
+                       random_covs = random_covs)
     return(split)
   }
 
@@ -392,7 +407,8 @@ findsplit <- function(response,
                        split.type = split.type,
                        coef.split.type = coef.split.type,
                        p.adjust.method = p.adjust.method,
-                       nb = nb)
+                       nb = nb,
+                       random_covs = random_covs)
     return(split)
   }
 
@@ -820,8 +836,8 @@ compute.dissimilarity.cl <- function(centroid, x,
              }
              #dist_centroid is obtained in the same way in the two cases:
              dist_centroid <- sapply(adj_data, function(i){
-               d <- NetworkDistance::nd.centrality(list(i, adj_centroid), mode = 'Degree', directed = TRUE)
-               d$D
+               d <- NetworkDistance::nd.edd(list(i, adj_centroid))
+               return(d$D)
              })
              return(dist_centroid)
            } else if (all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
