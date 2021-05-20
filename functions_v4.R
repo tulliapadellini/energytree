@@ -172,6 +172,13 @@ growtree <- function(id = 1L,
   kidids <- c()
   switch(class(covariates$cov[[varid]]),
 
+         integer = {
+
+           kidids[(which(covariates$cov[[varid]] <= breaks))] <- 1
+           kidids[(which(covariates$cov[[varid]] > breaks))] <- 2
+
+         },
+
          numeric = {
 
            kidids[(which(covariates$cov[[varid]] <= breaks))] <- 1
@@ -401,6 +408,15 @@ findsplit <- function(response,
   # Return the split point
   switch(class(x),
 
+         integer = {
+
+           return(sp = partysplit(varid = as.integer(xselect),
+                                  breaks = splitindex,
+                                  info = list(pvalue = p),
+                                  right = TRUE))
+
+         },
+
          numeric = {
 
            return(sp = partysplit(varid = as.integer(xselect),
@@ -486,6 +502,21 @@ split_opt <- function(y,
                       R = 500){
 
   switch(class(x),
+
+         integer    = {
+
+           s  <- sort(x)
+           comb <- sapply(s[-length(s)], function(j) x <= j)
+           pvalue <- apply(comb, 2, function(q) indep_test(x = q, y = y))
+           if (length(which(pvalue[2,] ==
+                            min(pvalue[2,], na.rm = T))) > 1 ||
+               all(is.na(pvalue[2,]))) {
+             splitindex <- s[which.max(pvalue[1,])]
+           } else {
+             splitindex <- s[which.min(pvalue[2,])]
+           }
+
+         },
 
          numeric    = {
 
@@ -757,6 +788,10 @@ dist_comp <- function(x,
 
   # Compute the distances/dissimilarities
   switch(class(x),
+         logical    = as.matrix(dist(x)),
+         #needed for split point search when split_type = 'coeff'
+         integer    = as.matrix(dist(x)),
+         #objects of class integer are not of class numeric
          numeric    = as.matrix(dist(x)),
          factor     = as.matrix(cluster::daisy(as.data.frame(x))),
          fdata      = metric.lp(x, lp = lp),
