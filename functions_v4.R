@@ -776,7 +776,7 @@ indep_test <- function(x,
   if(!is.na(dct$statistic)){
     return(c(dct$statistic, dct$p.value))
   } else{
-    c(NA, NA)
+    return(c(NA, NA))
   }
 }
 

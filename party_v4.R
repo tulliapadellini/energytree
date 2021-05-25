@@ -280,7 +280,7 @@ predict.party <- function(object, newdata = NULL, perm = NULL, ...){
         } else {
           train_max_shell <- NULL
         }
-        newcov <- graph_shell(j, predicting = TRUE, max.shell = train_max_shell)
+        newcov <- graph_shell(j, predicting = TRUE, max_shell = train_max_shell)
         return(newcov)
 
       } else {
