@@ -309,36 +309,26 @@ findsplit <- function(response,
   }
 
   # Independence test between the response and each covariate
-  p <- lapply(covariates$dist[cov_subset],
-              function(cov_dist) {
-                dct <- energy::dcor.test(cov_dist,
-                                         dist_comp(response),
-                                         R = R)
-                if (!is.na(dct$statistic)) {
-                  return(c(dct$statistic, dct$p.value))
-                } else{
-                  c(NA, NA)
-                }
-              }
+  stat_pval <- sapply(covariates$dist[cov_subset],
+                      function(cov_dist) {
+                        indep_test(x_dist = cov_dist, y = response, R)
+                      }
   )
-
-  # Create matrix with test stats and pvalues; check if pvalues are all NULL
-  p <- t(matrix(unlist(p), ncol = 2, byrow = T))
-  rownames(p) <- c("statistic", "pvalue")
-  if (all(is.na(p[2,]))) return(NULL)
+  if(all(is.na(stat_pval['Pvalue',]))) return(NULL)
 
   # Multiple testing correction
-  adj_p <- p.adjust(p[2,], method = p_adjust_method)
+  adj_p <- p.adjust(stat_pval['Pvalue',], method = p_adjust_method)
 
   # Stop criterion
   if (min(adj_p, na.rm = TRUE) > alpha) return(NULL)
 
   # Variable selection (based on original pvalues)
-  if (length(which(p[2,] == min(p[2,], na.rm = TRUE))) > 1) {
-    xselect <- which.max(p[1,])
+  if (length(which(stat_pval['Pvalue',] == min(stat_pval['Pvalue',],
+                                               na.rm = TRUE))) > 1) {
+    xselect <- which.max(stat_pval['Statistic',])
     #in case of multiple minima, take that with the highest test statistic
   } else{
-    xselect <- which.min(p[2,])
+    xselect <- which.min(stat_pval['Pvalue',])
   }
 
   # Selected covariates
@@ -412,7 +402,7 @@ findsplit <- function(response,
 
            return(sp = partysplit(varid = as.integer(xselect),
                                   breaks = splitindex,
-                                  info = list(pvalue = p),
+                                  info = list(pvalue = stat_pval),
                                   right = TRUE))
 
          },
@@ -421,7 +411,7 @@ findsplit <- function(response,
 
            return(sp = partysplit(varid = as.integer(xselect),
                                   breaks = splitindex,
-                                  info = list(pvalue = p),
+                                  info = list(pvalue = stat_pval),
                                   right = TRUE))
 
          },
@@ -430,7 +420,7 @@ findsplit <- function(response,
 
            return(sp = partysplit(varid = as.integer(xselect),
                                   index = splitindex,
-                                  info = list(pvalue = p)))
+                                  info = list(pvalue = stat_pval)))
 
          },
 
@@ -441,14 +431,14 @@ findsplit <- function(response,
                                     basid = as.integer(bselect),
                                     breaks = splitindex,
                                     right = TRUE,
-                                    info = list(pvalue = p)))
+                                    info = list(pvalue = stat_pval)))
 
            } else if(split_type == 'cluster'){
 
              sp <- partysplit(varid = as.integer(xselect),
                               centroids = centroids,
                               index = as.integer(splitindex),
-                              info = list(pvalue = p))
+                              info = list(pvalue = stat_pval))
              attr(sp, 'curr_split_type') <- 'cluster'   #used in edge.simple
              return(sp)
 
@@ -461,7 +451,7 @@ findsplit <- function(response,
            sp <- partysplit(varid = as.integer(xselect),
                             centroids = centroids,
                             index = as.integer(splitindex),
-                            info = list(pvalue = p))
+                            info = list(pvalue = stat_pval))
            attr(sp, 'curr_split_type') <- 'cluster'   #used in edge.simple
            return(sp)
 
@@ -473,14 +463,14 @@ findsplit <- function(response,
                                     basid = as.integer(bselect),
                                     breaks = splitindex,
                                     right = TRUE,
-                                    info = list(pvalue = p)))
+                                    info = list(pvalue = stat_pval)))
 
            } else if(split_type == 'cluster') {
 
              sp <- partysplit(varid = as.integer(xselect),
                               centroids = centroids,
                               index = as.integer(splitindex),
-                              info = list(pvalue = p))
+                              info = list(pvalue = stat_pval))
              attr(sp, 'curr_split_type') <- 'cluster'   #used in edge.simple
              return(sp)
 
@@ -507,13 +497,13 @@ split_opt <- function(y,
 
            s  <- sort(x)
            comb <- sapply(s[-length(s)], function(j) x <= j)
-           pvalue <- apply(comb, 2, function(q) indep_test(x = q, y = y))
-           if (length(which(pvalue[2,] ==
-                            min(pvalue[2,], na.rm = T))) > 1 ||
-               all(is.na(pvalue[2,]))) {
-             splitindex <- s[which.max(pvalue[1,])]
+           stat_pval <- apply(comb, 2, function(q) indep_test(x = q, y = y))
+           if (length(which(stat_pval['Pvalue',] ==
+                            min(stat_pval['Pvalue',], na.rm = T))) > 1 ||
+               all(is.na(stat_pval['Pvalue',]))) {
+             splitindex <- s[which.max(stat_pval['Statistic',])]
            } else {
-             splitindex <- s[which.min(pvalue[2,])]
+             splitindex <- s[which.min(stat_pval['Pvalue',])]
            }
 
          },
@@ -522,13 +512,13 @@ split_opt <- function(y,
 
            s  <- sort(x)
            comb <- sapply(s[-length(s)], function(j) x <= j)
-           pvalue <- apply(comb, 2, function(q) indep_test(x = q, y = y))
-           if (length(which(pvalue[2,] ==
-                            min(pvalue[2,], na.rm = T))) > 1 ||
-               all(is.na(pvalue[2,]))) {
-             splitindex <- s[which.max(pvalue[1,])]
+           stat_pval <- apply(comb, 2, function(q) indep_test(x = q, y = y))
+           if (length(which(stat_pval['Pvalue',] ==
+                            min(stat_pval['Pvalue',], na.rm = T))) > 1 ||
+               all(is.na(stat_pval['Pvalue',]))) {
+             splitindex <- s[which.max(stat_pval['Statistic',])]
            } else {
-             splitindex <- s[which.min(pvalue[2,])]
+             splitindex <- s[which.min(stat_pval['Pvalue',])]
            }
 
          },
@@ -549,15 +539,15 @@ split_opt <- function(y,
                                                            m = ntaken,
                                                            simplify = FALSE)))
              #todo: take only first length(lev)/2 - 1, the other are complements!
-             pvalue <- sapply(comb,
+             stat_pval <- sapply(comb,
                               function(q) indep_test(x %in% q, y))
 
-             if (length(which(pvalue[2,] ==
-                              min(pvalue[2,], na.rm = T))) > 1 ||
-                 all(is.na(pvalue[2,]))) {
-               splitpoint <- comb[[which.max(pvalue[1,])]]
+             if (length(which(stat_pval['Pvalue',] ==
+                              min(stat_pval['Pvalue',], na.rm = T))) > 1 ||
+                 all(is.na(stat_pval['Pvalue',]))) {
+               splitpoint <- comb[[which.max(stat_pval['Statistic',])]]
              } else {
-               splitpoint <- comb[[which.min(pvalue[2,])]]
+               splitpoint <- comb[[which.min(stat_pval['Pvalue',])]]
              }
            }
 
@@ -574,13 +564,13 @@ split_opt <- function(y,
 
            if(split_type == 'coeff'){
              bselect <- 1:dim(newx)[2]
-             pvalue <- sapply(bselect,
+             stat_pval <- sapply(bselect,
                               function(i) indep_test(newx[, i], y, R = R))
-             colnames(pvalue) <- colnames(newx)
-             if (length(which(pvalue[2,] == min(pvalue[2,], na.rm = T))) > 1) {
-               bselect <- as.integer(which.max(pvalue[1,]))
+             colnames(stat_pval) <- colnames(newx)
+             if (length(which(stat_pval['Pvalue',] == min(stat_pval['Pvalue',], na.rm = T))) > 1) {
+               bselect <- as.integer(which.max(stat_pval['Statistic',]))
              } else{
-               bselect <- as.integer(which.min(pvalue[2,]))
+               bselect <- as.integer(which.min(stat_pval['Pvalue',]))
              }
              sel_comp <- newx[,bselect]
              s  <- sort(sel_comp)
@@ -602,13 +592,13 @@ split_opt <- function(y,
 
              } else if (coeff_split_type == 'test'){
 
-               pvalue <- apply(comb, 2, function(q) indep_test(x = q, y = y))
-               if (length(which(pvalue[2,] ==
-                                min(pvalue[2,], na.rm = T))) > 1 ||
-                   all(is.na(pvalue[2,]))) {
-                 splitindex <- s[which.max(pvalue[1,])]
+               stat_pval <- apply(comb, 2, function(q) indep_test(x = q, y = y))
+               if (length(which(stat_pval['Pvalue',] ==
+                                min(stat_pval['Pvalue',], na.rm = T))) > 1 ||
+                   all(is.na(stat_pval['Pvalue',]))) {
+                 splitindex <- s[which.max(stat_pval['Statistic',])]
                } else {
-                 splitindex <- s[which.min(pvalue[2,])]
+                 splitindex <- s[which.min(stat_pval['Pvalue',])]
                }
 
              }
@@ -675,15 +665,15 @@ split_opt <- function(y,
              # Control if the df is now void; if so, return 'void'
              if(dim(newx)[2] == 0) return(list('void' = TRUE))
              bselect <- 1:dim(newx)[2]
-             pvalue <- sapply(bselect,
+             stat_pval <- sapply(bselect,
                               function(i) indep_test(newx[, i], y, R = R))
-             colnames(pvalue) <- colnames(newx)
-             if (length(which(pvalue[2,] ==
-                              min(pvalue[2,], na.rm = T))) > 1 ||
-                 all(is.na(pvalue[2,]))) {
-               bselect <- as.integer(which.max(pvalue[1,]))
+             colnames(stat_pval) <- colnames(newx)
+             if (length(which(stat_pval['Pvalue',] ==
+                              min(stat_pval['Pvalue',], na.rm = T))) > 1 ||
+                 all(is.na(stat_pval['Pvalue',]))) {
+               bselect <- as.integer(which.max(stat_pval['Statistic',]))
              } else{
-               bselect <- as.integer(which.min(pvalue[2,]))
+               bselect <- as.integer(which.min(stat_pval['Pvalue',]))
              }
              # graph_shell may drop columns, so switch from index to name
              bselect <- as.integer(names(newx)[bselect])
@@ -713,13 +703,13 @@ split_opt <- function(y,
 
              } else if (coeff_split_type == 'test'){
 
-               pvalue <- apply(comb, 2, function(q) indep_test(x = q, y = y))
-               if (length(which(pvalue[2,] ==
-                                min(pvalue[2,], na.rm = T))) > 1 ||
-                   all(is.na(pvalue[2,]))) {
-                 splitindex <- s[which.max(pvalue[1,])]
+               stat_pval <- apply(comb, 2, function(q) indep_test(x = q, y = y))
+               if (length(which(stat_pval['Pvalue',] ==
+                                min(stat_pval['Pvalue',], na.rm = T))) > 1 ||
+                   all(is.na(stat_pval['Pvalue',]))) {
+                 splitindex <- s[which.max(stat_pval['Statistic',])]
                } else {
-                 splitindex <- s[which.min(pvalue[2,])]
+                 splitindex <- s[which.min(stat_pval['Pvalue',])]
                }
 
              }
@@ -765,19 +755,26 @@ split_opt <- function(y,
 
 indep_test <- function(x,
                        y,
+                       x_dist = NULL,
+                       y_dist = NULL,
                        R = 1000) {
 
-  # Compute the dissimilarities within x and y
-  d1 <- dist_comp(x)
-  d2 <- dist_comp(y)
+  # If distances are not provided, compute them
+  if(is.null(x_dist)) x_dist <- dist_comp(x)
+  if(is.null(y_dist)) y_dist <- dist_comp(y)
 
   # Distance correlation test
-  dct <- energy::dcor.test(d1, d2, R = R)
-  if(!is.na(dct$statistic)){
-    return(c(dct$statistic, dct$p.value))
+  dct <- energy::dcor.test(x_dist, y_dist, R = R)
+
+  # Retrieve and return test statistic and p-value
+  stat_pval <- if(!is.na(dct$statistic)){
+    c(dct$statistic, dct$p.value)
   } else{
-    return(c(NA, NA))
+    c(NA, NA)
   }
+  names(stat_pval) <- c('Statistic', 'Pvalue')
+  return(stat_pval)
+
 }
 
 
