@@ -99,9 +99,13 @@ etree <- function(response,
                            'newcov' = newcovariates,
                            'dist' = cov_distance)
 
+  # Large list with response and the corresponding distances
+  response_large <- list('response' = response,
+                         'response_dist' = dist_comp(response))
+
   # Grow the tree (finds the split rules)
   nodes <- growtree(id = 1L,
-                    response = response,
+                    response = response_large,
                     covariates = covariates_large,
                     weights = weights,
                     minbucket = minbucket,
@@ -253,7 +257,7 @@ growtree <- function(id = 1L,
       prev_id <- id
     }
 
-    # Recursion on this kid node: initialization by updating covariates
+    # Recursion on this kid node: update covariates and response
     covariates_updated <- list()
     covariates_updated$cov <- lapply(covariates$cov,
                                      function(cov) subset(cov, as.logical(w)))
@@ -262,10 +266,15 @@ growtree <- function(id = 1L,
     covariates_updated$dist <- lapply(covariates$dist, function(cov){
       subset(cov, subset = as.logical(w), select = which(w == 1))
     })
+    response_updated <- list()
+    response_updated$response <- subset(response$response, as.logical(w))
+    response_updated$response_dist <- subset(response$response_dist,
+                                             as.logical(w),
+                                             select = which(w == 1))
 
     # Actual recursion
     kids[[kidid]] <- growtree(id = as.integer(prev_id + 1),
-                              response = subset(response, as.logical(w)),
+                              response = response_updated,
                               covariates = covariates_updated,
                               weights = rep(1L, sum(w, na.rm = TRUE)),
                               minbucket = minbucket,
@@ -309,9 +318,10 @@ findsplit <- function(response,
   }
 
   # Independence test between the response and each covariate
+  resp_dist <- response$response_dist
   stat_pval <- sapply(covariates$dist[cov_subset],
                       function(cov_dist) {
-                        indep_test(x_dist = cov_dist, y = response, R)
+                        indep_test(x_dist = cov_dist, y_dist = resp_dist, R)
                       }
   )
   if(all(is.na(stat_pval['Pvalue',]))) return(NULL)
@@ -491,13 +501,18 @@ split_opt <- function(y,
                       coeff_split_type = 'test',
                       R = 500){
 
+  # Retrieve response_dist and response
+  y_dist <- y$response_dist
+  y <- y$response
+
   switch(class(x),
 
          integer    = {
 
            s  <- sort(x)
            comb <- sapply(s[-length(s)], function(j) x <= j)
-           stat_pval <- apply(comb, 2, function(q) indep_test(x = q, y = y))
+           stat_pval <- apply(comb, 2, function(q) indep_test(x = q,
+                                                              y_dist = y_dist))
            if (length(which(stat_pval['Pvalue',] ==
                             min(stat_pval['Pvalue',], na.rm = T))) > 1 ||
                all(is.na(stat_pval['Pvalue',]))) {
@@ -512,7 +527,8 @@ split_opt <- function(y,
 
            s  <- sort(x)
            comb <- sapply(s[-length(s)], function(j) x <= j)
-           stat_pval <- apply(comb, 2, function(q) indep_test(x = q, y = y))
+           stat_pval <- apply(comb, 2, function(q) indep_test(x = q,
+                                                              y_dist = y_dist))
            if (length(which(stat_pval['Pvalue',] ==
                             min(stat_pval['Pvalue',], na.rm = T))) > 1 ||
                all(is.na(stat_pval['Pvalue',]))) {
@@ -529,9 +545,12 @@ split_opt <- function(y,
            lev <- levels(x[drop = TRUE])
 
            if (length(lev) == 2) {
+
              splitpoint <- lev[1]
              #the split point is simply given by the first level
-           } else{
+
+           } else {
+
              # Combination of all the levels
              comb <- do.call("c",
                              lapply(1:(length(lev) - 2),
@@ -540,8 +559,7 @@ split_opt <- function(y,
                                                            simplify = FALSE)))
              #todo: take only first length(lev)/2 - 1, the other are complements!
              stat_pval <- sapply(comb,
-                              function(q) indep_test(x %in% q, y))
-
+                              function(q) indep_test(x %in% q, y_dist = y_dist))
              if (length(which(stat_pval['Pvalue',] ==
                               min(stat_pval['Pvalue',], na.rm = T))) > 1 ||
                  all(is.na(stat_pval['Pvalue',]))) {
@@ -565,7 +583,7 @@ split_opt <- function(y,
            if(split_type == 'coeff'){
              bselect <- 1:dim(newx)[2]
              stat_pval <- sapply(bselect,
-                              function(i) indep_test(newx[, i], y, R = R))
+                              function(i) indep_test(newx[, i], y_dist = y_dist))
              colnames(stat_pval) <- colnames(newx)
              if (length(which(stat_pval['Pvalue',] == min(stat_pval['Pvalue',], na.rm = T))) > 1) {
                bselect <- as.integer(which.max(stat_pval['Statistic',]))
@@ -592,7 +610,8 @@ split_opt <- function(y,
 
              } else if (coeff_split_type == 'test'){
 
-               stat_pval <- apply(comb, 2, function(q) indep_test(x = q, y = y))
+               stat_pval <- apply(comb, 2, function(q) indep_test(x = q,
+                                                                  y_dist = y_dist))
                if (length(which(stat_pval['Pvalue',] ==
                                 min(stat_pval['Pvalue',], na.rm = T))) > 1 ||
                    all(is.na(stat_pval['Pvalue',]))) {
@@ -666,7 +685,7 @@ split_opt <- function(y,
              if(dim(newx)[2] == 0) return(list('void' = TRUE))
              bselect <- 1:dim(newx)[2]
              stat_pval <- sapply(bselect,
-                              function(i) indep_test(newx[, i], y, R = R))
+                              function(i) indep_test(newx[, i], y_dist = y_dist))
              colnames(stat_pval) <- colnames(newx)
              if (length(which(stat_pval['Pvalue',] ==
                               min(stat_pval['Pvalue',], na.rm = T))) > 1 ||
@@ -703,7 +722,8 @@ split_opt <- function(y,
 
              } else if (coeff_split_type == 'test'){
 
-               stat_pval <- apply(comb, 2, function(q) indep_test(x = q, y = y))
+               stat_pval <- apply(comb, 2, function(q) indep_test(x = q,
+                                                                  y_dist = y_dist))
                if (length(which(stat_pval['Pvalue',] ==
                                 min(stat_pval['Pvalue',], na.rm = T))) > 1 ||
                    all(is.na(stat_pval['Pvalue',]))) {
