@@ -401,6 +401,7 @@ findsplit <- function(response,
   }
 
   # Separately save split_objs outputs
+  splitpoint <- split_objs$splitpoint
   splitindex <- split_objs$splitindex
   bselect <- split_objs$bselect
   centroids <- split_objs$centroids
@@ -411,7 +412,7 @@ findsplit <- function(response,
          integer = {
 
            return(sp = partysplit(varid = as.integer(xselect),
-                                  breaks = splitindex,
+                                  breaks = splitpoint,
                                   info = list(pvalue = stat_pval),
                                   right = TRUE))
 
@@ -420,7 +421,7 @@ findsplit <- function(response,
          numeric = {
 
            return(sp = partysplit(varid = as.integer(xselect),
-                                  breaks = splitindex,
+                                  breaks = splitpoint,
                                   info = list(pvalue = stat_pval),
                                   right = TRUE))
 
@@ -439,7 +440,7 @@ findsplit <- function(response,
            if(split_type == 'coeff'){
              return(sp = partysplit(varid = as.integer(xselect),
                                     basid = as.integer(bselect),
-                                    breaks = splitindex,
+                                    breaks = splitpoint,
                                     right = TRUE,
                                     info = list(pvalue = stat_pval)))
 
@@ -471,7 +472,7 @@ findsplit <- function(response,
 
              return(sp = partysplit(varid = as.integer(xselect),
                                     basid = as.integer(bselect),
-                                    breaks = splitindex,
+                                    breaks = splitpoint,
                                     right = TRUE,
                                     info = list(pvalue = stat_pval)))
 
@@ -511,15 +512,11 @@ split_opt <- function(y,
 
            s  <- sort(x)
            comb <- sapply(s[-length(s)], function(j) x <= j)
+
            stat_pval <- apply(comb, 2, function(q) indep_test(x = q,
                                                               y_dist = y_dist))
-           if (length(which(stat_pval['Pvalue',] ==
-                            min(stat_pval['Pvalue',], na.rm = T))) > 1 ||
-               all(is.na(stat_pval['Pvalue',]))) {
-             splitindex <- s[which.max(stat_pval['Statistic',])]
-           } else {
-             splitindex <- s[which.min(stat_pval['Pvalue',])]
-           }
+           splitpoint <- select_splitpoint(values = s,
+                                           statistic_pvalue = stat_pval)
 
          },
 
@@ -527,15 +524,11 @@ split_opt <- function(y,
 
            s  <- sort(x)
            comb <- sapply(s[-length(s)], function(j) x <= j)
+
            stat_pval <- apply(comb, 2, function(q) indep_test(x = q,
                                                               y_dist = y_dist))
-           if (length(which(stat_pval['Pvalue',] ==
-                            min(stat_pval['Pvalue',], na.rm = T))) > 1 ||
-               all(is.na(stat_pval['Pvalue',]))) {
-             splitindex <- s[which.max(stat_pval['Statistic',])]
-           } else {
-             splitindex <- s[which.min(stat_pval['Pvalue',])]
-           }
+           splitpoint <- select_splitpoint(values = s,
+                                           statistic_pvalue = stat_pval)
 
          },
 
@@ -558,15 +551,12 @@ split_opt <- function(y,
                                                            m = ntaken,
                                                            simplify = FALSE)))
              #todo: take only first length(lev)/2 - 1, the other are complements!
-             stat_pval <- sapply(comb,
-                              function(q) indep_test(x %in% q, y_dist = y_dist))
-             if (length(which(stat_pval['Pvalue',] ==
-                              min(stat_pval['Pvalue',], na.rm = T))) > 1 ||
-                 all(is.na(stat_pval['Pvalue',]))) {
-               splitpoint <- comb[[which.max(stat_pval['Statistic',])]]
-             } else {
-               splitpoint <- comb[[which.min(stat_pval['Pvalue',])]]
-             }
+
+             stat_pval <- sapply(comb, function(q) indep_test(x %in% q,
+                                                              y_dist = y_dist))
+             splitpoint <- select_splitpoint(values = comb,
+                                             statistic_pvalue = stat_pval)
+
            }
 
            # Label levels with 1 if they are in splitpoint, 2 otherwise
@@ -606,19 +596,14 @@ split_opt <- function(y,
                  n <- n1 + n2
                  obj_c <- (n1 * v1 + n2 * v2) / n
                  return(obj_c)})
-               splitindex <- s[which.min(obj)]
+               splitpoint <- s[which.min(obj)]
 
              } else if (coeff_split_type == 'test'){
 
                stat_pval <- apply(comb, 2, function(q) indep_test(x = q,
                                                                   y_dist = y_dist))
-               if (length(which(stat_pval['Pvalue',] ==
-                                min(stat_pval['Pvalue',], na.rm = T))) > 1 ||
-                   all(is.na(stat_pval['Pvalue',]))) {
-                 splitindex <- s[which.max(stat_pval['Statistic',])]
-               } else {
-                 splitindex <- s[which.min(stat_pval['Pvalue',])]
-               }
+               splitpoint <- select_splitpoint(values = s,
+                                               statistic_pvalue = stat_pval)
 
              }
 
@@ -703,9 +688,9 @@ split_opt <- function(y,
              # Check if all columns of comb are equal
              if(all(apply(comb, 2, identical, comb[,1]))){
                # if TRUE, the omitted column [position length(s)] is different;
-               # when this is the case, set last included column as splitindex,
+               # when this is the case, set last included column as splitpoint,
                # as it means that breaks is set before last column
-               splitindex <- s[(length(s) - 1)]
+               splitpoint <- s[(length(s) - 1)]
              } else if(coeff_split_type == 'variance'){
 
                obj <- apply(comb, 2, function(c){
@@ -718,19 +703,14 @@ split_opt <- function(y,
                  n <- n1 + n2
                  obj_c <- (n1 * v1 + n2 * v2) / n
                  return(obj_c)})
-               splitindex <- s[which.min(obj)]
+               splitpoint <- s[which.min(obj)]
 
              } else if (coeff_split_type == 'test'){
 
                stat_pval <- apply(comb, 2, function(q) indep_test(x = q,
                                                                   y_dist = y_dist))
-               if (length(which(stat_pval['Pvalue',] ==
-                                min(stat_pval['Pvalue',], na.rm = T))) > 1 ||
-                   all(is.na(stat_pval['Pvalue',]))) {
-                 splitindex <- s[which.max(stat_pval['Statistic',])]
-               } else {
-                 splitindex <- s[which.min(stat_pval['Pvalue',])]
-               }
+               splitpoint <- select_splitpoint(values = s,
+                                               statistic_pvalue = stat_pval)
 
              }
 
@@ -762,13 +742,35 @@ split_opt <- function(y,
          }
   )
 
-  out <- list('splitindex' = splitindex)
-  if(exists('bselect')) out$bselect <- bselect
-  if(exists('centroids')) out$centroids <- centroids
-  return(out)
+  split_out <- list()
+  if(exists('splitpoint')) split_out$splitpoint <- splitpoint
+  if(exists('splitindex')) split_out$splitindex <- splitindex
+  if(exists('bselect')) split_out$bselect <- bselect
+  if(exists('centroids')) split_out$centroids <- centroids
+  return(split_out)
 
 }
 
+
+select_splitpoint <- function(values, statistic_pvalue){
+
+  stopifnot(identical(rownames(statistic_pvalue), c('Statistic', 'Pvalue')))
+
+  if (length(which(statistic_pvalue['Pvalue',] ==
+                   min(statistic_pvalue['Pvalue',], na.rm = T))) > 1 ||
+      all(is.na(statistic_pvalue['Pvalue',]))) {
+
+    splitpoint <- values[which.max(statistic_pvalue['Statistic',])]
+
+  } else {
+
+    splitpoint <- values[which.min(statistic_pvalue['Pvalue',])]
+
+  }
+
+  return(splitpoint)
+
+}
 
 
 # Independence test -----------------------------------------------------------
