@@ -607,28 +607,10 @@ split_opt <- function(y,
 
            } else if(split_type == 'cluster') {
 
-             if(length(x) == 2){
-
-               splitindex <- c(1, 2)
-
-               centroids <- list(c1 = x[[1]], c2 = x[[2]])
-
-             } else {
-
-               pam_obj <- cluster::pam(xdist, k = 2, diss = TRUE)
-               cl_index <- pam_obj$clustering
-               lev <- levels(newx)
-               splitindex <- rep(NA, length(lev))
-               splitindex[lev %in% newx[cl_index == 1]] <- 1
-               splitindex[lev %in% newx[cl_index == 2]] <- 2
-
-               medindex1 <- pam_obj$id.med[1]
-               c1 <- x[medindex1,]
-               medindex2 <- pam_obj$id.med[2]
-               c2 <- x[medindex2,]
-               centroids <- list(c1 = c1, c2 = c2)
-
-             }
+             clustering_objs <- select_clustering(x = x, newx = newx,
+                                                  xdist = xdist)
+             splitindex <- clustering_objs$splitindex
+             centroids <- clustering_objs$centroids
 
            }
 
@@ -636,28 +618,10 @@ split_opt <- function(y,
 
          list = if(all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
 
-           if(length(x) == 2){
-
-             splitindex <- c(1, 2)
-
-             centroids <- list(c1 = x[[1]], c2 = x[[2]])
-
-           } else {
-
-             pam_obj <- cluster::pam(xdist, k = 2, diss = TRUE)
-             cl_index <- pam_obj$clustering
-             lev <- levels(newx)
-             splitindex <- rep(NA, length(lev))
-             splitindex[lev %in% newx[cl_index == 1]] <- 1
-             splitindex[lev %in% newx[cl_index == 2]] <- 2
-
-             medindex1 <- pam_obj$id.med[1]
-             c1 <- x[[medindex1]]
-             medindex2 <- pam_obj$id.med[2]
-             c2 <- x[[medindex2]]
-             centroids <- list(c1 = c1, c2 = c2)
-
-           }
+           clustering_objs <- select_clustering(x = x, newx = newx,
+                                                xdist = xdist)
+           splitindex <- clustering_objs$splitindex
+           centroids <- clustering_objs$centroids
 
          } else if(all(sapply(x, class) == 'igraph')){
 
@@ -713,28 +677,11 @@ split_opt <- function(y,
 
            } else if(split_type == 'cluster') {
 
-             if(length(x) == 2){
+             clustering_objs <- select_clustering(x = x, newx = newx,
+                                                  xdist = xdist)
+             splitindex <- clustering_objs$splitindex
+             centroids <- clustering_objs$centroids
 
-               splitindex <- c(1, 2)
-
-               centroids <- list(c1 = x[[1]], c2 = x[[2]])
-
-             } else {
-
-               pam_obj <- cluster::pam(xdist, k = 2, diss = TRUE)
-               cl_index <- pam_obj$clustering
-               lev <- levels(newx)
-               splitindex <- rep(NA, length(lev))
-               splitindex[lev %in% newx[cl_index == 1]] <- 1
-               splitindex[lev %in% newx[cl_index == 2]] <- 2
-
-               medindex1 <- pam_obj$id.med[1]
-               c1 <- x[[medindex1]]
-               medindex2 <- pam_obj$id.med[2]
-               c2 <- x[[medindex2]]
-               centroids <- list(c1 = c1, c2 = c2)
-
-             }
            }
          }
   )
@@ -791,6 +738,37 @@ select_component <- function(statistic_pvalue){
 }
 
 
+select_clustering <- function(x, newx, xdist){
+
+  stopifnot(identical(typeof(x), 'list'))
+  stopifnot(isSymmetric(xdist))
+
+  if(length(x) == 2){
+
+    splitindex <- c(1, 2)
+
+    centroids <- list(c1 = x[1], c2 = x[2])
+
+  } else {
+
+    pam_obj <- cluster::pam(xdist, k = 2, diss = TRUE)
+    cl_index <- pam_obj$clustering
+    lev <- levels(newx)
+    splitindex <- rep(NA, length(lev))
+    splitindex[lev %in% newx[cl_index == 1]] <- 1
+    splitindex[lev %in% newx[cl_index == 2]] <- 2
+
+    medindex1 <- pam_obj$id.med[1]
+    c1 <- x[medindex1]
+    medindex2 <- pam_obj$id.med[2]
+    c2 <- x[medindex2]
+    centroids <- list(c1 = c1, c2 = c2)
+
+  }
+
+  return(list(splitindex = splitindex, centroids = centroids))
+
+}
 # Independence test -----------------------------------------------------------
 
 indep_test <- function(x,
