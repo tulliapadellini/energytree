@@ -513,8 +513,8 @@ split_opt <- function(y,
            s  <- sort(x)
            comb <- sapply(s[-length(s)], function(j) x <= j)
 
-           stat_pval <- apply(comb, 2, function(q) indep_test(x = q,
-                                                              y_dist = y_dist))
+           stat_pval <- apply(comb, 2,
+                              function(q) indep_test(x = q, y_dist = y_dist))
            splitpoint <- select_splitpoint(values = s,
                                            statistic_pvalue = stat_pval)
 
@@ -525,8 +525,8 @@ split_opt <- function(y,
            s  <- sort(x)
            comb <- sapply(s[-length(s)], function(j) x <= j)
 
-           stat_pval <- apply(comb, 2, function(q) indep_test(x = q,
-                                                              y_dist = y_dist))
+           stat_pval <- apply(comb, 2,
+                              function(q) indep_test(x = q, y_dist = y_dist))
            splitpoint <- select_splitpoint(values = s,
                                            statistic_pvalue = stat_pval)
 
@@ -571,16 +571,14 @@ split_opt <- function(y,
          fdata      = {
 
            if(split_type == 'coeff'){
-             bselect <- 1:dim(newx)[2]
-             stat_pval <- sapply(bselect,
-                              function(i) indep_test(newx[, i], y_dist = y_dist))
-             colnames(stat_pval) <- colnames(newx)
-             if (length(which(stat_pval['Pvalue',] == min(stat_pval['Pvalue',], na.rm = T))) > 1) {
-               bselect <- as.integer(which.max(stat_pval['Statistic',]))
-             } else{
-               bselect <- as.integer(which.min(stat_pval['Pvalue',]))
-             }
-             sel_comp <- newx[,bselect]
+
+             comp_idx <- 1:dim(newx)[2]
+             stat_pval <- sapply(comp_idx,
+                                 function(i) indep_test(newx[, i],
+                                                        y_dist = y_dist))
+             bselect <- select_component(statistic_pvalue = stat_pval)
+
+             sel_comp <- newx[, bselect]
              s  <- sort(sel_comp)
              comb <- sapply(s[-length(s)], function(j) sel_comp <= j)
 
@@ -600,8 +598,8 @@ split_opt <- function(y,
 
              } else if (coeff_split_type == 'test'){
 
-               stat_pval <- apply(comb, 2, function(q) indep_test(x = q,
-                                                                  y_dist = y_dist))
+               stat_pval <- apply(comb, 2,
+                                  function(q) indep_test(x = q, y_dist = y_dist))
                splitpoint <- select_splitpoint(values = s,
                                                statistic_pvalue = stat_pval)
 
@@ -664,23 +662,22 @@ split_opt <- function(y,
          } else if(all(sapply(x, class) == 'igraph')){
 
            if(split_type == 'coeff'){
+
              # Drop non-informative (i.e. all-equal) columns
              newx <- newx[, !as.logical(apply(newx, 2, zero_range))]
+
              # Control if the df is now void; if so, return 'void'
              if(dim(newx)[2] == 0) return(list('void' = TRUE))
-             bselect <- 1:dim(newx)[2]
-             stat_pval <- sapply(bselect,
-                              function(i) indep_test(newx[, i], y_dist = y_dist))
-             colnames(stat_pval) <- colnames(newx)
-             if (length(which(stat_pval['Pvalue',] ==
-                              min(stat_pval['Pvalue',], na.rm = T))) > 1 ||
-                 all(is.na(stat_pval['Pvalue',]))) {
-               bselect <- as.integer(which.max(stat_pval['Statistic',]))
-             } else{
-               bselect <- as.integer(which.min(stat_pval['Pvalue',]))
-             }
+
+             comp_idx <- 1:dim(newx)[2]
+             stat_pval <- sapply(comp_idx,
+                                 function(i) indep_test(newx[, i],
+                                                        y_dist = y_dist))
+             bselect <- select_component(statistic_pvalue = stat_pval)
+
              # graph_shell may drop columns, so switch from index to name
              bselect <- as.integer(names(newx)[bselect])
+
              sel_comp <- newx[[as.character(bselect)]]
              s  <- sort(sel_comp)
              comb <- sapply(s[-length(s)], function(j) sel_comp <= j)
@@ -707,8 +704,8 @@ split_opt <- function(y,
 
              } else if (coeff_split_type == 'test'){
 
-               stat_pval <- apply(comb, 2, function(q) indep_test(x = q,
-                                                                  y_dist = y_dist))
+               stat_pval <- apply(comb, 2,
+                                  function(q) indep_test(x = q, y_dist = y_dist))
                splitpoint <- select_splitpoint(values = s,
                                                statistic_pvalue = stat_pval)
 
@@ -769,6 +766,27 @@ select_splitpoint <- function(values, statistic_pvalue){
   }
 
   return(splitpoint)
+
+}
+
+
+select_component <- function(statistic_pvalue){
+
+  stopifnot(identical(rownames(statistic_pvalue), c('Statistic', 'Pvalue')))
+
+  if (length(which(statistic_pvalue['Pvalue',] ==
+                   min(statistic_pvalue['Pvalue',], na.rm = T))) > 1 ||
+      all(is.na(statistic_pvalue['Pvalue',]))) {
+
+    bselect <- as.integer(which.max(statistic_pvalue['Statistic',]))
+
+  } else{
+
+    bselect <- as.integer(which.min(statistic_pvalue['Pvalue',]))
+
+  }
+
+  return(bselect)
 
 }
 
