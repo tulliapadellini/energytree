@@ -202,9 +202,7 @@ growtree <- function(id = 1L,
 
            if(split_type == 'coeff'){
 
-             # observations before the split point are assigned to node 1
              kidids[which(covariates$newcov[[varid]][, basid] <= breaks)] <- 1
-             #  observations before the split point are assigned to node 2
              kidids[which(covariates$newcov[[varid]][, basid] > breaks)] <- 2
 
            } else if (split_type == 'cluster') {
@@ -513,11 +511,20 @@ split_opt <- function(y,
            s  <- sort(x)
            comb <- sapply(s[-length(s)], function(j) x <= j)
 
-           stat_pval <- apply(comb, 2,
-                              function(q) indep_test(x = q, y_dist = y_dist))
-           splitpoint <- select_splitpoint(values = s,
-                                           statistic_pvalue = stat_pval)
+           if(coeff_split_type == 'rss'){
 
+             splitpoint <- select_traditional(values = s,
+                                              combinations = comb,
+                                              y = y)
+
+           } else if (coeff_split_type == 'test'){
+
+             stat_pval <- apply(comb, 2,
+                                function(q) indep_test(x = q, y_dist = y_dist))
+             splitpoint <- select_splitpoint(values = s,
+                                             statistic_pvalue = stat_pval)
+
+           }
          },
 
          numeric    = {
@@ -525,11 +532,20 @@ split_opt <- function(y,
            s  <- sort(x)
            comb <- sapply(s[-length(s)], function(j) x <= j)
 
-           stat_pval <- apply(comb, 2,
-                              function(q) indep_test(x = q, y_dist = y_dist))
-           splitpoint <- select_splitpoint(values = s,
-                                           statistic_pvalue = stat_pval)
+           if(coeff_split_type == 'rss'){
 
+             splitpoint <- select_traditional(values = s,
+                                              combinations = comb,
+                                              y = y)
+
+           } else if (coeff_split_type == 'test'){
+
+             stat_pval <- apply(comb, 2,
+                                function(q) indep_test(x = q, y_dist = y_dist))
+             splitpoint <- select_splitpoint(values = s,
+                                             statistic_pvalue = stat_pval)
+
+           }
          },
 
          factor     = {
@@ -545,17 +561,30 @@ split_opt <- function(y,
            } else {
 
              # Combination of all the levels
-             comb <- do.call("c",
-                             lapply(1:(length(lev) - 2),
-                                    function(ntaken) combn(x = lev,
-                                                           m = ntaken,
-                                                           simplify = FALSE)))
+             lev_cmb <- do.call("c",
+                                lapply(1:(length(lev) - 2),
+                                       function(ntaken) combn(x = lev,
+                                                              m = ntaken,
+                                                              simplify = FALSE)))
              #todo: take only first length(lev)/2 - 1, the other are complements!
+             comb <- sapply(lev_cmb, function(q) x %in% q)
 
-             stat_pval <- sapply(comb, function(q) indep_test(x %in% q,
-                                                              y_dist = y_dist))
-             splitpoint <- select_splitpoint(values = comb,
-                                             statistic_pvalue = stat_pval)
+             if(coeff_split_type == 'rss'){
+
+               splitpoint <- select_traditional(values = lev_cmb,
+                                                combinations = comb,
+                                                y = y)
+
+             } else if (coeff_split_type == 'test'){
+
+               stat_pval <- apply(comb, 2,
+                                  function(q) indep_test(x = q, y_dist = y_dist))
+               splitpoint <- select_splitpoint(values = lev_cmb,
+                                               statistic_pvalue = stat_pval)
+
+             }
+
+
 
            }
 
@@ -582,19 +611,11 @@ split_opt <- function(y,
              s  <- sort(sel_comp)
              comb <- sapply(s[-length(s)], function(j) sel_comp <= j)
 
-             if(coeff_split_type == 'variance'){
+             if(coeff_split_type == 'rss'){
 
-               obj <- apply(comb, 2, function(c){
-                 data1 <- y[c]
-                 data2 <- y[!c]
-                 v1 <- var(data1)
-                 v2 <- var(data2)
-                 n1 <- length(data1)
-                 n2 <- length(data2)
-                 n <- n1 + n2
-                 obj_c <- (n1 * v1 + n2 * v2) / n
-                 return(obj_c)})
-               splitpoint <- s[which.min(obj)]
+               splitpoint <- select_traditional(values = s,
+                                                combinations = comb,
+                                                y = y)
 
              } else if (coeff_split_type == 'test'){
 
@@ -652,21 +673,13 @@ split_opt <- function(y,
                # when this is the case, set last included column as splitpoint,
                # as it means that breaks is set before last column
                splitpoint <- s[(length(s) - 1)]
-             } else if(coeff_split_type == 'variance'){
+             } else if(coeff_split_type == 'rss'){
 
-               obj <- apply(comb, 2, function(c){
-                 data1 <- y[c]
-                 data2 <- y[!c]
-                 v1 <- var(data1)
-                 v2 <- var(data2)
-                 n1 <- length(data1)
-                 n2 <- length(data2)
-                 n <- n1 + n2
-                 obj_c <- (n1 * v1 + n2 * v2) / n
-                 return(obj_c)})
-               splitpoint <- s[which.min(obj)]
+               splitpoint <- select_traditional(values = s,
+                                                combinations = comb,
+                                                y = y)
 
-             } else if (coeff_split_type == 'test'){
+             } else if(coeff_split_type == 'test'){
 
                stat_pval <- apply(comb, 2,
                                   function(q) indep_test(x = q, y_dist = y_dist))
@@ -769,6 +782,32 @@ select_clustering <- function(x, newx, xdist){
   return(list(splitindex = splitindex, centroids = centroids))
 
 }
+
+
+select_traditional <- function(values, combinations, y){
+
+  total_rss <- apply(combinations, 2,
+                     function(c){
+
+                       y1 <- y[c]
+                       y2 <- y[!c]
+                       v1 <- if(length(y1) == 1) 0 else var(y1)
+                       v2 <- if(length(y2) == 1) 0 else var(y2)
+                       n1 <- length(y1)
+                       n2 <- length(y)
+
+                       rss_c <- (n1 - 1) * v1 + (n2 - 1) * v2
+                       return(rss_c)
+
+                     })
+
+  splitpoint <- values[which.min(total_rss)]
+  return(splitpoint)
+
+}
+
+
+
 # Independence test -----------------------------------------------------------
 
 indep_test <- function(x,
