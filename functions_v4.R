@@ -514,7 +514,7 @@ split_opt <- function(y,
            if(coeff_split_type == 'rss'){
 
              splitpoint <- select_traditional(values = s,
-                                              combinations = comb,
+                                              comb_logical = comb,
                                               y = y)
 
            } else if (coeff_split_type == 'test'){
@@ -535,7 +535,7 @@ split_opt <- function(y,
            if(coeff_split_type == 'rss'){
 
              splitpoint <- select_traditional(values = s,
-                                              combinations = comb,
+                                              comb_logical = comb,
                                               y = y)
 
            } else if (coeff_split_type == 'test'){
@@ -572,7 +572,7 @@ split_opt <- function(y,
              if(coeff_split_type == 'rss'){
 
                splitpoint <- select_traditional(values = lev_cmb,
-                                                combinations = comb,
+                                                comb_logical = comb,
                                                 y = y)
 
              } else if (coeff_split_type == 'test'){
@@ -614,7 +614,7 @@ split_opt <- function(y,
              if(coeff_split_type == 'rss'){
 
                splitpoint <- select_traditional(values = s,
-                                                combinations = comb,
+                                                comb_logical = comb,
                                                 y = y)
 
              } else if (coeff_split_type == 'test'){
@@ -676,7 +676,7 @@ split_opt <- function(y,
              } else if(coeff_split_type == 'rss'){
 
                splitpoint <- select_traditional(values = s,
-                                                combinations = comb,
+                                                comb_logical = comb,
                                                 y = y)
 
              } else if(coeff_split_type == 'test'){
@@ -760,7 +760,11 @@ select_clustering <- function(x, newx, xdist){
 
     splitindex <- c(1, 2)
 
-    centroids <- list(c1 = x[1], c2 = x[2])
+    centroids <- if(class(x) == 'fdata'){
+      list(c1 = x[1,], c2 = x[2,])
+    } else {
+      list(c1 = x[[1]], c2 = x[[2]])
+    }
 
   } else {
 
@@ -772,9 +776,9 @@ select_clustering <- function(x, newx, xdist){
     splitindex[lev %in% newx[cl_index == 2]] <- 2
 
     medindex1 <- pam_obj$id.med[1]
-    c1 <- x[medindex1]
+    c1 <- if(class(x) == 'fdata') x[medindex1,] else x[[medindex1]]
     medindex2 <- pam_obj$id.med[2]
-    c2 <- x[medindex2]
+    c2 <- if(class(x) == 'fdata') x[medindex2,] else x[[medindex2]]
     centroids <- list(c1 = c1, c2 = c2)
 
   }
