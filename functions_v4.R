@@ -511,7 +511,7 @@ split_opt <- function(y,
            s  <- sort(x)
            comb <- sapply(s[-length(s)], function(j) x <= j)
 
-           if(coeff_split_type == 'rss'){
+           if(coeff_split_type == 'traditional'){
 
              splitpoint <- select_traditional(values = s,
                                               comb_logical = comb,
@@ -532,7 +532,7 @@ split_opt <- function(y,
            s  <- sort(x)
            comb <- sapply(s[-length(s)], function(j) x <= j)
 
-           if(coeff_split_type == 'rss'){
+           if(coeff_split_type == 'traditional'){
 
              splitpoint <- select_traditional(values = s,
                                               comb_logical = comb,
@@ -569,7 +569,7 @@ split_opt <- function(y,
              #todo: take only first length(lev)/2 - 1, the other are complements!
              comb <- sapply(lev_cmb, function(q) x %in% q)
 
-             if(coeff_split_type == 'rss'){
+             if(coeff_split_type == 'traditional'){
 
                splitpoint <- select_traditional(values = lev_cmb,
                                                 comb_logical = comb,
@@ -611,7 +611,7 @@ split_opt <- function(y,
              s  <- sort(sel_comp)
              comb <- sapply(s[-length(s)], function(j) sel_comp <= j)
 
-             if(coeff_split_type == 'rss'){
+             if(coeff_split_type == 'traditional'){
 
                splitpoint <- select_traditional(values = s,
                                                 comb_logical = comb,
@@ -673,7 +673,7 @@ split_opt <- function(y,
                # when this is the case, set last included column as splitpoint,
                # as it means that breaks is set before last column
                splitpoint <- s[(length(s) - 1)]
-             } else if(coeff_split_type == 'rss'){
+             } else if(coeff_split_type == 'traditional'){
 
                splitpoint <- select_traditional(values = s,
                                                 comb_logical = comb,
@@ -788,24 +788,47 @@ select_clustering <- function(x, newx, xdist){
 }
 
 
-select_traditional <- function(values, combinations, y){
+select_traditional <- function(values, comb_logical, y){
 
-  total_rss <- apply(combinations, 2,
-                     function(c){
+  if(class(y) == 'factor'){
 
-                       y1 <- y[c]
-                       y2 <- y[!c]
-                       v1 <- if(length(y1) == 1) 0 else var(y1)
-                       v2 <- if(length(y2) == 1) 0 else var(y2)
-                       n1 <- length(y1)
-                       n2 <- length(y)
+    total_gini <- apply(comb_logical, 2,
+                        function(c){
 
-                       rss_c <- (n1 - 1) * v1 + (n2 - 1) * v2
-                       return(rss_c)
+                          y1 <- y[c]
+                          y2 <- y[!c]
+                          # Gini (alt. def.): G(B_r) = 1 - \sum_k p_{kr}^2
+                          g1 <- 1 - sum(prop.table(table(y1)) ^ 2)
+                          g2 <- 1 - sum(prop.table(table(y2)) ^ 2)
 
-                     })
+                          total_gini_c <- g1 + g2
+                          return(total_gini_c)
 
-  splitpoint <- values[which.min(total_rss)]
+                        })
+
+    splitpoint <- values[which.min(total_gini)]
+
+  } else {
+
+    total_rss <- apply(comb_logical, 2,
+                       function(c){
+
+                         y1 <- y[c]
+                         y2 <- y[!c]
+                         v1 <- if(length(y1) == 1) 0 else var(y1)
+                         v2 <- if(length(y2) == 1) 0 else var(y2)
+                         n1 <- length(y1)
+                         n2 <- length(y2)
+
+                         total_rss_c <- (n1 - 1) * v1 + (n2 - 1) * v2
+                         return(total_rss_c)
+
+                       })
+
+    splitpoint <- values[which.min(total_rss)]
+
+  }
+
   return(splitpoint)
 
 }
