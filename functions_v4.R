@@ -22,7 +22,7 @@ etree <- function(response,
     weights <- rep(1L, as.numeric(length(response)))
 
   # New list of covariates (needed here to build the df used by party)
-  newcovariates <- lapply(covariates, function(j){
+  newcovariates <- lapply(covariates, function(j) {
 
     if(class(j) == 'fdata'){
 
@@ -261,7 +261,7 @@ growtree <- function(id = 1L,
                                      function(cov) subset(cov, as.logical(w)))
     covariates_updated$newcov <- lapply(covariates$newcov,
                                         function(cov) subset(cov, as.logical(w)))
-    covariates_updated$dist <- lapply(covariates$dist, function(cov){
+    covariates_updated$dist <- lapply(covariates$dist, function(cov) {
       subset(cov, subset = as.logical(w), select = which(w == 1))
     })
     response_updated <- list()
@@ -322,21 +322,21 @@ findsplit <- function(response,
                         indep_test(x_dist = cov_dist, y_dist = resp_dist, R)
                       }
   )
-  if(all(is.na(stat_pval['Pvalue',]))) return(NULL)
+  if(all(is.na(stat_pval['Pvalue', ]))) return(NULL)
 
   # Multiple testing correction
-  adj_p <- p.adjust(stat_pval['Pvalue',], method = p_adjust_method)
+  adj_p <- p.adjust(stat_pval['Pvalue', ], method = p_adjust_method)
 
   # Stop criterion
   if (min(adj_p, na.rm = TRUE) > alpha) return(NULL)
 
   # Variable selection (based on original pvalues)
-  if (length(which(stat_pval['Pvalue',] == min(stat_pval['Pvalue',],
+  if (length(which(stat_pval['Pvalue', ] == min(stat_pval['Pvalue', ],
                                                na.rm = TRUE))) > 1) {
-    xselect <- which.max(stat_pval['Statistic',])
+    xselect <- which.max(stat_pval['Statistic', ])
     #in case of multiple minima, take that with the highest test statistic
   } else{
-    xselect <- which.min(stat_pval['Pvalue',])
+    xselect <- which.min(stat_pval['Pvalue', ])
   }
 
   # Selected covariates
@@ -498,7 +498,7 @@ split_opt <- function(y,
                       xdist,
                       split_type = 'coeff',
                       coeff_split_type = 'test',
-                      R = 500){
+                      R = 500) {
 
   # Retrieve response_dist and response
   y_dist <- y$response_dist
@@ -583,8 +583,6 @@ split_opt <- function(y,
                                                statistic_pvalue = stat_pval)
 
              }
-
-
 
            }
 
@@ -709,19 +707,19 @@ split_opt <- function(y,
 }
 
 
-select_splitpoint <- function(values, statistic_pvalue){
+select_splitpoint <- function(values, statistic_pvalue) {
 
   stopifnot(identical(rownames(statistic_pvalue), c('Statistic', 'Pvalue')))
 
-  if (length(which(statistic_pvalue['Pvalue',] ==
-                   min(statistic_pvalue['Pvalue',], na.rm = T))) > 1 ||
-      all(is.na(statistic_pvalue['Pvalue',]))) {
+  if (length(which(statistic_pvalue['Pvalue', ] ==
+                   min(statistic_pvalue['Pvalue', ], na.rm = T))) > 1 ||
+      all(is.na(statistic_pvalue['Pvalue', ]))) {
 
-    splitpoint <- values[which.max(statistic_pvalue['Statistic',])]
+    splitpoint <- values[which.max(statistic_pvalue['Statistic', ])]
 
   } else {
 
-    splitpoint <- values[which.min(statistic_pvalue['Pvalue',])]
+    splitpoint <- values[which.min(statistic_pvalue['Pvalue', ])]
 
   }
 
@@ -730,19 +728,19 @@ select_splitpoint <- function(values, statistic_pvalue){
 }
 
 
-select_component <- function(statistic_pvalue){
+select_component <- function(statistic_pvalue) {
 
   stopifnot(identical(rownames(statistic_pvalue), c('Statistic', 'Pvalue')))
 
-  if (length(which(statistic_pvalue['Pvalue',] ==
-                   min(statistic_pvalue['Pvalue',], na.rm = T))) > 1 ||
-      all(is.na(statistic_pvalue['Pvalue',]))) {
+  if (length(which(statistic_pvalue['Pvalue', ] ==
+                   min(statistic_pvalue['Pvalue', ], na.rm = T))) > 1 ||
+      all(is.na(statistic_pvalue['Pvalue', ]))) {
 
-    bselect <- as.integer(which.max(statistic_pvalue['Statistic',]))
+    bselect <- as.integer(which.max(statistic_pvalue['Statistic', ]))
 
   } else{
 
-    bselect <- as.integer(which.min(statistic_pvalue['Pvalue',]))
+    bselect <- as.integer(which.min(statistic_pvalue['Pvalue', ]))
 
   }
 
@@ -751,7 +749,7 @@ select_component <- function(statistic_pvalue){
 }
 
 
-select_clustering <- function(x, newx, xdist){
+select_clustering <- function(x, newx, xdist) {
 
   stopifnot(identical(typeof(x), 'list'))
   stopifnot(isSymmetric(xdist))
@@ -761,7 +759,7 @@ select_clustering <- function(x, newx, xdist){
     splitindex <- c(1, 2)
 
     centroids <- if(class(x) == 'fdata'){
-      list(c1 = x[1,], c2 = x[2,])
+      list(c1 = x[1, ], c2 = x[2, ])
     } else {
       list(c1 = x[[1]], c2 = x[[2]])
     }
@@ -776,9 +774,9 @@ select_clustering <- function(x, newx, xdist){
     splitindex[lev %in% newx[cl_index == 2]] <- 2
 
     medindex1 <- pam_obj$id.med[1]
-    c1 <- if(class(x) == 'fdata') x[medindex1,] else x[[medindex1]]
+    c1 <- if(class(x) == 'fdata') x[medindex1, ] else x[[medindex1]]
     medindex2 <- pam_obj$id.med[2]
-    c2 <- if(class(x) == 'fdata') x[medindex2,] else x[[medindex2]]
+    c2 <- if(class(x) == 'fdata') x[medindex2, ] else x[[medindex2]]
     centroids <- list(c1 = c1, c2 = c2)
 
   }
@@ -788,12 +786,12 @@ select_clustering <- function(x, newx, xdist){
 }
 
 
-select_traditional <- function(values, comb_logical, y){
+select_traditional <- function(values, comb_logical, y) {
 
   if(class(y) == 'factor'){
 
     total_gini <- apply(comb_logical, 2,
-                        function(c){
+                        function(c) {
 
                           y1 <- y[c]
                           y2 <- y[!c]
@@ -811,7 +809,7 @@ select_traditional <- function(values, comb_logical, y){
   } else {
 
     total_rss <- apply(comb_logical, 2,
-                       function(c){
+                       function(c) {
 
                          y1 <- y[c]
                          y2 <- y[!c]
@@ -865,7 +863,7 @@ indep_test <- function(x,
 # Distances ---------------------------------------------------------------
 
 dist_comp <- function(x,
-                      lp = 2){
+                      lp = 2) {
 
   # Compute the distances/dissimilarities
   switch(class(x),
@@ -909,7 +907,7 @@ dist_comp <- function(x,
 
 dist_comp_cl <- function(centroid,
                          x,
-                         lp = 2){
+                         lp = 2) {
 
   switch(class(x),
          fdata      = metric.lp(fdata1 = x, fdata2 = centroid, lp = lp),
@@ -929,7 +927,7 @@ dist_comp_cl <- function(centroid,
                adj_centroid <- igraph::as_adjacency_matrix(centroid, attr = 'weight')
              }
              #dist_centroid is obtained in the same way in the two cases:
-             dist_centroid <- sapply(adj_data, function(i){
+             dist_centroid <- sapply(adj_data, function(i) {
                d <- NetworkDistance::nd.edd(list(i, adj_centroid))
                return(d$D)
              })
@@ -952,19 +950,17 @@ dist_comp_cl <- function(centroid,
 
 graph_shell <- function(graph_list,
                         max_shell = NULL,
-                        predicting = FALSE){
+                        predicting = FALSE) {
 
   # Number of observations (graphs)
   n_graphs <- length(graph_list)
 
   # Shell distribution for each graph
-  table_shell <- lapply(graph_list, function(g){table(brainGraph::s_core(g))})
+  table_shell <- lapply(graph_list, function(g) table(brainGraph::s_core(g)))
 
   # Observed maximum shell index
   obs_max_shell <- do.call(max, lapply(table_shell,
-                                       function(s){
-                                         as.integer(names(s))
-                                       }))
+                                       function(s) as.integer(names(s))))
 
   # If max_shell is provided, go for it; otherwise, set obs_max_shell as max_shell
   if(is.null(max_shell)) max_shell <- obs_max_shell
@@ -979,7 +975,7 @@ graph_shell <- function(graph_list,
   colnames(all_shell_df) <- col_names
 
   # Fill in with the actual shell distibutions
-  invisible(sapply(1:n_graphs, function(i){
+  invisible(sapply(1:n_graphs, function(i) {
     shells <- names(table_shell[[i]])
     cols <- intersect(col_names, shells)
     all_shell_df[i, cols] <<- table_shell[[i]][cols]
@@ -1017,7 +1013,7 @@ zero_range <- function(x, tol = .Machine$double.eps ^ 0.5) {
 # Selected features analysis --------------------------------------------------
 
 # Determine the variables selected for splitting
-sel.features_det <- function(object){
+sel.features_det <- function(object) {
 
   # Check that object has class party
   stopifnot(inherits(object, 'party'))
@@ -1027,7 +1023,7 @@ sel.features_det <- function(object){
 
   # Retrieve variables' id for each split
   varids <- unique(unlist(nodeapply(object, ids = ids,
-                                    FUN = function(x){
+                                    FUN = function(x) {
                                       varid_split(split_node(x))
                                     })))
 
@@ -1037,11 +1033,11 @@ sel.features_det <- function(object){
 
 
 # Analysis
-sel.features_analyze <- function(object_list){
+sel.features_analyze <- function(object_list) {
 
   # Determine selected features for each object
   lapply(object_list,
-         FUN = function(object){
+         FUN = function(object) {
            sel.features_det(object)
          })
 
