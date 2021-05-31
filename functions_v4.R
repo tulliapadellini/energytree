@@ -21,7 +21,9 @@ etree <- function(response,
   if (is.null(weights)) weights <- rep(1L, as.numeric(length(response)))
 
   # New list of covariates (needed here to build the df used by party)
-  newcovariates <- create_newcov(covariates)
+  newcovariates <- create_newcov(covariates = covariates,
+                                 response = response,
+                                 split_type = split_type)
 
   # Distances
   cov_distance <- lapply(covariates, dist_comp)
@@ -67,7 +69,7 @@ etree <- function(response,
 }
 
 
-create_newcov <- function(covariates) {
+create_newcov <- function(covariates, response, split_type) {
 
   newcovariates <- lapply(covariates, function(j) {
 
@@ -348,13 +350,7 @@ findsplit <- function(response,
   if (min(adj_p, na.rm = TRUE) > alpha) return(NULL)
 
   # Variable selection (based on original pvalues)
-  if (length(which(stat_pval['Pvalue', ] == min(stat_pval['Pvalue', ],
-                                                na.rm = TRUE))) > 1) {
-    xselect <- which.max(stat_pval['Statistic', ])
-    #in case of multiple minima, take that with the highest test statistic
-  } else {
-    xselect <- which.min(stat_pval['Pvalue', ])
-  }
+  xselect <- select_variable(statistic_pvalue = stat_pval)
 
   # Selected covariates
   xselect <- cov_subset[xselect] #useful only if !is.null(random_covs)
@@ -747,7 +743,7 @@ select_splitpoint <- function(values, statistic_pvalue) {
   stopifnot(identical(rownames(statistic_pvalue), c('Statistic', 'Pvalue')))
 
   if (length(which(statistic_pvalue['Pvalue', ] ==
-                   min(statistic_pvalue['Pvalue', ], na.rm = T))) > 1 ||
+                   min(statistic_pvalue['Pvalue', ], na.rm = TRUE))) > 1 ||
       all(is.na(statistic_pvalue['Pvalue', ]))) {
 
     splitpoint <- values[which.max(statistic_pvalue['Statistic', ])]
@@ -768,7 +764,7 @@ select_component <- function(statistic_pvalue) {
   stopifnot(identical(rownames(statistic_pvalue), c('Statistic', 'Pvalue')))
 
   if (length(which(statistic_pvalue['Pvalue', ] ==
-                   min(statistic_pvalue['Pvalue', ], na.rm = T))) > 1 ||
+                   min(statistic_pvalue['Pvalue', ], na.rm = TRUE))) > 1 ||
       all(is.na(statistic_pvalue['Pvalue', ]))) {
 
     bselect <- as.integer(which.max(statistic_pvalue['Statistic', ]))
@@ -782,6 +778,7 @@ select_component <- function(statistic_pvalue) {
   return(bselect)
 
 }
+select_variable <- select_component
 
 
 select_clustering <- function(cov, new_cov, cov_dist) {
