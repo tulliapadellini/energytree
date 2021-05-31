@@ -18,79 +18,10 @@ etree <- function(response,
   if (!is.list(covariates)) stop("Argument 'covariates' must be provided as a list")
 
   # If the case weights are not provided, they are all initialized as 1
-  if (is.null(weights))
-    weights <- rep(1L, as.numeric(length(response)))
+  if (is.null(weights)) weights <- rep(1L, as.numeric(length(response)))
 
   # New list of covariates (needed here to build the df used by party)
-  newcovariates <- lapply(covariates, function(j) {
-
-    if (class(j) == 'fdata') {
-
-      if (split_type == "coeff") {
-
-        fdata_est <- fda.usc::optim.basis(j,
-                                          numbasis = floor(seq(4, ncol(j)/2,
-                                                               len = 10)))
-        #seq starts from 4 as it is the smallest acceptable number (norder is 4,
-        #and nbasis has to be >= norder -- cf. fda::create.bspline.basis)
-        coefs <- fda.usc::fdata2fd(fdata_est$fdata.est,
-                                   type.basis = "bspline",
-                                   nbasis = fdata_est$numbasis.opt)$coefs
-        newcov <- data.frame(t(coefs))
-        names(newcov) <- 1:length(names(newcov))
-
-      } else if (split_type == "cluster") {
-
-        newcov <- as.factor(1:length(response))
-
-      }
-
-      attr(newcov, 'cov_type') <- 'fdata'
-      return(newcov)
-
-    } else if (class(j) == 'list' &&
-               all(sapply(j, function(x) attributes(x)$names) == 'diagram')) {
-
-      newcov <- as.factor(1:length(response))
-      attr(newcov, 'cov_type') <- 'diagram'
-      return(newcov)
-
-    } else if (class(j) == 'list' &&
-               all(sapply(j, class) == 'igraph')) {
-
-      if (split_type == "coeff") {
-
-        newcov <- graph_shell(j)
-
-      } else if (split_type == "cluster") {
-
-        newcov <- as.factor(1:length(response))
-
-      }
-
-      attr(newcov, 'cov_type') <- 'graph'
-      return(newcov)
-
-    } else {
-
-      return(j)
-
-    }
-  })
-
-  # Covariates name
-  if (!is.null(names(covariates))) {
-    names(newcovariates) <- names(covariates)
-    #control if any name is void, i.e. if it is ''
-    no_name <- which(sapply(names(covariates), function(n) n == '',
-                            USE.NAMES = FALSE))
-    names(newcovariates) <- replace(names(newcovariates),
-                                    no_name,
-                                    as.factor(1:length(no_name)))
-  } else {
-    warning('No names available for covariates. Numbers are used instead.')
-    names(newcovariates) <- 1:length(newcovariates)
-  }
+  newcovariates <- create_newcov(covariates)
 
   # Distances
   cov_distance <- lapply(covariates, dist_comp)
@@ -132,6 +63,89 @@ etree <- function(response,
   attr(etree_obj, 'split_type') <- split_type     #used in predict.party
 
   return(etree_obj)
+
+}
+
+
+create_newcov <- function(covariates) {
+
+  newcovariates <- lapply(covariates, function(j) {
+
+    switch(class(j),
+
+           fdata = {
+
+             if (split_type == "coeff") {
+
+               fdata_est <- fda.usc::optim.basis(j,
+                                                 numbasis = floor(seq(4,
+                                                                      ncol(j)/2,
+                                                                      len = 10)))
+               #seq starts from 4 as it is the smallest ok number (norder is 4,
+               #and nbasis has to be >= norder -- cf. fda::create.bspline.basis)
+               coefs <- fda.usc::fdata2fd(fdata_est$fdata.est,
+                                          type.basis = "bspline",
+                                          nbasis = fdata_est$numbasis.opt)$coefs
+               newcov <- data.frame(t(coefs))
+               names(newcov) <- 1:length(names(newcov))
+
+             } else if (split_type == "cluster") {
+
+               newcov <- as.factor(1:length(response))
+
+             }
+
+             attr(newcov, 'cov_type') <- 'fdata'
+             return(newcov)
+
+           },
+
+           list = if (all(sapply(j, function(x) attributes(x)$names)
+                          == 'diagram')) {
+
+             newcov <- as.factor(1:length(response))
+             attr(newcov, 'cov_type') <- 'diagram'
+             return(newcov)
+
+           } else if (all(sapply(j, class) == 'igraph')) {
+
+             if (split_type == "coeff") {
+
+               newcov <- graph_shell(j)
+
+             } else if (split_type == "cluster") {
+
+               newcov <- as.factor(1:length(response))
+
+             }
+
+             attr(newcov, 'cov_type') <- 'graph'
+             return(newcov)
+
+           },
+
+           # In all other cases:
+           return(j)
+
+    )
+  })
+
+  # Covariates name
+  if (!is.null(names(covariates))) {
+    names(newcovariates) <- names(covariates)
+    #control if any name is void, i.e. if it is ''
+    no_name <- which(sapply(names(covariates), function(n) n == '',
+                            USE.NAMES = FALSE))
+    names(newcovariates) <- replace(names(newcovariates),
+                                    no_name,
+                                    as.factor(1:length(no_name)))
+  } else {
+    warning('No names available for covariates. Numbers are used instead.')
+    names(newcovariates) <- 1:length(newcovariates)
+  }
+
+  # Return newcovariates
+  return(newcovariates)
 
 }
 
