@@ -15,18 +15,18 @@ etree <- function(response,
                   random_covs = NULL) {
 
   # Check whether covariates is a list
-  if(!is.list(covariates)) stop("Argument 'covariates' must be provided as a list")
+  if (!is.list(covariates)) stop("Argument 'covariates' must be provided as a list")
 
   # If the case weights are not provided, they are all initialized as 1
-  if(is.null(weights))
+  if (is.null(weights))
     weights <- rep(1L, as.numeric(length(response)))
 
   # New list of covariates (needed here to build the df used by party)
   newcovariates <- lapply(covariates, function(j) {
 
-    if(class(j) == 'fdata'){
+    if (class(j) == 'fdata') {
 
-      if(split_type == "coeff"){
+      if (split_type == "coeff") {
 
         fdata_est <- fda.usc::optim.basis(j,
                                           numbasis = floor(seq(4, ncol(j)/2,
@@ -39,7 +39,7 @@ etree <- function(response,
         newcov <- data.frame(t(coefs))
         names(newcov) <- 1:length(names(newcov))
 
-      } else if(split_type == "cluster"){
+      } else if (split_type == "cluster") {
 
         newcov <- as.factor(1:length(response))
 
@@ -48,20 +48,21 @@ etree <- function(response,
       attr(newcov, 'cov_type') <- 'fdata'
       return(newcov)
 
-    } else if(class(j) == 'list' & all(sapply(j, function(x) attributes(x)$names) == 'diagram')){
+    } else if (class(j) == 'list' &&
+               all(sapply(j, function(x) attributes(x)$names) == 'diagram')) {
 
       newcov <- as.factor(1:length(response))
       attr(newcov, 'cov_type') <- 'diagram'
       return(newcov)
 
-    } else if(class(j) == 'list' &
-              all(sapply(j, class) == 'igraph')){
+    } else if (class(j) == 'list' &&
+               all(sapply(j, class) == 'igraph')) {
 
-      if(split_type == "coeff"){
+      if (split_type == "coeff") {
 
         newcov <- graph_shell(j)
 
-      } else if(split_type == "cluster"){
+      } else if (split_type == "cluster") {
 
         newcov <- as.factor(1:length(response))
 
@@ -78,7 +79,7 @@ etree <- function(response,
   })
 
   # Covariates name
-  if(!is.null(names(covariates))){
+  if (!is.null(names(covariates))) {
     names(newcovariates) <- names(covariates)
     #control if any name is void, i.e. if it is ''
     no_name <- which(sapply(names(covariates), function(n) n == '',
@@ -123,7 +124,8 @@ etree <- function(response,
   obj <- party(nodes,
                data = newcovariates,
                fitted = data.frame("(fitted)" = fitted_obs,
-                                   "(response)" = if(supervised) response else fitted_obs,
+                                   "(response)" = if (supervised) response
+                                   else fitted_obs,
                                    check.names = FALSE),
                terms = terms(response ~ ., data = newcovariates))
   etree_obj <- as.constparty(obj)
@@ -165,7 +167,7 @@ growtree <- function(id = 1L,
 
   # Selected variable index and possibly selected basis index
   varid <- split$varid
-  if(!is.null(split$basid)){
+  if (!is.null(split$basid)) {
     basid <- split$basid
   }
 
@@ -200,7 +202,7 @@ growtree <- function(id = 1L,
 
          fdata = {
 
-           if(split_type == 'coeff'){
+           if (split_type == 'coeff') {
 
              kidids[which(covariates$newcov[[varid]][, basid] <= breaks)] <- 1
              kidids[which(covariates$newcov[[varid]][, basid] > breaks)] <- 2
@@ -212,13 +214,14 @@ growtree <- function(id = 1L,
            }
          },
 
-         list = if(all(sapply(covariates$cov[[varid]], function(x) attributes(x)$names) == 'diagram')){
+         list = if (all(sapply(covariates$cov[[varid]],
+                               function(x) attributes(x)$names) == 'diagram')) {
 
            kidids <- na.exclude(index)
 
-         } else if(all(sapply(covariates$cov[[varid]], class) == 'igraph')){
+         } else if (all(sapply(covariates$cov[[varid]], class) == 'igraph')) {
 
-           if(split_type == 'coeff'){
+           if (split_type == 'coeff') {
 
              kidids[which(covariates$newcov[[varid]][as.character(basid)]
                           <= breaks)] <- 1
@@ -226,7 +229,7 @@ growtree <- function(id = 1L,
                           > breaks)] <- 2
              #recall that basid is the column's name, so [as.character(basid)]
 
-           } else if(split_type == 'cluster') {
+           } else if (split_type == 'cluster') {
 
              kidids <- na.exclude(index)
 
@@ -251,7 +254,7 @@ growtree <- function(id = 1L,
     # Previous maximum id (to later set the id for the current kid node)
     if (kidid > 1) {
       prev_id <- max(nodeids(kids[[kidid - 1]]))
-    } else{
+    } else {
       prev_id <- id
     }
 
@@ -311,7 +314,7 @@ findsplit <- function(response,
 
   # Subset of covariates to consider for splitting (possibly all of them)
   cov_subset <- as.integer(1:n_cov)
-  if(!is.null(random_covs)){
+  if (!is.null(random_covs)) {
     cov_subset <- sample(cov_subset, random_covs)
   }
 
@@ -319,10 +322,10 @@ findsplit <- function(response,
   resp_dist <- response$response_dist
   stat_pval <- sapply(covariates$dist[cov_subset],
                       function(cov_dist) {
-                        indep_test(x_dist = cov_dist, y_dist = resp_dist, R)
+                        indep_test(x_dist = cov_dist, y_dist = resp_dist, R = R)
                       }
   )
-  if(all(is.na(stat_pval['Pvalue', ]))) return(NULL)
+  if (all(is.na(stat_pval['Pvalue', ]))) return(NULL)
 
   # Multiple testing correction
   adj_p <- p.adjust(stat_pval['Pvalue', ], method = p_adjust_method)
@@ -332,10 +335,10 @@ findsplit <- function(response,
 
   # Variable selection (based on original pvalues)
   if (length(which(stat_pval['Pvalue', ] == min(stat_pval['Pvalue', ],
-                                               na.rm = TRUE))) > 1) {
+                                                na.rm = TRUE))) > 1) {
     xselect <- which.max(stat_pval['Statistic', ])
     #in case of multiple minima, take that with the highest test statistic
-  } else{
+  } else {
     xselect <- which.min(stat_pval['Pvalue', ])
   }
 
@@ -343,14 +346,14 @@ findsplit <- function(response,
   xselect <- cov_subset[xselect] #useful only if !is.null(random_covs)
   x <- covariates$cov[[xselect]]
   newx <- covariates$newcov[[xselect]]
-  if(split_type == 'cluster'){
+  if (split_type == 'cluster') {
     xdist <- covariates$dist[[xselect]]
   }
 
   # Control for newx not being void
-  if((split_type == 'coeff') &&
-     (class(x) == 'list') && all(sapply(x, class) == 'igraph') &&
-     (dim(newx)[2] == 0)){
+  if ((split_type == 'coeff') &&
+      (class(x) == 'list') && all(sapply(x, class) == 'igraph') &&
+      (dim(newx)[2] == 0)) {
 
     # Throw warning: if x is selected (through distance) and newx is void because
     # it had all-equal columns (after coeff exp), it means that either distance
@@ -377,15 +380,16 @@ findsplit <- function(response,
   }
 
   # Split point search
-  split_objs <- split_opt(y = response,
-                          x = x,
-                          newx = newx,
-                          xdist = xdist,
+  split_objs <- split_opt(resp = response,
+                          cov = x,
+                          new_cov = newx,
+                          cov_dist = xdist,
+                          R = R,
                           split_type = split_type,
                           coeff_split_type = coeff_split_type)
 
   # If split_objs is VOID, ignore the selected covariate and re-run findsplit
-  if(isTRUE(split_objs$void)){
+  if (isTRUE(split_objs$void)) {
     covariates$dist[[xselect]][] <- 0L
     split <- findsplit(response = response,
                        covariates = covariates,
@@ -435,14 +439,14 @@ findsplit <- function(response,
 
          fdata = {
 
-           if(split_type == 'coeff'){
+           if (split_type == 'coeff') {
              return(sp = partysplit(varid = as.integer(xselect),
                                     basid = as.integer(bselect),
                                     breaks = splitpoint,
                                     right = TRUE,
                                     info = list(pvalue = stat_pval)))
 
-           } else if(split_type == 'cluster'){
+           } else if (split_type == 'cluster') {
 
              sp <- partysplit(varid = as.integer(xselect),
                               centroids = centroids,
@@ -454,7 +458,8 @@ findsplit <- function(response,
            }
          },
 
-         list = if(all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
+         list = if (all(sapply(x, function(x) attributes(x)$names)
+                        == 'diagram')) {
 
            #only cluster
            sp <- partysplit(varid = as.integer(xselect),
@@ -464,9 +469,9 @@ findsplit <- function(response,
            attr(sp, 'curr_split_type') <- 'cluster'   #used in edge.simple
            return(sp)
 
-         } else if(all(sapply(x, class) == 'igraph')){
+         } else if (all(sapply(x, class) == 'igraph')) {
 
-           if(split_type == 'coeff'){
+           if (split_type == 'coeff') {
 
              return(sp = partysplit(varid = as.integer(xselect),
                                     basid = as.integer(bselect),
@@ -474,7 +479,7 @@ findsplit <- function(response,
                                     right = TRUE,
                                     info = list(pvalue = stat_pval)))
 
-           } else if(split_type == 'cluster') {
+           } else if (split_type == 'cluster') {
 
              sp <- partysplit(varid = as.integer(xselect),
                               centroids = centroids,
@@ -492,35 +497,37 @@ findsplit <- function(response,
 # Split point search ------------------------------------------------------
 
 
-split_opt <- function(y,
-                      x,
-                      newx,
-                      xdist,
+split_opt <- function(resp,
+                      cov,
+                      new_cov,
+                      cov_dist,
+                      R = 1000,
                       split_type = 'coeff',
-                      coeff_split_type = 'test',
-                      R = 500) {
+                      coeff_split_type = 'test') {
 
   # Retrieve response_dist and response
-  y_dist <- y$response_dist
-  y <- y$response
+  resp_dist <- resp$response_dist
+  resp <- resp$response
 
-  switch(class(x),
+  switch(class(cov),
 
          integer    = {
 
-           s  <- sort(x)
-           comb <- sapply(s[-length(s)], function(j) x <= j)
+           s  <- sort(cov)
+           comb <- sapply(s[-length(s)], function(j) cov <= j)
 
-           if(coeff_split_type == 'traditional'){
+           if (coeff_split_type == 'traditional') {
 
              splitpoint <- select_traditional(values = s,
                                               comb_logical = comb,
-                                              y = y)
+                                              resp = resp)
 
            } else if (coeff_split_type == 'test'){
 
              stat_pval <- apply(comb, 2,
-                                function(q) indep_test(x = q, y_dist = y_dist))
+                                function(q) indep_test(x = q,
+                                                       y_dist = resp_dist,
+                                                       R = R))
              splitpoint <- select_splitpoint(values = s,
                                              statistic_pvalue = stat_pval)
 
@@ -529,19 +536,21 @@ split_opt <- function(y,
 
          numeric    = {
 
-           s  <- sort(x)
-           comb <- sapply(s[-length(s)], function(j) x <= j)
+           s  <- sort(cov)
+           comb <- sapply(s[-length(s)], function(j) cov <= j)
 
-           if(coeff_split_type == 'traditional'){
+           if (coeff_split_type == 'traditional') {
 
              splitpoint <- select_traditional(values = s,
                                               comb_logical = comb,
-                                              y = y)
+                                              resp = resp)
 
            } else if (coeff_split_type == 'test'){
 
              stat_pval <- apply(comb, 2,
-                                function(q) indep_test(x = q, y_dist = y_dist))
+                                function(q) indep_test(x = q,
+                                                       y_dist = resp_dist,
+                                                       R = R))
              splitpoint <- select_splitpoint(values = s,
                                              statistic_pvalue = stat_pval)
 
@@ -551,7 +560,7 @@ split_opt <- function(y,
          factor     = {
 
            # Drop unused levels
-           lev <- levels(x[drop = TRUE])
+           lev <- levels(cov[drop = TRUE])
 
            if (length(lev) == 2) {
 
@@ -567,18 +576,20 @@ split_opt <- function(y,
                                                               m = ntaken,
                                                               simplify = FALSE)))
              #todo: take only first length(lev)/2 - 1, the other are complements!
-             comb <- sapply(lev_cmb, function(q) x %in% q)
+             comb <- sapply(lev_cmb, function(lc) cov %in% lc)
 
-             if(coeff_split_type == 'traditional'){
+             if (coeff_split_type == 'traditional') {
 
                splitpoint <- select_traditional(values = lev_cmb,
                                                 comb_logical = comb,
-                                                y = y)
+                                                resp = resp)
 
              } else if (coeff_split_type == 'test'){
 
                stat_pval <- apply(comb, 2,
-                                  function(q) indep_test(x = q, y_dist = y_dist))
+                                  function(q) indep_test(x = q,
+                                                         y_dist = resp_dist,
+                                                         R = R))
                splitpoint <- select_splitpoint(values = lev_cmb,
                                                statistic_pvalue = stat_pval)
 
@@ -589,45 +600,49 @@ split_opt <- function(y,
            # Label levels with 1 if they are in splitpoint, 2 otherwise
            # (and with NA if they do not occur)
            #needed in growtree to split observations using their level
-           splitindex <- !(levels(x) %in% splitpoint)
-           splitindex[!(levels(x) %in% lev)] <- NA_integer_
+           splitindex <- !(levels(cov) %in% splitpoint)
+           splitindex[!(levels(cov) %in% lev)] <- NA_integer_
            splitindex <- splitindex - min(splitindex, na.rm = TRUE) + 1L
 
          },
 
          fdata      = {
 
-           if(split_type == 'coeff'){
+           if (split_type == 'coeff') {
 
-             comp_idx <- 1:dim(newx)[2]
+             comp_idx <- 1:dim(new_cov)[2]
              stat_pval <- sapply(comp_idx,
-                                 function(i) indep_test(newx[, i],
-                                                        y_dist = y_dist))
+                                 function(i) indep_test(x = new_cov[, i],
+                                                        y_dist = resp_dist,
+                                                        R = R))
              bselect <- select_component(statistic_pvalue = stat_pval)
 
-             sel_comp <- newx[, bselect]
+             sel_comp <- new_cov[, bselect]
              s  <- sort(sel_comp)
              comb <- sapply(s[-length(s)], function(j) sel_comp <= j)
 
-             if(coeff_split_type == 'traditional'){
+             if (coeff_split_type == 'traditional') {
 
                splitpoint <- select_traditional(values = s,
                                                 comb_logical = comb,
-                                                y = y)
+                                                resp = resp)
 
              } else if (coeff_split_type == 'test'){
 
                stat_pval <- apply(comb, 2,
-                                  function(q) indep_test(x = q, y_dist = y_dist))
+                                  function(q) indep_test(x = q,
+                                                         y_dist = resp_dist,
+                                                         R = R))
                splitpoint <- select_splitpoint(values = s,
                                                statistic_pvalue = stat_pval)
 
              }
 
-           } else if(split_type == 'cluster') {
+           } else if (split_type == 'cluster') {
 
-             clustering_objs <- select_clustering(x = x, newx = newx,
-                                                  xdist = xdist)
+             clustering_objs <- select_clustering(cov = cov,
+                                                  new_cov = new_cov,
+                                                  cov_dist = cov_dist)
              splitindex <- clustering_objs$splitindex
              centroids <- clustering_objs$centroids
 
@@ -635,61 +650,67 @@ split_opt <- function(y,
 
          },
 
-         list = if(all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
+         list = if (all(sapply(cov, function(obj) attributes(obj)$names)
+                        == 'diagram')) {
 
-           clustering_objs <- select_clustering(x = x, newx = newx,
-                                                xdist = xdist)
+           clustering_objs <- select_clustering(cov = cov,
+                                                new_cov = new_cov,
+                                                cov_dist = cov_dist)
            splitindex <- clustering_objs$splitindex
            centroids <- clustering_objs$centroids
 
-         } else if(all(sapply(x, class) == 'igraph')){
+         } else if (all(sapply(cov, class) == 'igraph')) {
 
-           if(split_type == 'coeff'){
+           if (split_type == 'coeff') {
 
              # Drop non-informative (i.e. all-equal) columns
-             newx <- newx[, !as.logical(apply(newx, 2, zero_range))]
+             new_cov <- new_cov[, !as.logical(apply(new_cov, 2, zero_range))]
 
              # Control if the df is now void; if so, return 'void'
-             if(dim(newx)[2] == 0) return(list('void' = TRUE))
+             if (dim(new_cov)[2] == 0) return(list('void' = TRUE))
 
-             comp_idx <- 1:dim(newx)[2]
+             comp_idx <- 1:dim(new_cov)[2]
              stat_pval <- sapply(comp_idx,
-                                 function(i) indep_test(newx[, i],
-                                                        y_dist = y_dist))
+                                 function(i) indep_test(x = new_cov[, i],
+                                                        y_dist = resp_dist,
+                                                        R = R))
              bselect <- select_component(statistic_pvalue = stat_pval)
 
              # graph_shell may drop columns, so switch from index to name
-             bselect <- as.integer(names(newx)[bselect])
+             bselect <- as.integer(names(new_cov)[bselect])
 
-             sel_comp <- newx[[as.character(bselect)]]
+             sel_comp <- new_cov[[as.character(bselect)]]
              s  <- sort(sel_comp)
              comb <- sapply(s[-length(s)], function(j) sel_comp <= j)
 
              # Check if all columns of comb are equal
-             if(all(apply(comb, 2, identical, comb[,1]))){
+             if (all(apply(comb, 2, identical, comb[,1]))) {
                # if TRUE, the omitted column [position length(s)] is different;
                # when this is the case, set last included column as splitpoint,
                # as it means that breaks is set before last column
                splitpoint <- s[(length(s) - 1)]
-             } else if(coeff_split_type == 'traditional'){
+             } else if (coeff_split_type == 'traditional') {
 
                splitpoint <- select_traditional(values = s,
                                                 comb_logical = comb,
-                                                y = y)
+                                                resp = resp)
 
-             } else if(coeff_split_type == 'test'){
+             } else if (coeff_split_type == 'test') {
 
                stat_pval <- apply(comb, 2,
-                                  function(q) indep_test(x = q, y_dist = y_dist))
+                                  function(q) indep_test(x = q,
+                                                         y_dist = resp_dist,
+                                                         R = R))
                splitpoint <- select_splitpoint(values = s,
                                                statistic_pvalue = stat_pval)
 
              }
 
-           } else if(split_type == 'cluster') {
+           } else if (split_type == 'cluster') {
 
-             clustering_objs <- select_clustering(x = x, newx = newx,
-                                                  xdist = xdist)
+             clustering_objs <- select_clustering(cov = cov,
+                                                  new_cov = new_cov,
+                                                  cov_dist = cov_dist)
              splitindex <- clustering_objs$splitindex
              centroids <- clustering_objs$centroids
 
@@ -698,10 +719,10 @@ split_opt <- function(y,
   )
 
   split_out <- list()
-  if(exists('splitpoint')) split_out$splitpoint <- splitpoint
-  if(exists('splitindex')) split_out$splitindex <- splitindex
-  if(exists('bselect')) split_out$bselect <- bselect
-  if(exists('centroids')) split_out$centroids <- centroids
+  if (exists('splitpoint')) split_out$splitpoint <- splitpoint
+  if (exists('splitindex')) split_out$splitindex <- splitindex
+  if (exists('bselect')) split_out$bselect <- bselect
+  if (exists('centroids')) split_out$centroids <- centroids
   return(split_out)
 
 }
@@ -738,7 +759,7 @@ select_component <- function(statistic_pvalue) {
 
     bselect <- as.integer(which.max(statistic_pvalue['Statistic', ]))
 
-  } else{
+  } else {
 
     bselect <- as.integer(which.min(statistic_pvalue['Pvalue', ]))
 
@@ -749,34 +770,34 @@ select_component <- function(statistic_pvalue) {
 }
 
 
-select_clustering <- function(x, newx, xdist) {
+select_clustering <- function(cov, new_cov, cov_dist) {
 
-  stopifnot(identical(typeof(x), 'list'))
-  stopifnot(isSymmetric(xdist))
+  stopifnot(identical(typeof(cov), 'list'))
+  stopifnot(isSymmetric(cov_dist))
 
-  if(length(x) == 2){
+  if (length(cov) == 2) {
 
     splitindex <- c(1, 2)
 
-    centroids <- if(class(x) == 'fdata'){
-      list(c1 = x[1, ], c2 = x[2, ])
+    centroids <- if (class(cov) == 'fdata') {
+      list(c1 = cov[1, ], c2 = cov[2, ])
     } else {
-      list(c1 = x[[1]], c2 = x[[2]])
+      list(c1 = cov[[1]], c2 = cov[[2]])
     }
 
   } else {
 
-    pam_obj <- cluster::pam(xdist, k = 2, diss = TRUE)
+    pam_obj <- cluster::pam(cov_dist, k = 2, diss = TRUE)
     cl_index <- pam_obj$clustering
-    lev <- levels(newx)
+    lev <- levels(new_cov)
     splitindex <- rep(NA, length(lev))
-    splitindex[lev %in% newx[cl_index == 1]] <- 1
-    splitindex[lev %in% newx[cl_index == 2]] <- 2
+    splitindex[lev %in% new_cov[cl_index == 1]] <- 1
+    splitindex[lev %in% new_cov[cl_index == 2]] <- 2
 
     medindex1 <- pam_obj$id.med[1]
-    c1 <- if(class(x) == 'fdata') x[medindex1, ] else x[[medindex1]]
+    c1 <- if (class(cov) == 'fdata') cov[medindex1, ] else cov[[medindex1]]
     medindex2 <- pam_obj$id.med[2]
-    c2 <- if(class(x) == 'fdata') x[medindex2, ] else x[[medindex2]]
+    c2 <- if (class(cov) == 'fdata') cov[medindex2, ] else cov[[medindex2]]
     centroids <- list(c1 = c1, c2 = c2)
 
   }
@@ -786,15 +807,15 @@ select_clustering <- function(x, newx, xdist) {
 }
 
 
-select_traditional <- function(values, comb_logical, y) {
+select_traditional <- function(values, comb_logical, resp) {
 
-  if(class(y) == 'factor'){
+  if (class(resp) == 'factor') {
 
     total_gini <- apply(comb_logical, 2,
                         function(c) {
 
-                          y1 <- y[c]
-                          y2 <- y[!c]
+                          y1 <- resp[c]
+                          y2 <- resp[!c]
                           # Gini (alt. def.): G(B_r) = 1 - \sum_k p_{kr}^2
                           g1 <- 1 - sum(prop.table(table(y1)) ^ 2)
                           g2 <- 1 - sum(prop.table(table(y2)) ^ 2)
@@ -811,10 +832,10 @@ select_traditional <- function(values, comb_logical, y) {
     total_rss <- apply(comb_logical, 2,
                        function(c) {
 
-                         y1 <- y[c]
-                         y2 <- y[!c]
-                         v1 <- if(length(y1) == 1) 0 else var(y1)
-                         v2 <- if(length(y2) == 1) 0 else var(y2)
+                         y1 <- resp[c]
+                         y2 <- resp[!c]
+                         v1 <- if (length(y1) == 1) 0 else var(y1)
+                         v2 <- if (length(y2) == 1) 0 else var(y2)
                          n1 <- length(y1)
                          n2 <- length(y2)
 
@@ -842,14 +863,14 @@ indep_test <- function(x,
                        R = 1000) {
 
   # If distances are not provided, compute them
-  if(is.null(x_dist)) x_dist <- dist_comp(x)
-  if(is.null(y_dist)) y_dist <- dist_comp(y)
+  if (is.null(x_dist)) x_dist <- dist_comp(x)
+  if (is.null(y_dist)) y_dist <- dist_comp(y)
 
   # Distance correlation test
   dct <- energy::dcor.test(x_dist, y_dist, R = R)
 
   # Retrieve and return test statistic and p-value
-  stat_pval <- if(!is.na(dct$statistic)){
+  stat_pval <- if (!is.na(dct$statistic)) {
     c(dct$statistic, dct$p.value)
   } else{
     c(NA, NA)
@@ -875,14 +896,14 @@ dist_comp <- function(x,
          factor     = as.matrix(cluster::daisy(as.data.frame(x))),
          fdata      = metric.lp(x, lp = lp),
          list       = {
-           if(all(sapply(x, class) == 'igraph')){
-             if(all(sapply(x,
-                           function(i) {
-                             is.null(edge.attributes(i)$weight)
-                             #if attribute weight is null for all the graphs,
-                             #the graph covariate is not weighted
-                           })
-             )){
+           if (all(sapply(x, class) == 'igraph')) {
+             if (all(sapply(x,
+                            function(i) {
+                              is.null(edge.attributes(i)$weight)
+                              #if attribute weight is null for all the graphs,
+                              #the graph covariate is not weighted
+                            })
+             )) {
                adj_data <- lapply(x, igraph::as_adjacency_matrix)
              } else { #otherwise, it is weighted
                adj_data <- lapply(x, function(i) {
@@ -892,9 +913,10 @@ dist_comp <- function(x,
              #d is obtained in the same way in the two cases:
              d <- NetworkDistance::nd.edd(adj_data)
              return(as.matrix(d$D))
-           } else if(all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
+           } else if (all(sapply(x, function(x) attributes(x)$names)
+                          == 'diagram')) {
              wass_fun <- function(i,j) TDA::wasserstein(x[[i]]$diagram,
-                                                       x[[j]]$diagram)
+                                                        x[[j]]$diagram)
              vec_wass_fun <- Vectorize(wass_fun)
              d_idx <- seq_along(x)
              return(outer(d_idx, d_idx, vec_wass_fun))
@@ -912,8 +934,8 @@ dist_comp_cl <- function(centroid,
   switch(class(x),
          fdata      = metric.lp(fdata1 = x, fdata2 = centroid, lp = lp),
          list       = {
-           if(all(sapply(x, class) == 'igraph')){
-             if(all(sapply(x, function(i) {
+           if (all(sapply(x, class) == 'igraph')) {
+             if (all(sapply(x, function(i) {
                is.null(edge.attributes(i)$weight)
                #if attribute weight is null for all the graphs, the graph
                #covariate is not weighted
@@ -932,9 +954,10 @@ dist_comp_cl <- function(centroid,
                return(d$D)
              })
              return(dist_centroid)
-           } else if (all(sapply(x, function(x) attributes(x)$names) == 'diagram')){
+           } else if (all(sapply(x, function(x) attributes(x)$names)
+                          == 'diagram')){
              wass_fun <- function(x, centroid) TDA::wasserstein(x$diagram,
-                                                               centroid$diagram)
+                                                                centroid$diagram)
              vec_wass_fun <- Vectorize(wass_fun, vectorize.args = 'x')
              return(vec_wass_fun(x, centroid))
            }
@@ -963,7 +986,7 @@ graph_shell <- function(graph_list,
                                        function(s) as.integer(names(s))))
 
   # If max_shell is provided, go for it; otherwise, set obs_max_shell as max_shell
-  if(is.null(max_shell)) max_shell <- obs_max_shell
+  if (is.null(max_shell)) max_shell <- obs_max_shell
 
   # Column names for the shell df
   col_names <- as.character(seq(0, max_shell, 1))
@@ -987,7 +1010,7 @@ graph_shell <- function(graph_list,
   # }
 
   # Ignore non-informative columns only when not in predict
-  if(isFALSE(predicting)){
+  if (isFALSE(predicting)) {
     # Update all_shell_df ignoring non-informative columns
     all_shell_df <- all_shell_df[, !as.logical(apply(all_shell_df,
                                                      2,
@@ -1003,7 +1026,7 @@ graph_shell <- function(graph_list,
 # Function to test if all elements of a given vector are equal for tol provided
 zero_range <- function(x, tol = .Machine$double.eps ^ 0.5) {
   # if only one obs, equality cannot be tested -> return FALSE
-  if(length(x) == 1) return(FALSE)
+  if (length(x) == 1) return(FALSE)
   x <- range(x) / mean(x)
   isTRUE(all.equal(x[1], x[2], tolerance = tol))
 }
