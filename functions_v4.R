@@ -350,7 +350,7 @@ findsplit <- function(response,
   if (min(adj_p, na.rm = TRUE) > alpha) return(NULL)
 
   # Variable selection (based on original pvalues)
-  xselect <- select_variable(statistic_pvalue = stat_pval)
+  xselect <- select_variable(statistic_pvalue = stat_pval)#i.e. select_component
 
   # Selected covariates
   xselect <- cov_subset[xselect] #useful only if !is.null(random_covs)
@@ -571,21 +571,33 @@ split_opt <- function(resp,
 
            # Drop unused levels
            lev <- levels(cov[drop = TRUE])
+           n_lev <- length(lev)
 
-           if (length(lev) == 2) {
+           if (n_lev == 2) {
 
-             splitpoint <- lev[1]
-             #the split point is simply given by the first level
+             splitpoint <- lev[1]  #split point simply given by the first level
 
            } else {
 
              # Combination of all the levels
              lev_cmb <- do.call("c",
-                                lapply(1:(length(lev) - 2),
-                                       function(ntaken) combn(x = lev,
-                                                              m = ntaken,
-                                                              simplify = FALSE)))
-             #todo: take only first length(lev)/2 - 1, the other are complements!
+                                lapply(1:(n_lev / 2), function(ntaken) {
+                                  #1 for n_lev=2,3; 1,2 for n_lev=4,5; 1,2,3 for
+                                  #n_lev=6,7;... since [(1:x) := (1:floor(x))]
+                                  combs_ntaken <- combn(x = lev,
+                                                        m = ntaken,
+                                                        simplify = FALSE)
+                                  #fine, when n_lev is odd; for even n_lev, skip
+                                  #half the combs for the last ntaken
+                                  #e.g. n_lev=6 => last_ntaken=3, but '1,5,6' is
+                                  #equivalent to '2,3,4'
+                                  if (ntaken == (n_lev / 2)) {
+                                    combs_ntaken <-
+                                      combs_ntaken[1:(length(combs_ntaken)/2)]
+                                  }
+                                  return(combs_ntaken)
+
+                                } ))
              comb <- sapply(lev_cmb, function(lc) cov %in% lc)
 
              if (coeff_split_type == 'traditional') {
