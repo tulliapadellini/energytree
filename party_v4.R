@@ -256,38 +256,45 @@ predict.party <- function(object, newdata = NULL, perm = NULL, ...){
   }
 
   # Coefficient expansion in the 'coeff' case
-  if(!is.null(newdata)){
+  if (!is.null(newdata) && split_type == "coeff") {
 
-    newdata = lapply(newdata, function(j){
-      if(class(j) == 'fdata' && split_type == "coeff"){
+    newdata = lapply(newdata, function(j) {
 
-        fdata_est <- fda.usc::optim.basis(j,
-                                          numbasis = floor(seq(4, ncol(j)/2,
-                                                               len = 10)))
-        coefs <- fda.usc::fdata2fd(fdata_est$fdata.est,
-                                   type.basis = "bspline",
-                                   nbasis = fdata_est$numbasis.opt)$coefs
-        newcov <- data.frame(t(coefs))
-        names(newcov) <- 1:length(names(newcov))
-        return(newcov)
+      switch(class(j),
 
-      } else if(class(j) == 'list' &
-                all(sapply(j, class) == 'igraph') & split_type == "coeff"){
+             fdata = {
 
-        if(max(terminal) > 1L){
-          train_max_shell <- max(unlist(basids))
-          #if(is.infinite(train_max_shell)) train_max_shell <- NULL
-        } else {
-          train_max_shell <- NULL
-        }
-        newcov <- graph_shell(j, predicting = TRUE, max_shell = train_max_shell)
-        return(newcov)
+               fdata_est <- fda.usc::optim.basis(j,
+                                                 numbasis = floor(seq(4,
+                                                                      ncol(j)/2,
+                                                                      len = 10)))
+               coefs <- fda.usc::fdata2fd(fdata_est$fdata.est,
+                                          type.basis = "bspline",
+                                          nbasis = fdata_est$numbasis.opt)$coefs
+               newcov <- data.frame(t(coefs))
+               names(newcov) <- 1:length(names(newcov))
+               return(newcov)
 
-      } else {
+             },
 
-        return(j)
+             list = if (all(sapply(j, class) == 'igraph')) {
 
-      }})
+               if(max(terminal) > 1L){
+                 train_max_shell <- max(unlist(basids))
+                 #if(is.infinite(train_max_shell)) train_max_shell <- NULL
+               } else {
+                 train_max_shell <- NULL
+               }
+               newcov <- graph_shell(j,
+                                     predicting = TRUE,
+                                     max_shell = train_max_shell)
+               return(newcov)
+
+             },
+
+             return(j)
+
+      )})
   }
 
   ### compute fitted node ids first
