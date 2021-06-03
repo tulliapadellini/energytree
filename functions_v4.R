@@ -21,9 +21,9 @@ etree <- function(response,
   if (is.null(weights)) weights <- rep(1L, as.numeric(length(response)))
 
   # New list of covariates (needed here to build the df used by party)
-  newcovariates <- create_newcov(covariates = covariates,
-                                 response = response,
-                                 split_type = split_type)
+  newcovariates <- .create_newcov(covariates = covariates,
+                                  response = response,
+                                  split_type = split_type)
 
   # Distances
   cov_distance <- lapply(covariates, dist_comp)
@@ -69,7 +69,7 @@ etree <- function(response,
 }
 
 
-create_newcov <- function(covariates, response, split_type) {
+.create_newcov <- function(covariates, response, split_type) {
 
   newcovariates <- lapply(covariates, function(j) {
 
@@ -350,7 +350,8 @@ findsplit <- function(response,
   if (min(adj_p, na.rm = TRUE) > alpha) return(NULL)
 
   # Variable selection (based on original pvalues)
-  xselect <- select_variable(statistic_pvalue = stat_pval)#i.e. select_component
+  xselect <- .select_variable(statistic_pvalue = stat_pval)
+  #.select_variable is just a copy of .select_component
 
   # Selected covariates
   xselect <- cov_subset[xselect] #useful only if !is.null(random_covs)
@@ -528,9 +529,9 @@ split_opt <- function(resp,
 
            if (coeff_split_type == 'traditional') {
 
-             splitpoint <- select_traditional(values = s,
-                                              comb_logical = comb,
-                                              resp = resp)
+             splitpoint <- .select_traditional(values = s,
+                                               comb_logical = comb,
+                                               resp = resp)
 
            } else if (coeff_split_type == 'test'){
 
@@ -538,8 +539,8 @@ split_opt <- function(resp,
                                 function(q) indep_test(x = q,
                                                        y_dist = resp_dist,
                                                        R = R))
-             splitpoint <- select_splitpoint(values = s,
-                                             statistic_pvalue = stat_pval)
+             splitpoint <- .select_splitpoint(values = s,
+                                              statistic_pvalue = stat_pval)
 
            }
          },
@@ -551,9 +552,9 @@ split_opt <- function(resp,
 
            if (coeff_split_type == 'traditional') {
 
-             splitpoint <- select_traditional(values = s,
-                                              comb_logical = comb,
-                                              resp = resp)
+             splitpoint <- .select_traditional(values = s,
+                                               comb_logical = comb,
+                                               resp = resp)
 
            } else if (coeff_split_type == 'test'){
 
@@ -561,8 +562,8 @@ split_opt <- function(resp,
                                 function(q) indep_test(x = q,
                                                        y_dist = resp_dist,
                                                        R = R))
-             splitpoint <- select_splitpoint(values = s,
-                                             statistic_pvalue = stat_pval)
+             splitpoint <- .select_splitpoint(values = s,
+                                              statistic_pvalue = stat_pval)
 
            }
          },
@@ -602,9 +603,9 @@ split_opt <- function(resp,
 
              if (coeff_split_type == 'traditional') {
 
-               splitpoint <- select_traditional(values = lev_cmb,
-                                                comb_logical = comb,
-                                                resp = resp)
+               splitpoint <- .select_traditional(values = lev_cmb,
+                                                 comb_logical = comb,
+                                                 resp = resp)
 
              } else if (coeff_split_type == 'test'){
 
@@ -612,8 +613,8 @@ split_opt <- function(resp,
                                   function(q) indep_test(x = q,
                                                          y_dist = resp_dist,
                                                          R = R))
-               splitpoint <- select_splitpoint(values = lev_cmb,
-                                               statistic_pvalue = stat_pval)
+               splitpoint <- .select_splitpoint(values = lev_cmb,
+                                                statistic_pvalue = stat_pval)
 
              }
 
@@ -637,7 +638,7 @@ split_opt <- function(resp,
                                  function(i) indep_test(x = new_cov[, i],
                                                         y_dist = resp_dist,
                                                         R = R))
-             bselect <- select_component(statistic_pvalue = stat_pval)
+             bselect <- .select_component(statistic_pvalue = stat_pval)
 
              sel_comp <- new_cov[, bselect]
              s  <- sort(sel_comp)
@@ -645,9 +646,9 @@ split_opt <- function(resp,
 
              if (coeff_split_type == 'traditional') {
 
-               splitpoint <- select_traditional(values = s,
-                                                comb_logical = comb,
-                                                resp = resp)
+               splitpoint <- .select_traditional(values = s,
+                                                 comb_logical = comb,
+                                                 resp = resp)
 
              } else if (coeff_split_type == 'test'){
 
@@ -655,16 +656,16 @@ split_opt <- function(resp,
                                   function(q) indep_test(x = q,
                                                          y_dist = resp_dist,
                                                          R = R))
-               splitpoint <- select_splitpoint(values = s,
-                                               statistic_pvalue = stat_pval)
+               splitpoint <- .select_splitpoint(values = s,
+                                                statistic_pvalue = stat_pval)
 
              }
 
            } else if (split_type == 'cluster') {
 
-             clustering_objs <- select_clustering(cov = cov,
-                                                  new_cov = new_cov,
-                                                  cov_dist = cov_dist)
+             clustering_objs <- .select_clustering(cov = cov,
+                                                   new_cov = new_cov,
+                                                   cov_dist = cov_dist)
              splitindex <- clustering_objs$splitindex
              centroids <- clustering_objs$centroids
 
@@ -675,9 +676,9 @@ split_opt <- function(resp,
          list = if (all(sapply(cov, function(obj) attributes(obj)$names)
                         == 'diagram')) {
 
-           clustering_objs <- select_clustering(cov = cov,
-                                                new_cov = new_cov,
-                                                cov_dist = cov_dist)
+           clustering_objs <- .select_clustering(cov = cov,
+                                                 new_cov = new_cov,
+                                                 cov_dist = cov_dist)
            splitindex <- clustering_objs$splitindex
            centroids <- clustering_objs$centroids
 
@@ -696,7 +697,7 @@ split_opt <- function(resp,
                                  function(i) indep_test(x = new_cov[, i],
                                                         y_dist = resp_dist,
                                                         R = R))
-             bselect <- select_component(statistic_pvalue = stat_pval)
+             bselect <- .select_component(statistic_pvalue = stat_pval)
 
              # graph_shell may drop columns, so switch from index to name
              bselect <- as.integer(names(new_cov)[bselect])
@@ -713,9 +714,9 @@ split_opt <- function(resp,
                splitpoint <- s[(length(s) - 1)]
              } else if (coeff_split_type == 'traditional') {
 
-               splitpoint <- select_traditional(values = s,
-                                                comb_logical = comb,
-                                                resp = resp)
+               splitpoint <- .select_traditional(values = s,
+                                                 comb_logical = comb,
+                                                 resp = resp)
 
              } else if (coeff_split_type == 'test') {
 
@@ -723,16 +724,16 @@ split_opt <- function(resp,
                                   function(q) indep_test(x = q,
                                                          y_dist = resp_dist,
                                                          R = R))
-               splitpoint <- select_splitpoint(values = s,
-                                               statistic_pvalue = stat_pval)
+               splitpoint <- .select_splitpoint(values = s,
+                                                statistic_pvalue = stat_pval)
 
              }
 
            } else if (split_type == 'cluster') {
 
-             clustering_objs <- select_clustering(cov = cov,
-                                                  new_cov = new_cov,
-                                                  cov_dist = cov_dist)
+             clustering_objs <- .select_clustering(cov = cov,
+                                                   new_cov = new_cov,
+                                                   cov_dist = cov_dist)
              splitindex <- clustering_objs$splitindex
              centroids <- clustering_objs$centroids
 
@@ -750,7 +751,7 @@ split_opt <- function(resp,
 }
 
 
-select_splitpoint <- function(values, statistic_pvalue) {
+.select_splitpoint <- function(values, statistic_pvalue) {
 
   stopifnot(identical(rownames(statistic_pvalue), c('Statistic', 'Pvalue')))
 
@@ -771,7 +772,7 @@ select_splitpoint <- function(values, statistic_pvalue) {
 }
 
 
-select_component <- function(statistic_pvalue) {
+.select_component <- function(statistic_pvalue) {
 
   stopifnot(identical(rownames(statistic_pvalue), c('Statistic', 'Pvalue')))
 
@@ -790,10 +791,10 @@ select_component <- function(statistic_pvalue) {
   return(bselect)
 
 }
-select_variable <- select_component
+.select_variable <- .select_component
 
 
-select_clustering <- function(cov, new_cov, cov_dist) {
+.select_clustering <- function(cov, new_cov, cov_dist) {
 
   stopifnot(identical(typeof(cov), 'list'))
   stopifnot(isSymmetric(cov_dist))
@@ -830,7 +831,7 @@ select_clustering <- function(cov, new_cov, cov_dist) {
 }
 
 
-select_traditional <- function(values, comb_logical, resp) {
+.select_traditional <- function(values, comb_logical, resp) {
 
   if (class(resp) == 'factor') {
 
