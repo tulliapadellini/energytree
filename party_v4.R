@@ -10,12 +10,13 @@
 party <- function(node, data, fitted = NULL, terms = NULL, names = NULL, info = NULL) {
 
   stopifnot(inherits(node, "partynode"))
-  #stopifnot(inherits(data, "list"))   #give rise to problems for classif plots
+  stopifnot(inherits(data, "list") | inherits(data, "data.frame"))
+  #without adding 'data.frame', it throws error for CLS plots
   ### make sure all split variables are there
   ids <- nodeids(node)[!nodeids(node) %in% nodeids(node, terminal = TRUE)]
   varids <- unique(unlist(nodeapply(node, ids = ids, FUN = function(x)
     varid_split(split_node(x)))))
-  #stopifnot(varids %in% 1:length(data))
+  stopifnot(varids %in% 1:length(data))
 
   if(!is.null(fitted)) {
     stopifnot(inherits(fitted, "data.frame"))
