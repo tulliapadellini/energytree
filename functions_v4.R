@@ -167,6 +167,10 @@ growtree <- function(id = 1L,
                      p_adjust_method,
                      random_covs) {
 
+  # If the observations are less than <2*minbucket>, stop here (otherwise, there
+  #would not be enough obs to have at least <minbucket> obs in each kid node)
+  if (sum(weights) < 2 * minbucket) return(partynode(id = id))
+
   # Find the best split (variable selection & split point search)
   split <- findsplit(response = response,
                      covariates = covariates,
@@ -178,8 +182,7 @@ growtree <- function(id = 1L,
                      random_covs = random_covs)
 
   # If no split is found, stop here
-  if (is.null(split))
-    return(partynode(id = id))
+  if (is.null(split)) return(partynode(id = id))
 
   # Selected variable index and possibly selected basis index
   varid <- split$varid
@@ -264,8 +267,7 @@ growtree <- function(id = 1L,
     w[kidids != kidid] <- 0
 
     # For less than <minbucket> observations, stop here
-    if (sum(w) < minbucket)
-      return(partynode(id = id))
+    if (sum(w) < minbucket) return(partynode(id = id))
 
     # Previous maximum id (to later set the id for the current kid node)
     if (kidid > 1) {
