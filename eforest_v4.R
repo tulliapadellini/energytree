@@ -1,0 +1,148 @@
+eforest <- function(response,
+                    covariates,
+                    weights = NULL,
+                    ntrees = 100,
+                    ncores = 1L,
+                    minbucket = 1,
+                    alpha = 1,
+                    R = 500,
+                    split_type = 'cluster',
+                    coeff_split_type = 'test',
+                    p_adjust_method = 'fdr',
+                    random_covs = NULL){
+
+  # Number of observations
+  nobs <- length(response)
+
+  # New list of covariates
+  newcovariates <- .create_newcov(covariates = covariates,
+                                  response = response,
+                                  split_type = split_type)
+
+  # Distances
+  cov_distance <- lapply(covariates, dist_comp)
+
+  # Large list with covariates, newcovariates and distances
+  covariates_large = list('cov' = covariates,
+                          'newcov' = newcovariates,
+                          'dist' = cov_distance)
+
+  # Generate B bootstrap samples
+  set.seed(12345)
+  boot_idx <- lapply(1:ntrees,
+                     function(b) sample.int(nobs, replace = TRUE))
+
+  # Energy Tree fits for each bootstrap sample
+  etree_boot_fits <- parallel::mclapply(boot_idx, function(b_i) {
+
+    # Covariates and response for this bootstrap sample
+    boot_cov_large <- lapply(covariates_large[1:2],
+                             function(cl) lapply(cl, function(cov) cov[b_i]))
+    boot_cov_large$dist <- lapply(covariates_large[[3]],
+                                  function(cov_dist){
+                                    boot_dist <- usedist::dist_subset(cov_dist, b_i)
+                                    return(as.matrix(boot_dist))
+                                  })
+    boot_resp <- response[b_i]
+
+    # Energy Trees fit
+    e_fit <- etree(response = boot_resp,
+                   covariates = boot_cov_large,
+                   weights = weights,
+                   minbucket = minbucket,
+                   alpha = alpha,
+                   R = R,
+                   split_type = split_type,
+                   coeff_split_type = coeff_split_type,
+                   p_adjust_method = p_adjust_method,
+                   nb = nb,
+                   random_covs = random_covs)
+
+    # Remove .Environment attribute from terms
+    attr(e_fit$terms, '.Environment') <- NULL
+
+    # Return
+    return(e_fit)
+
+  },
+  mc.cores = ncores,
+  mc.set.seed = TRUE)
+
+  # List containing for each obs the predicted response with all the corresponding OOB trees
+  oob_pred_resp <- lapply(1:nobs, function(i){
+
+    # Is the observation Out Of Bag in each bootstrap sample?
+    is.oob <- sapply(boot_idx, function(b) !(i %in% b))
+
+    # Indices of bootstrap samples for which the observation is OOB
+    is.oob_idx <- which(is.oob)
+
+    # Predict response for this obs only with trees whose index is is.oob_idx
+    oob_pred_resp <- sapply(is.oob_idx, function(o){
+      predict(etree_boot_fits[[o]],
+              newdata = lapply(covariates, function(cov) cov[i]))
+    })
+
+    # Return predicted response
+    return(oob_pred_resp)
+
+  })
+
+
+  # Predicted responses and OOB error calculation
+  if(class(response) == 'factor'){
+
+    ## Classification ##
+
+    # Predicted response: majority voting rule
+    pred_resp <- sapply(oob_pred_resp, function(i) names(which.max(table(i))))
+
+    # OOB error (measured as 1 - AUC)
+    oob_error <- 1 - MLmetrics::AUC(as.integer(pred_resp == 'GBM'),
+                                    as.integer(response == 'GBM'))
+    #MISC: oob_error <- mean(pred_resp != response)
+
+  } else {
+
+    ## Regression ##
+
+    # Predicted response: average
+    pred_resp <- sapply(oob_pred_resp, mean)
+
+    # OOB error
+    oob_error <- mean((pred_resp - response) ^ 2)
+
+  }
+
+  # Return couple (etree_boot_fits, oob_error)
+  return(list(ensemble =  etree_boot_fits, oob_error = oob_error))
+
+}
+
+predict_eforest <- function(eforest_ensemble, newdata = NULL){
+
+  # Individual predictions with base learners
+  ind_pred_resp <- sapply(eforest_ensemble, function(tree){
+    predict(tree, newdata = newdata)
+  })
+
+  # Predict response, differenty based on the type of problem (CLS or REG)
+  if(class(response) == 'factor'){
+
+    # Majority voting rule
+    pred_resp <- apply(ind_pred_resp, 1, function(i) names(which.max(table(i))))
+    pred_resp <- factor(pred_resp)
+
+  } else if (class(response) == 'numeric' ||
+             class(response) == 'integer') {
+
+    # Average
+    pred_resp <- apply(ind_pred_resp, 1, mean)
+
+  }
+
+  # Return predicted response
+  return(pred_resp)
+
+}
+
