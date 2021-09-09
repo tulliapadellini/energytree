@@ -260,7 +260,14 @@ predict.party <- function(object, newdata = NULL, perm = NULL, ...){
   # Coefficient expansion in the 'coeff' case
   if (!is.null(newdata) && split_type == "coeff") {
 
-    cov_numbasis <- lapply(object$data, ncol)
+    cov_numbasis <- lapply(object$data,
+                           function(cov) {
+                             bases_names <- colnames(cov)
+                             #colnames(), not ncol(), bc graph_shell may drop cols
+                             if (!is.null(bases_names)) {
+                             numbasis <- max(as.integer(bases_names))
+                             }
+                           })
     #number of basis for fda, max shell index for graphs, NULL for others
     #FIXME: only works if covs ordering in newdata is preserved (wrt to train)
     newdata <- mapply(function(cov, numbas) {
