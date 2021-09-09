@@ -250,25 +250,36 @@ predict.party <- function(object, newdata = NULL, perm = NULL, ...){
   if(max(terminal) > 1L) {
     inner <- 1L:max(terminal)
     inner <- inner[-terminal]
-    if(split_type == "coeff"){
-      basids <<- nodeapply(object, ids = inner, by_node = TRUE,
-                          FUN = function(node) basid_split(split_node(node)))
-    }
+    # if(split_type == "coeff"){
+    #   basids <<- nodeapply(object, ids = inner, by_node = TRUE,
+    #                       FUN = function(node) basid_split(split_node(node)))
+    #   train_max_basid <- max(unlist(basids))
+    # }
   }
 
   # Coefficient expansion in the 'coeff' case
   if (!is.null(newdata) && split_type == "coeff") {
 
-    newdata = lapply(newdata, function(j) {
+    cov_numbasis <- lapply(object$data, ncol)
+    #number of basis for fda, max shell index for graphs, NULL for others
+    #FIXME: only works if covs ordering in newdata is preserved (wrt to train)
+    newdata <- mapply(function(cov, numbas) {
+      attr(cov, 'numbasis') <- numbas
+      return(cov)
+    },
+    newdata,
+    cov_numbasis,
+    SIMPLIFY = FALSE)
+
+    newdata <- lapply(newdata, function(j) {
 
       switch(class(j),
 
              fdata = {
 
+               train_nb <- attr(j, 'numbasis')
                fdata_est <- fda.usc::optim.basis(j,
-                                                 numbasis = floor(seq(4,
-                                                                      ncol(j)/2,
-                                                                      len = 10)))
+                                                 numbasis = train_nb)
                coefs <- fda.usc::fdata2fd(fdata_est$fdata.est,
                                           type.basis = "bspline",
                                           nbasis = fdata_est$numbasis.opt)$coefs
@@ -280,15 +291,10 @@ predict.party <- function(object, newdata = NULL, perm = NULL, ...){
 
              list = if (all(sapply(j, class) == 'igraph')) {
 
-               if(max(terminal) > 1L){
-                 train_max_shell <- max(unlist(basids))
-                 #if(is.infinite(train_max_shell)) train_max_shell <- NULL
-               } else {
-                 train_max_shell <- NULL
-               }
+               train_nb <- attr(j, 'numbasis')
                newcov <- graph_shell(j,
                                      predicting = TRUE,
-                                     max_shell = train_max_shell)
+                                     max_shell = train_nb)
                return(newcov)
 
              },
