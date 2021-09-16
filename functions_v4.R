@@ -826,9 +826,14 @@ split_opt <- function(resp,
   stopifnot(identical(typeof(cov), 'list'))
   stopifnot(isSymmetric(cov_dist))
 
+  # Initialize splitindex
+  N_obs <- length(levels(new_cov))
+  splitindex <- rep(NA, N_obs)
+
+  # Only two observations: split is trivial
   if (length(cov) == 2) {
 
-    splitindex <- c(1, 2)
+    splitindex[new_cov] <- c(1, 2)
 
     centroids <- if (class(cov) == 'fdata') {
       list(c1 = cov[1, ], c2 = cov[2, ])
@@ -836,14 +841,11 @@ split_opt <- function(resp,
       list(c1 = cov[[1]], c2 = cov[[2]])
     }
 
-  } else {
+  } else {  # More than two observations: split via PAM
 
     pam_obj <- cluster::pam(cov_dist, k = 2, diss = TRUE)
     cl_index <- pam_obj$clustering
-    lev <- levels(new_cov)
-    splitindex <- rep(NA, length(lev))
-    splitindex[lev %in% new_cov[cl_index == 1]] <- 1
-    splitindex[lev %in% new_cov[cl_index == 2]] <- 2
+    splitindex[as.integer(names(cl_index))] <- cl_index
 
     medindex1 <- pam_obj$id.med[1]
     c1 <- if (class(cov) == 'fdata') cov[medindex1, ] else cov[[medindex1]]
