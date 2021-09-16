@@ -27,6 +27,10 @@ eforest <- function(response,
                           'newcov' = newcovariates,
                           'dist' = cov_distance)
 
+  # Large list with response and the corresponding distances
+  response_large <- list('response' = response,
+                         'response_dist' = dist_comp(response))
+
   # Generate B bootstrap samples
   set.seed(12345)
   boot_idx <- lapply(1:ntrees,
@@ -43,10 +47,13 @@ eforest <- function(response,
                                     boot_dist <- usedist::dist_subset(cov_dist, b_i)
                                     return(as.matrix(boot_dist))
                                   })
-    boot_resp <- response[b_i]
+    resp_dist <- usedist::dist_subset(response_large$response_dist, b_i)
+    resp_dist <- as.matrix(usedist::dist_setNames(resp_dist, 1:nobs))
+    boot_resp_large <- list('response' = response[b_i],
+                            'response_dist' = resp_dist)
 
     # Energy Trees fit
-    e_fit <- etree(response = boot_resp,
+    e_fit <- etree(response = boot_resp_large,
                    covariates = boot_cov_large,
                    weights = weights,
                    minbucket = minbucket,
