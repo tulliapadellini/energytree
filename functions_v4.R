@@ -782,9 +782,9 @@ split_opt <- function(resp,
 
   stopifnot(identical(rownames(statistic_pvalue), c('Statistic', 'Pvalue')))
 
-  if (length(which(statistic_pvalue['Pvalue', ] ==
-                   min(statistic_pvalue['Pvalue', ], na.rm = TRUE))) > 1 ||
-      all(is.na(statistic_pvalue['Pvalue', ]))) {
+  if (all(is.na(statistic_pvalue['Pvalue', ])) ||
+      length(which(statistic_pvalue['Pvalue', ] ==
+                   min(statistic_pvalue['Pvalue', ], na.rm = TRUE))) > 1) {
 
     splitpoint <- values[which.max(statistic_pvalue['Statistic', ])]
 
@@ -803,9 +803,9 @@ split_opt <- function(resp,
 
   stopifnot(identical(rownames(statistic_pvalue), c('Statistic', 'Pvalue')))
 
-  if (length(which(statistic_pvalue['Pvalue', ] ==
-                   min(statistic_pvalue['Pvalue', ], na.rm = TRUE))) > 1 ||
-      all(is.na(statistic_pvalue['Pvalue', ]))) {
+  if (all(is.na(statistic_pvalue['Pvalue', ])) ||
+      length(which(statistic_pvalue['Pvalue', ] ==
+                   min(statistic_pvalue['Pvalue', ], na.rm = TRUE))) > 1) {
 
     bselect <- as.integer(which.max(statistic_pvalue['Statistic', ]))
 
