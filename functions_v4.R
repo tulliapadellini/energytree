@@ -59,7 +59,9 @@ etree <- function(response,
     response_large <- list('response' = response,
                            'response_dist' = dist_comp(response))
 
-  # Grow the tree (finds the split rules)
+  }
+
+  # Grow the tree (find the split rules)
   nodes <- growtree(id = 1L,
                     response = response_large,
                     covariates = covariates_large,
@@ -111,7 +113,8 @@ etree <- function(response,
                                           type.basis = "bspline",
                                           nbasis = fdata_est$numbasis.opt)$coefs
                newcov <- data.frame(t(coefs))
-               names(newcov) <- 1:length(names(newcov))
+               num_basis <- length(names(newcov))
+               names(newcov) <- 1:num_basis
 
              } else if (split_type == "cluster") {
 
