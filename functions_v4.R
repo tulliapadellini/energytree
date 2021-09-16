@@ -937,42 +937,58 @@ indep_test <- function(x,
 dist_comp <- function(x,
                       lp = 2) {
 
-  # Compute the distances/dissimilarities
-  switch(class(x),
-         logical    = as.matrix(dist(x)),
-         #needed for split point search when split_type = 'coeff'
-         integer    = as.matrix(dist(x)),
-         #objects of class integer are not of class numeric
-         numeric    = as.matrix(dist(x)),
-         factor     = as.matrix(cluster::daisy(as.data.frame(x))),
-         fdata      = metric.lp(x, lp = lp),
-         list       = {
-           if (all(sapply(x, class) == 'igraph')) {
-             if (all(sapply(x,
-                            function(i) {
-                              is.null(edge.attributes(i)$weight)
-                              #if attribute weight is null for all the graphs,
-                              #the graph covariate is not weighted
-                            })
-             )) {
-               adj_data <- lapply(x, igraph::as_adjacency_matrix)
-             } else { #otherwise, it is weighted
-               adj_data <- lapply(x, function(i) {
-                 igraph::as_adjacency_matrix(i, attr = 'weight')
-               })
-             }
-             #d is obtained in the same way in the two cases:
-             d <- NetworkDistance::nd.edd(adj_data)
-             return(as.matrix(d$D))
-           } else if (all(sapply(x, function(x) attributes(x)$names)
-                          == 'diagram')) {
-             wass_fun <- function(i,j) TDA::wasserstein(x[[i]]$diagram,
-                                                        x[[j]]$diagram)
-             vec_wass_fun <- Vectorize(wass_fun)
-             d_idx <- seq_along(x)
-             return(outer(d_idx, d_idx, vec_wass_fun))
-           }
-         })
+  # Compute the distance/dissimilarity matrix
+  mat <- switch(class(x),
+
+                logical    = as.matrix(dist(x)),
+                #needed for split point search when split_type = 'coeff'
+
+                integer    = as.matrix(dist(x)),
+                #objects of class integer are not of class numeric
+
+                numeric    = as.matrix(dist(x)),
+
+                factor     = as.matrix(cluster::daisy(as.data.frame(x))),
+
+                fdata      = metric.lp(x, lp = lp),
+
+                list       = {
+
+                  # Graphs
+                  if (all(sapply(x, class) == 'igraph')) {
+
+                    # Unweighted
+                    if (all(sapply(x, function(i)
+                      is.null(edge.attributes(i)$weight)))) {
+                      adj_data <- lapply(x, igraph::as_adjacency_matrix)
+                      } else {  # Weighted
+                      adj_data <- lapply(x, function(i) {
+                        igraph::as_adjacency_matrix(i, attr = 'weight')
+                      })
+                    }
+
+                    #d is obtained in the same way in the two cases:
+                    d <- NetworkDistance::nd.edd(adj_data)
+                    return(as.matrix(d$D))
+
+                    # Persistence diagrams
+                  } else if (all(sapply(x, function(x) attributes(x)$names)
+                                 == 'diagram')) {
+                    wass_fun <- function(i,j) TDA::wasserstein(x[[i]]$diagram,
+                                                               x[[j]]$diagram)
+                    vec_wass_fun <- Vectorize(wass_fun)
+                    d_idx <- seq_along(x)
+                    return(outer(d_idx, d_idx, vec_wass_fun))
+                  }
+
+                }
+                )
+
+  # Set row and column names
+  dimnames(mat) <- list(as.character(1:dim(mat)[1]),
+                        as.character(1:dim(mat)[2]))
+  # Return
+  return(mat)
 
 }
 
@@ -983,28 +999,34 @@ dist_comp_cl <- function(centroid,
                          lp = 2) {
 
   switch(class(x),
-         fdata      = metric.lp(fdata1 = x, fdata2 = centroid, lp = lp),
-         list       = {
+
+         fdata  = metric.lp(fdata1 = x, fdata2 = centroid, lp = lp),
+
+         list   = {
+
+           # Graphs
            if (all(sapply(x, class) == 'igraph')) {
-             if (all(sapply(x, function(i) {
-               is.null(edge.attributes(i)$weight)
-               #if attribute weight is null for all the graphs, the graph
-               #covariate is not weighted
-             }))){
+
+             # Unweighted
+             if (all(sapply(x, function(i) is.null(edge.attributes(i)$weight)))){
                adj_data <- lapply(x, igraph::as_adjacency_matrix)
                adj_centroid <- igraph::as_adjacency_matrix(centroid)
-             } else { #otherwise, it is weighted
+             } else {  # Weighted
                adj_data <- lapply(x, function(i) {
                  igraph::as_adjacency_matrix(i, attr = 'weight')
                })
-               adj_centroid <- igraph::as_adjacency_matrix(centroid, attr = 'weight')
+               adj_centroid <- igraph::as_adjacency_matrix(centroid,
+                                                           attr = 'weight')
              }
+
              #dist_centroid is obtained in the same way in the two cases:
              dist_centroid <- sapply(adj_data, function(i) {
                d <- NetworkDistance::nd.edd(list(i, adj_centroid))
                return(d$D)
              })
              return(dist_centroid)
+
+             # Persistence diagrams
            } else if (all(sapply(x, function(x) attributes(x)$names)
                           == 'diagram')){
              wass_fun <- function(x, centroid) TDA::wasserstein(x$diagram,
@@ -1012,9 +1034,9 @@ dist_comp_cl <- function(centroid,
              vec_wass_fun <- Vectorize(wass_fun, vectorize.args = 'x')
              return(vec_wass_fun(x, centroid))
            }
-         })
 
-
+         }
+  )
 }
 
 
