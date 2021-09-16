@@ -41,7 +41,11 @@ eforest <- function(response,
 
     # Covariates and response for this bootstrap sample
     boot_cov_large <- lapply(covariates_large[1:2],
-                             function(cl) lapply(cl, function(cov) cov[b_i]))
+                             function(cl) lapply(cl, function(cov) {
+                               if (class(cov) == 'data.frame') cov[b_i, ]
+                               else cov[b_i]
+                             }
+                             ))
     boot_cov_large$dist <- lapply(covariates_large[[3]],
                                   function(cov_dist){
                                     boot_dist <- usedist::dist_subset(cov_dist, b_i)
@@ -62,7 +66,6 @@ eforest <- function(response,
                    split_type = split_type,
                    coeff_split_type = coeff_split_type,
                    p_adjust_method = p_adjust_method,
-                   nb = nb,
                    random_covs = random_covs)
 
     # Remove .Environment attribute from terms
