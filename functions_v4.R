@@ -18,24 +18,46 @@ etree <- function(response,
   if (!is.list(covariates)) stop("Argument 'covariates' must be provided as a list")
 
   # If the case weights are not provided, they are all initialized as 1
-  if (is.null(weights)) weights <- rep(1L, as.numeric(length(response)))
+  if (is.null(weights)) {
+    if (isTRUE(identical(names(response), c('response', 'response_dist')))) {
+      weights <- rep(1L, as.numeric(length(response$response)))
+    } else {
+      weights <- rep(1L, as.numeric(length(response)))
+    }
+  }
 
-  # New list of covariates (needed here to build the df used by party)
-  newcovariates <- .create_newcov(covariates = covariates,
-                                  response = response,
-                                  split_type = split_type)
+  # Large list both for covariates and for response
+  #(get them, if already computed in eforest; otherwise, compute them)
+  if (isTRUE(identical(names(covariates), c('cov', 'newcov', 'dist')))) {
 
-  # Distances
-  cov_distance <- lapply(covariates, dist_comp)
+    # Large list with covariates, newcovariates and distances
+    covariates_large <- covariates
 
-  # Large list with covariates, newcovariates and distances
-  covariates_large <- list('cov' = covariates,
-                           'newcov' = newcovariates,
-                           'dist' = cov_distance)
+    # Large list with response and the corresponding distances
+    response_large <- response
 
-  # Large list with response and the corresponding distances
-  response_large <- list('response' = response,
-                         'response_dist' = dist_comp(response))
+    # New covariates and response (needed divided to build the df used by party)
+    newcovariates <- covariates_large$newcov
+    response <- response_large$response
+
+  } else {
+
+    # New covariates
+    newcovariates <- .create_newcov(covariates = covariates,
+                                    response = response,
+                                    split_type = split_type)
+
+    # Distances
+    cov_distance <- lapply(covariates, dist_comp)
+
+    # Large list with covariates, newcovariates and distances
+    covariates_large <- list('cov' = covariates,
+                             'newcov' = newcovariates,
+                             'dist' = cov_distance)
+
+    # Large list with response and the corresponding distances
+    response_large <- list('response' = response,
+                           'response_dist' = dist_comp(response))
 
   # Grow the tree (finds the split rules)
   nodes <- growtree(id = 1L,
