@@ -46,8 +46,11 @@ eforest <- function(response,
                                else cov[b_i]
                              }
                              ))
-    boot_cov_large$newcov[[1]] <- factor(1:nobs)
-    boot_cov_large$newcov[[2]] <- factor(1:nobs)
+    # Re-index newcov only if using 'cluster'
+    if (split_type == 'cluster') {
+      boot_cov_large$newcov[[1]] <- factor(1:nobs)
+      boot_cov_large$newcov[[2]] <- factor(1:nobs)
+    }
     boot_cov_large$dist <- lapply(covariates_large[[3]],
                                   function(cov_dist){
                                     boot_dist <- usedist::dist_subset(cov_dist, b_i)
