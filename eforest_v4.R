@@ -138,14 +138,16 @@ eforest <- function(response,
 
 }
 
-predict_eforest <- function(eforest_ensemble, newdata = NULL){
+predict_eforest <- function(eforest_obj, newdata = NULL){
 
   # Individual predictions with base learners
-  ind_pred_resp <- sapply(eforest_ensemble, function(tree){
+  #(newdata check, split retrieval, newcov computation are all done in predict)
+  ind_pred_resp <- sapply(eforest_obj$ensemble, function(tree){
     predict(tree, newdata = newdata)
   })
 
   # Predict response, differenty based on the type of problem (CLS or REG)
+  response <- eforest_obj$ensemble[[1]]$fitted$`(response)`
   if(class(response) == 'factor'){
 
     # Majority voting rule
