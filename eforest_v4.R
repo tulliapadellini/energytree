@@ -87,6 +87,9 @@ eforest <- function(response,
   # List containing for each obs the predicted response with all the corresponding OOB trees
   oob_pred_resp <- lapply(1:nobs, function(i){
 
+    # All covariates for observation i (to be used as newdata in predict())
+    covs_i <- lapply(covariates, function(cov) cov[i])
+
     # Is the observation Out Of Bag in each bootstrap sample?
     is.oob <- sapply(boot_idx, function(b) !(i %in% b))
 
@@ -96,7 +99,7 @@ eforest <- function(response,
     # Predict response for this obs only with trees whose index is is.oob_idx
     oob_pred_resp <- sapply(is.oob_idx, function(o){
       predict(etree_boot_fits[[o]],
-              newdata = lapply(covariates, function(cov) cov[i]))
+              newdata = covs_i)
     })
 
     # Return predicted response
