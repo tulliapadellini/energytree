@@ -17,6 +17,9 @@ etree <- function(response,
   # Check whether covariates is a list
   if (!is.list(covariates)) stop("Argument 'covariates' must be provided as a list")
 
+  # Check that response is factor or numeric
+  if (!is.factor(response) && !is.numeric(response)) stop("Argument 'response' must be provided either as a factor or as an object of mode 'numeric'")
+
   # If the case weights are not provided, they are all initialized as 1
   if (is.null(weights)) {
     if (isTRUE(identical(names(response), c('response', 'response_dist')))) {
