@@ -10,7 +10,7 @@ eforest <- function(response,
                     coeff_split_type = 'test',
                     p_adjust_method = 'fdr',
                     perf_metric = NULL,
-                    random_covs = NULL){
+                    random_covs = NULL) {
 
   # If perf_metric is NULL, set it to default choices
   if (is.null(perf_metric)) {
@@ -90,7 +90,7 @@ eforest <- function(response,
 
     # Remove .Environment attribute from terms
     attr(e_fit$terms, '.Environment') <- NULL
-
+    print('one round again')
     # Return
     return(e_fit)
 
@@ -166,7 +166,7 @@ eforest <- function(response,
     # Predicted response: average
     pred_resp <- sapply(oob_pred_resp, mean)
 
-    # OOB performance metric:various choices (default is 'RMSPE')
+    # OOB performance metric: various choices (default is 'RMSPE')
     oob_perf_metric <-
       switch(perf_metric,
              MAPE = MLmetrics::MAPE(pred_resp, response),
