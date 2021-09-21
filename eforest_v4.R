@@ -14,7 +14,7 @@ eforest <- function(response,
 
   # If perf_metric is NULL, set it to default choices
   if (is.null(perf_metric)) {
-    if (is.factor(response)) perf_metric <- 'Accuracy' else
+    if (is.factor(response)) perf_metric <- 'BAcc' else
       if (is.numeric(response)) perf_metric <- 'RMSPE'
   }
 
@@ -121,12 +121,36 @@ eforest <- function(response,
     ## Classification ##
 
     # Predicted response: majority voting rule
-    pred_resp <- sapply(oob_pred_resp, function(i) names(which.max(table(i))))
+    pred_resp <- factor(sapply(oob_pred_resp,
+                               function(i) names(which.max(table(i)))
+    ))
 
-    # OOB performance metric (measured via weighted & balanced accuracy)
-    oob_perf_metric <- 1 - MLmetrics::AUC(as.integer(pred_resp == 'GBM'),
-                                          as.integer(response == 'GBM'))
-    #MISC: oob_error <- mean(pred_resp != response)
+    # OOB performance metric (measured via BAcc or WBAcc)
+    if (perf_metric == 'BAcc' || perf_metric == 'WBAcc') {
+
+      # Balanced Accuracy for each class (each given by (TP/P + TN/N) / 2)
+      bal_accs <- sapply(levels(response),
+                         function(lev) {
+                           true_pos <- sum(pred_resp == lev &
+                                             response == lev)
+                           pos <- sum(response == lev)
+                           sens <- true_pos / pos
+                           true_neg <- sum(pred_resp != lev &
+                                             response != lev)
+                           neg <- sum(response != lev)
+                           spec <- true_neg / neg
+                           bal_acc_lev <- (sens + spec) / 2
+                         })
+
+      # OOB performance metric
+      #Balanced Accuracy -> arithmetic mean
+      #Weighted Balanced Accuracy -> weighted mean (with class sizes as weights)
+      oob_perf_metric <- switch(perf_metric,
+                                BAcc = mean(bal_accs),
+                                WBAcc = sum(bal_accs * table(response)) /
+                                  length(response))
+
+    }
 
   } else if (is.numeric(response)) {
 
