@@ -9,7 +9,14 @@ eforest <- function(response,
                     split_type = 'cluster',
                     coeff_split_type = 'test',
                     p_adjust_method = 'fdr',
+                    perf_metric = NULL,
                     random_covs = NULL){
+
+  # If perf_metric is NULL, set it to default choices
+  if (is.null(perf_metric)) {
+    if (is.factor(response)) perf_metric <- 'Accuracy' else
+      if (is.numeric(response)) perf_metric <- 'RMSPE'
+  }
 
   # Number of observations
   nobs <- length(response)
