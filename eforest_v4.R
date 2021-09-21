@@ -115,7 +115,7 @@ eforest <- function(response,
   })
 
 
-  # Predicted responses and OOB error calculation
+  # Predicted responses and OOB performance metric calculation
   if(is.factor(response)){
 
     ## Classification ##
@@ -123,9 +123,9 @@ eforest <- function(response,
     # Predicted response: majority voting rule
     pred_resp <- sapply(oob_pred_resp, function(i) names(which.max(table(i))))
 
-    # OOB error (measured as 1 - AUC)
-    oob_error <- 1 - MLmetrics::AUC(as.integer(pred_resp == 'GBM'),
-                                    as.integer(response == 'GBM'))
+    # OOB performance metric (measured via weighted & balanced accuracy)
+    oob_perf_metric <- 1 - MLmetrics::AUC(as.integer(pred_resp == 'GBM'),
+                                          as.integer(response == 'GBM'))
     #MISC: oob_error <- mean(pred_resp != response)
 
   } else if (is.numeric(response)) {
@@ -135,13 +135,13 @@ eforest <- function(response,
     # Predicted response: average
     pred_resp <- sapply(oob_pred_resp, mean)
 
-    # OOB error
+    # OOB performance metric:various choices (default is 'RMSPE')
     oob_error <- mean((pred_resp - response) ^ 2)
 
   }
 
-  # Return couple (etree_boot_fits, oob_error)
-  return(list(ensemble =  etree_boot_fits, oob_error = oob_error))
+  # Return couple (etree_boot_fits, oob_perf_metric)
+  return(list(ensemble =  etree_boot_fits, oob_perf_metric = oob_perf_metric))
 
 }
 
