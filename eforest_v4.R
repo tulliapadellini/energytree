@@ -136,7 +136,18 @@ eforest <- function(response,
     pred_resp <- sapply(oob_pred_resp, mean)
 
     # OOB performance metric:various choices (default is 'RMSPE')
-    oob_error <- mean((pred_resp - response) ^ 2)
+    oob_perf_metric <-
+      switch(perf_metric,
+             MAPE = MLmetrics::MAPE(pred_resp, response),
+             RMSPE = MLmetrics::RMSPE(pred_resp, response),
+             NRMSE = MLmetrics::RMSE(pred_resp, response) / mean(response),
+             MAE = MLmetrics::MAE(pred_resp, response),
+             MedianAE = MLmetrics::MedianAE(pred_resp, response),
+             MedianAPE = MLmetrics::MedianAPE(pred_resp, response),
+             MSE = MLmetrics::MSE(pred_resp, response),
+             RAE = MLmetrics::RAE(pred_resp, response),
+             RMSE = MLmetrics::RMSE(pred_resp, response),
+             RMLSE = MLmetrics::RMSLE(pred_resp, response))
 
   }
 
