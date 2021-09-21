@@ -109,7 +109,7 @@ eforest <- function(response,
 
 
   # Predicted responses and OOB error calculation
-  if(class(response) == 'factor'){
+  if(is.factor(response)){
 
     ## Classification ##
 
@@ -121,7 +121,7 @@ eforest <- function(response,
                                     as.integer(response == 'GBM'))
     #MISC: oob_error <- mean(pred_resp != response)
 
-  } else {
+  } else if (is.numeric(response)) {
 
     ## Regression ##
 
@@ -148,14 +148,13 @@ predict_eforest <- function(eforest_obj, newdata = NULL){
 
   # Predict response, differenty based on the type of problem (CLS or REG)
   response <- eforest_obj$ensemble[[1]]$fitted$`(response)`
-  if(class(response) == 'factor'){
+  if (is.factor(class(response))) {
 
     # Majority voting rule
     pred_resp <- apply(ind_pred_resp, 1, function(i) names(which.max(table(i))))
     pred_resp <- factor(pred_resp)
 
-  } else if (class(response) == 'numeric' ||
-             class(response) == 'integer') {
+  } else if (is.numeric(response)) {
 
     # Average
     pred_resp <- apply(ind_pred_resp, 1, mean)
