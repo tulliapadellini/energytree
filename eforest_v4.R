@@ -19,9 +19,15 @@ eforest <- function(response,
   } else {
     # If perf_metric is given, check that it has an acceptable value
     if (is.factor(response)) {
-      if (isFALSE(perf_metric %in% c('BAcc', 'WBAcc'))) stop("The value provided for 'perf_metric' is not available for this task")
+      if (isFALSE(perf_metric %in% c('BAcc', 'WBAcc')))
+        stop("The value provided for 'perf_metric' is not available for this
+             task")
     } else if (is.numeric(response)) {
-      if (isFALSE(perf_metric %in% c('MAPE', 'RMSPE', 'NRMSE', 'MAE', 'MedianAE', 'MedianAPE', 'MSE', 'RAE', 'RMSE', 'RMLSE'))) stop("The value provided for 'perf_metric' is not available for this task")
+      if (isFALSE(perf_metric %in% c('MAPE', 'RMSPE', 'NRMSE', 'MAE',
+                                     'MedianAE', 'MedianAPE', 'MSE', 'RAE',
+                                     'RMSE', 'RMLSE')))
+        stop("The value provided for 'perf_metric' is not available for this
+             task")
     }
   }
 
@@ -37,9 +43,9 @@ eforest <- function(response,
   cov_distance <- lapply(covariates, dist_comp)
 
   # Large list with covariates, newcovariates and distances
-  covariates_large = list('cov' = covariates,
-                          'newcov' = newcovariates,
-                          'dist' = cov_distance)
+  covariates_large <- list('cov' = covariates,
+                           'newcov' = newcovariates,
+                           'dist' = cov_distance)
 
   # Large list with response and the corresponding distances
   response_large <- list('response' = response,
@@ -66,9 +72,11 @@ eforest <- function(response,
       boot_cov_large$newcov[[2]] <- factor(1:nobs)
     }
     boot_cov_large$dist <- lapply(covariates_large[[3]],
-                                  function(cov_dist){
-                                    boot_dist <- usedist::dist_subset(cov_dist, b_i)
-                                    boot_dist <- usedist::dist_setNames(boot_dist, 1:nobs)
+                                  function(cov_dist) {
+                                    boot_dist <- usedist::dist_subset(cov_dist,
+                                                                      b_i)
+                                    boot_dist <-
+                                      usedist::dist_setNames(boot_dist, 1:nobs)
                                     return(as.matrix(boot_dist))
                                   })
     resp_dist <- usedist::dist_subset(response_large$response_dist, b_i)
@@ -99,7 +107,7 @@ eforest <- function(response,
   mc.set.seed = TRUE)
 
   # List containing for each obs the predicted response with all the corresponding OOB trees
-  oob_pred_resp <- lapply(1:nobs, function(i){
+  oob_pred_resp <- lapply(1:nobs, function(i) {
 
     # All covariates for observation i (to be used as newdata in predict())
     covs_i <- lapply(covariates, function(cov) cov[i])
@@ -111,7 +119,7 @@ eforest <- function(response,
     is.oob_idx <- which(is.oob)
 
     # Predict response for this obs only with trees whose index is is.oob_idx
-    oob_pred_resp <- sapply(is.oob_idx, function(o){
+    oob_pred_resp <- sapply(is.oob_idx, function(o) {
       predict(etree_boot_fits[[o]],
               newdata = covs_i)
     })
@@ -123,7 +131,7 @@ eforest <- function(response,
 
 
   # Predicted responses and OOB performance metric calculation
-  if(is.factor(response)){
+  if (is.factor(response)) {
 
     ## Classification ##
 
@@ -138,15 +146,20 @@ eforest <- function(response,
       # Balanced Accuracy for each class (each given by (TP/P + TN/N) / 2)
       bal_accs <- sapply(levels(response),
                          function(lev) {
+                           # Sensitivity
                            true_pos <- sum(pred_resp == lev &
                                              response == lev)
                            pos <- sum(response == lev)
                            sens <- true_pos / pos
+                           # Specificity
                            true_neg <- sum(pred_resp != lev &
                                              response != lev)
                            neg <- sum(response != lev)
                            spec <- true_neg / neg
+                           # Balanced Accuracy (with the current class as pos)
                            bal_acc_lev <- (sens + spec) / 2
+                           # Return Balanced Accuracy
+                           return(bal_acc_lev)
                          })
 
       # OOB performance metric
@@ -187,17 +200,17 @@ eforest <- function(response,
 
 }
 
-predict_eforest <- function(eforest_obj, newdata = NULL){
+predict_eforest <- function(eforest_obj, newdata = NULL) {
 
   # Individual predictions with base learners
   #(newdata check, split retrieval, newcov computation are all done in predict)
-  ind_pred_resp <- sapply(eforest_obj$ensemble, function(tree){
+  ind_pred_resp <- sapply(eforest_obj$ensemble, function(tree) {
     predict(tree, newdata = newdata)
   })
 
   # Predict response, differenty based on the type of problem (CLS or REG)
   response <- eforest_obj$ensemble[[1]]$fitted$`(response)`
-  if (is.factor(class(response))) {
+  if (is.factor(response)) {
 
     # Majority voting rule
     pred_resp <- apply(ind_pred_resp, 1, function(i) names(which.max(table(i))))
