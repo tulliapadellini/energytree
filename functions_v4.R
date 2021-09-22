@@ -15,7 +15,8 @@ etree <- function(response,
                   random_covs = NULL) {
 
   # Check whether covariates is a list
-  if (!is.list(covariates)) stop("Argument 'covariates' must be provided as a list")
+  if (!is.list(covariates))
+    stop("Argument 'covariates' must be provided as a list")
 
   # If the case weights are not provided, they are all initialized as 1
   if (is.null(weights)) {
@@ -63,7 +64,9 @@ etree <- function(response,
 
   # Check that response is factor or numeric
   if (!is.factor(response_large$response) &&
-      !is.numeric(response_large$response)) stop("Argument 'response' must be provided either as a factor or as an object of mode 'numeric'")
+      !is.numeric(response_large$response))
+    stop("Argument 'response' must be provided either as a factor or as an
+         object of mode 'numeric'")
 
   # Grow the tree (find the split rules)
   nodes <- growtree(id = 1L,
@@ -107,22 +110,21 @@ etree <- function(response,
 
              if (split_type == "coeff") {
 
-               fdata_est <- fda.usc::optim.basis(j,
-                                                 numbasis = floor(seq(4,
-                                                                      ncol(j)/2,
-                                                                      len = 10)))
+               fdata_est <- fda.usc::optim.basis(j, numbasis =
+                                                   floor(seq(4,
+                                                             ncol(j) / 2,
+                                                             len = 10)))
                #seq starts from 4 as it is the smallest ok number (norder is 4,
                #and nbasis has to be >= norder -- cf. fda::create.bspline.basis)
                coefs <- fda.usc::fdata2fd(fdata_est$fdata.est,
                                           type.basis = "bspline",
                                           nbasis = fdata_est$numbasis.opt)$coefs
                newcov <- data.frame(t(coefs))
-               num_basis <- length(names(newcov))
-               names(newcov) <- 1:num_basis
+               names(newcov) <- seq_along(names(newcov))
 
              } else if (split_type == "cluster") {
 
-               newcov <- as.factor(1:length(response))
+               newcov <- as.factor(seq_along(response))
 
              }
 
@@ -134,7 +136,7 @@ etree <- function(response,
            list = if (all(sapply(j, function(x) attributes(x)$names)
                           == 'diagram')) {
 
-             newcov <- as.factor(1:length(response))
+             newcov <- as.factor(seq_along(response))
              attr(newcov, 'cov_type') <- 'diagram'
              return(newcov)
 
@@ -146,7 +148,7 @@ etree <- function(response,
 
              } else if (split_type == "cluster") {
 
-               newcov <- as.factor(1:length(response))
+               newcov <- as.factor(seq_along(response))
 
              }
 
@@ -169,10 +171,10 @@ etree <- function(response,
                             USE.NAMES = FALSE))
     names(newcovariates) <- replace(names(newcovariates),
                                     no_name,
-                                    as.factor(1:length(no_name)))
+                                    as.factor(seq_along(no_name)))
   } else {
     warning('No names available for covariates. Numbers are used instead.')
-    names(newcovariates) <- 1:length(newcovariates)
+    names(newcovariates) <- seq_along(newcovariates)
   }
 
   # Return newcovariates
@@ -289,7 +291,7 @@ growtree <- function(id = 1L,
   kids <- vector(mode = "list", length = max(kidids, na.rm = TRUE))
 
   # Give birth to the kid nodes
-  for (kidid in 1:length(kids)) {
+  for (kidid in seq_along(kids)) {
 
     # Select observations for the current kid node
     w <- weights
@@ -309,11 +311,10 @@ growtree <- function(id = 1L,
     covariates_updated <- list()
     covariates_updated$cov <- lapply(covariates$cov,
                                      function(cov) subset(cov, as.logical(w)))
-    covariates_updated$newcov <- lapply(covariates$newcov,
-                                        function(cov) subset(cov, as.logical(w)))
-    covariates_updated$dist <- lapply(covariates$dist, function(cov) {
-      subset(cov, subset = as.logical(w), select = which(w == 1))
-    })
+    covariates_updated$newcov <- lapply(covariates$newcov, function(cov)
+      subset(cov, as.logical(w)))
+    covariates_updated$dist <- lapply(covariates$dist, function(cov)
+      subset(cov, subset = as.logical(w), select = which(w == 1)))
     response_updated <- list()
     response_updated$response <- subset(response$response, as.logical(w))
     response_updated$response_dist <- subset(response$response_dist,
@@ -356,11 +357,8 @@ findsplit <- function(response,
                       p_adjust_method,
                       random_covs) {
 
-  # Number of original covariates
-  n_cov <- length(covariates$cov)
-
   # Subset of covariates to consider for splitting (possibly all of them)
-  cov_subset <- as.integer(1:n_cov)
+  cov_subset <- as.integer(seq_along(covariates$cov))
   if (!is.null(random_covs)) {
     cov_subset <- sample(cov_subset, random_covs)
   }
@@ -401,9 +399,9 @@ findsplit <- function(response,
     # it had all-equal columns (after coeff exp), it means that either distance
     # or coeff exp are not appropriate, or at least that they are uncompatible
     warning('The selected covariate has non-informative coefficient expansion.
-            Please reconsider the choice for at least one between distance and
-            coefficient expansion. The selected covariate is ignored for the
-            time being.')
+    Please reconsider the choice for at least one between distance and
+    coefficient expansion. The selected covariate is ignored for the time
+            being.')
 
     # Ignore the selected covariate and re-run findsplit
     # in order to keep the original indices (i.e. not to create confusion), the
@@ -564,7 +562,7 @@ split_opt <- function(resp,
                                                comb_logical = comb,
                                                resp = resp)
 
-           } else if (coeff_split_type == 'test'){
+           } else if (coeff_split_type == 'test') {
 
              stat_pval <- apply(comb, 2,
                                 function(q) indep_test(x = q,
@@ -587,7 +585,7 @@ split_opt <- function(resp,
                                                comb_logical = comb,
                                                resp = resp)
 
-           } else if (coeff_split_type == 'test'){
+           } else if (coeff_split_type == 'test') {
 
              stat_pval <- apply(comb, 2,
                                 function(q) indep_test(x = q,
@@ -613,7 +611,7 @@ split_opt <- function(resp,
 
              # Combination of all the levels
              lev_cmb <- do.call("c",
-                                lapply(1:(n_lev / 2), function(ntaken) {
+                                lapply(seq_len(n_lev / 2), function(ntaken) {
                                   #1 for n_lev=2,3; 1,2 for n_lev=4,5; 1,2,3 for
                                   #n_lev=6,7;... since [(1:x) := (1:floor(x))]
                                   combs_ntaken <- combn(x = lev,
@@ -625,11 +623,12 @@ split_opt <- function(resp,
                                   #equivalent to '2,3,4'
                                   if (ntaken == (n_lev / 2)) {
                                     combs_ntaken <-
-                                      combs_ntaken[1:(length(combs_ntaken)/2)]
+                                      combs_ntaken[seq_len(
+                                        length(combs_ntaken) / 2)]
                                   }
                                   return(combs_ntaken)
 
-                                } ))
+                                }))
              comb <- sapply(lev_cmb, function(lc) cov %in% lc)
 
              if (coeff_split_type == 'traditional') {
@@ -638,7 +637,7 @@ split_opt <- function(resp,
                                                  comb_logical = comb,
                                                  resp = resp)
 
-             } else if (coeff_split_type == 'test'){
+             } else if (coeff_split_type == 'test') {
 
                stat_pval <- apply(comb, 2,
                                   function(q) indep_test(x = q,
@@ -664,7 +663,7 @@ split_opt <- function(resp,
 
            if (split_type == 'coeff') {
 
-             comp_idx <- 1:dim(new_cov)[2]
+             comp_idx <- seq_len(dim(new_cov)[2])
              stat_pval <- sapply(comp_idx,
                                  function(i) indep_test(x = new_cov[, i],
                                                         y_dist = resp_dist,
@@ -681,7 +680,7 @@ split_opt <- function(resp,
                                                  comb_logical = comb,
                                                  resp = resp)
 
-             } else if (coeff_split_type == 'test'){
+             } else if (coeff_split_type == 'test') {
 
                stat_pval <- apply(comb, 2,
                                   function(q) indep_test(x = q,
@@ -723,7 +722,7 @@ split_opt <- function(resp,
              # Control if the df is now void; if so, return 'void'
              if (dim(new_cov)[2] == 0) return(list('void' = TRUE))
 
-             comp_idx <- 1:dim(new_cov)[2]
+             comp_idx <- seq_len(dim(new_cov)[2])
              stat_pval <- sapply(comp_idx,
                                  function(i) indep_test(x = new_cov[, i],
                                                         y_dist = resp_dist,
@@ -738,7 +737,7 @@ split_opt <- function(resp,
              comb <- sapply(s[-length(s)], function(j) sel_comp <= j)
 
              # Check if all columns of comb are equal
-             if (all(apply(comb, 2, identical, comb[,1]))) {
+             if (all(apply(comb, 2, identical, comb[, 1]))) {
                # if TRUE, the omitted column [position length(s)] is different;
                # when this is the case, set last included column as splitpoint,
                # as it means that breaks is set before last column
@@ -980,8 +979,8 @@ dist_comp <- function(x,
                     # Persistence diagrams
                   } else if (all(sapply(x, function(x) attributes(x)$names)
                                  == 'diagram')) {
-                    wass_fun <- function(i,j) TDA::wasserstein(x[[i]]$diagram,
-                                                               x[[j]]$diagram)
+                    wass_fun <- function(i, j) TDA::wasserstein(x[[i]]$diagram,
+                                                                x[[j]]$diagram)
                     vec_wass_fun <- Vectorize(wass_fun)
                     d_idx <- seq_along(x)
                     return(outer(d_idx, d_idx, vec_wass_fun))
@@ -991,8 +990,8 @@ dist_comp <- function(x,
                 )
 
   # Set row and column names
-  dimnames(mat) <- list(as.character(1:dim(mat)[1]),
-                        as.character(1:dim(mat)[2]))
+  dimnames(mat) <- list(as.character(seq_len(dim(mat)[1])),
+                        as.character(seq_len(dim(mat)[2])))
   # Return
   return(mat)
 
@@ -1014,7 +1013,8 @@ dist_comp_cl <- function(centroid,
            if (all(sapply(x, class) == 'igraph')) {
 
              # Unweighted
-             if (all(sapply(x, function(i) is.null(edge.attributes(i)$weight)))){
+             if (all(sapply(x, function(i)
+               is.null(edge.attributes(i)$weight)))) {
                adj_data <- lapply(x, igraph::as_adjacency_matrix)
                adj_centroid <- igraph::as_adjacency_matrix(centroid)
              } else {  # Weighted
@@ -1034,9 +1034,9 @@ dist_comp_cl <- function(centroid,
 
              # Persistence diagrams
            } else if (all(sapply(x, function(x) attributes(x)$names)
-                          == 'diagram')){
-             wass_fun <- function(x, centroid) TDA::wasserstein(x$diagram,
-                                                                centroid$diagram)
+                          == 'diagram')) {
+             wass_fun <- function(x, centroid)
+               TDA::wasserstein(x$diagram, centroid$diagram)
              vec_wass_fun <- Vectorize(wass_fun, vectorize.args = 'x')
              return(vec_wass_fun(x, centroid))
            }
@@ -1064,7 +1064,7 @@ graph_shell <- function(graph_list,
   obs_max_shell <- do.call(max, lapply(table_shell,
                                        function(s) as.integer(names(s))))
 
-  # If max_shell is provided, go for it; otherwise, set obs_max_shell as max_shell
+  # If max_shell is given, go for it; otherwise, set obs_max_shell as max_shell
   if (is.null(max_shell)) max_shell <- obs_max_shell
 
   # Column names for the shell df
@@ -1077,7 +1077,7 @@ graph_shell <- function(graph_list,
   colnames(all_shell_df) <- col_names
 
   # Fill in with the actual shell distibutions
-  invisible(sapply(1:n_graphs, function(i) {
+  invisible(sapply(seq_len(n_graphs), function(i) {
     shells <- names(table_shell[[i]])
     cols <- intersect(col_names, shells)
     all_shell_df[i, cols] <<- table_shell[[i]][cols]
@@ -1148,6 +1148,3 @@ sel.features_analyze <- function(object_list) {
   # Table?
 
 }
-
-
-
