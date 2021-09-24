@@ -19,15 +19,17 @@ eforest <- function(response,
   } else {
     # If perf_metric is given, check that it has an acceptable value
     if (is.factor(response)) {
-      if (isFALSE(perf_metric %in% c('BAcc', 'WBAcc')))
+      if (isFALSE(perf_metric %in% c('BAcc', 'WBAcc'))) {
         stop("The value provided for 'perf_metric' is not available for this
              task")
+      }
     } else if (is.numeric(response)) {
       if (isFALSE(perf_metric %in% c('MAPE', 'RMSPE', 'NRMSE', 'MAE',
                                      'MedianAE', 'MedianAPE', 'MSE', 'RAE',
-                                     'RMSE', 'RMLSE')))
+                                     'RMSE', 'RMLSE'))) {
         stop("The value provided for 'perf_metric' is not available for this
              task")
+      }
     }
   }
 

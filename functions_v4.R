@@ -15,8 +15,9 @@ etree <- function(response,
                   random_covs = NULL) {
 
   # Check whether covariates is a list
-  if (!is.list(covariates))
+  if (!is.list(covariates)) {
     stop("Argument 'covariates' must be provided as a list")
+  }
 
   # If the case weights are not provided, they are all initialized as 1
   if (is.null(weights)) {
@@ -64,9 +65,11 @@ etree <- function(response,
 
   # Check that response is factor or numeric
   if (!is.factor(response_large$response) &&
-      !is.numeric(response_large$response))
+      !is.numeric(response_large$response)) {
     stop("Argument 'response' must be provided either as a factor or as an
          object of mode 'numeric'")
+  }
+
 
   # Grow the tree (find the split rules)
   nodes <- growtree(id = 1L,
@@ -200,7 +203,9 @@ growtree <- function(id = 1L,
 
   # If the observations are less than <2*minbucket>, stop here (otherwise, there
   #would not be enough obs to have at least <minbucket> obs in each kid node)
-  if (sum(weights) < 2 * minbucket) return(partynode(id = id))
+  if (sum(weights) < 2 * minbucket) {
+    return(partynode(id = id))
+  }
 
   # Find the best split (variable selection & split point search)
   split <- findsplit(response = response,
@@ -213,7 +218,9 @@ growtree <- function(id = 1L,
                      random_covs = random_covs)
 
   # If no split is found, stop here
-  if (is.null(split)) return(partynode(id = id))
+  if (is.null(split)) {
+    return(partynode(id = id))
+  }
 
   # Selected variable index and possibly selected basis index
   varid <- split$varid
@@ -298,7 +305,9 @@ growtree <- function(id = 1L,
     w[kidids != kidid] <- 0
 
     # For less than <minbucket> observations, stop here
-    if (sum(w) < minbucket) return(partynode(id = id))
+    if (sum(w) < minbucket) {
+      return(partynode(id = id))
+    }
 
     # Previous maximum id (to later set the id for the current kid node)
     if (kidid > 1) {
@@ -370,13 +379,17 @@ findsplit <- function(response,
                         indep_test(x_dist = cov_dist, y_dist = resp_dist, R = R)
                       }
   )
-  if (all(is.na(stat_pval['Pvalue', ]))) return(NULL)
+  if (all(is.na(stat_pval['Pvalue', ]))) {
+    return(NULL)
+  }
 
   # Multiple testing correction
   adj_p <- p.adjust(stat_pval['Pvalue', ], method = p_adjust_method)
 
   # Stop criterion
-  if (min(adj_p, na.rm = TRUE) > alpha) return(NULL)
+  if (min(adj_p, na.rm = TRUE) > alpha) {
+    return(NULL)
+  }
 
   # Variable selection (based on original pvalues)
   xselect <- .select_variable(statistic_pvalue = stat_pval)
@@ -720,7 +733,9 @@ split_opt <- function(resp,
              new_cov <- new_cov[, !as.logical(apply(new_cov, 2, zero_range))]
 
              # Control if the df is now void; if so, return 'void'
-             if (dim(new_cov)[2] == 0) return(list('void' = TRUE))
+             if (dim(new_cov)[2] == 0) {
+               return(list('void' = TRUE))
+             }
 
              comp_idx <- seq_len(dim(new_cov)[2])
              stat_pval <- sapply(comp_idx,
@@ -1105,7 +1120,9 @@ graph_shell <- function(graph_list,
 # Function to test if all elements of a given vector are equal for tol provided
 zero_range <- function(x, tol = .Machine$double.eps ^ 0.5) {
   # if only one obs, equality cannot be tested -> return FALSE
-  if (length(x) == 1) return(FALSE)
+  if (length(x) == 1) {
+    return(FALSE)
+  }
   x <- range(x) / mean(x)
   isTRUE(all.equal(x[1], x[2], tolerance = tol))
 }
