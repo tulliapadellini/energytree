@@ -146,23 +146,8 @@ eforest <- function(response,
     if (perf_metric == 'BAcc' || perf_metric == 'WBAcc') {
 
       # Balanced Accuracy for each class (each given by (TP/P + TN/N) / 2)
-      bal_accs <- sapply(levels(response),
-                         function(lev) {
-                           # Sensitivity
-                           true_pos <- sum(pred_resp == lev &
-                                             response == lev)
-                           pos <- sum(response == lev)
-                           sens <- true_pos / pos
-                           # Specificity
-                           true_neg <- sum(pred_resp != lev &
-                                             response != lev)
-                           neg <- sum(response != lev)
-                           spec <- true_neg / neg
-                           # Balanced Accuracy (with the current class as pos)
-                           bal_acc_lev <- (sens + spec) / 2
-                           # Return Balanced Accuracy
-                           return(bal_acc_lev)
-                         })
+      bal_accs <- comp_bal_accs(y_pred = pred_resp,
+                                y_true = response)
 
       # OOB performance metric
       #Balanced Accuracy -> arithmetic mean
@@ -202,7 +187,9 @@ eforest <- function(response,
 
 }
 
-predict_eforest <- function(eforest_obj, newdata = NULL) {
+
+predict_eforest <- function(eforest_obj,
+                            newdata = NULL) {
 
   # Individual predictions with base learners
   #(newdata check, split retrieval, newcov computation are all done in predict)
@@ -230,3 +217,30 @@ predict_eforest <- function(eforest_obj, newdata = NULL) {
 
 }
 
+
+comp_bal_accs <- function(y_pred,
+                          y_true) {
+
+  bal_accs <- sapply(levels(y_true),
+                     function(lev) {
+                       # Sensitivity
+                       true_pos <- sum(y_pred == lev &
+                                         y_true == lev)
+                       pos <- sum(y_true == lev)
+                       sens <- true_pos / pos
+                       # Specificity
+                       true_neg <- sum(y_pred != lev &
+                                         y_true != lev)
+                       neg <- sum(y_true != lev)
+                       spec <- true_neg / neg
+                       # Balanced Accuracy (with the current class as pos)
+                       bal_acc_lev <- (sens + spec) / 2
+                       # Return Balanced Accuracy
+                       return(bal_acc_lev)
+                     })
+
+  return(bal_accs)
+
+
+
+}
