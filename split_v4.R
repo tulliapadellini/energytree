@@ -206,8 +206,11 @@ kidids_split_predict <- function(split, data, vmatch = 1:length(data), obs = NUL
 
     if(!is.null(centroids_split(split))){
 
-      cl.idx = lapply(centroids_split(split), dist_comp_cl, x = x, lp = 2)
-      x <- apply(matrix(unlist(cl.idx),ncol = 2),1, which.min)
+      centroids <- centroids_split(split)
+      centroids_dist <- sapply(centroids, dist_comp_cl, x = x, lp = 2)
+      x <- if(!is.null(dim(centroids_dist))) apply(centroids_dist, 1, which.min)
+            else which.min(centroids_dist)
+
     }
 
     if (storage.mode(x) != "integer")
