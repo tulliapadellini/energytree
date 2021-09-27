@@ -79,10 +79,10 @@ eforest <- function(response,
                                                                       b_i)
                                     boot_dist <-
                                       usedist::dist_setNames(boot_dist, 1:nobs)
-                                    return(as.matrix(boot_dist))
+                                    return(boot_dist)
                                   })
     resp_dist <- usedist::dist_subset(response_large$response_dist, b_i)
-    resp_dist <- as.matrix(usedist::dist_setNames(resp_dist, 1:nobs))
+    resp_dist <- usedist::dist_setNames(resp_dist, 1:nobs)
     boot_resp_large <- list('response' = response[b_i],
                             'response_dist' = resp_dist)
 

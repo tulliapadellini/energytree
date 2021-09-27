@@ -320,15 +320,14 @@ growtree <- function(id = 1L,
     covariates_updated <- list()
     covariates_updated$cov <- lapply(covariates$cov,
                                      function(cov) subset(cov, as.logical(w)))
-    covariates_updated$newcov <- lapply(covariates$newcov, function(cov)
-      subset(cov, as.logical(w)))
-    covariates_updated$dist <- lapply(covariates$dist, function(cov)
-      subset(cov, subset = as.logical(w), select = which(w == 1)))
+    covariates_updated$newcov <- lapply(covariates$newcov, function(newcov)
+      subset(newcov, as.logical(w)))
+    covariates_updated$dist <- lapply(covariates$dist, function(cov_dist)
+      usedist::dist_subset(cov_dist, which(w == 1)))
     response_updated <- list()
     response_updated$response <- subset(response$response, as.logical(w))
-    response_updated$response_dist <- subset(response$response_dist,
-                                             as.logical(w),
-                                             select = which(w == 1))
+    response_updated$response_dist <-
+      usedist::dist_subset(response$response_dist, which(w == 1))
 
     # Actual recursion
     kids[[kidid]] <- growtree(id = as.integer(prev_id + 1),
@@ -842,7 +841,7 @@ split_opt <- function(resp,
 .select_clustering <- function(cov, new_cov, cov_dist) {
 
   stopifnot(identical(typeof(cov), 'list'))
-  stopifnot(isSymmetric(cov_dist))
+  stopifnot(inherits(cov_dist, 'dist'))
 
   # Initialize splitindex
   N_obs <- length(levels(new_cov))
@@ -957,20 +956,20 @@ indep_test <- function(x,
 dist_comp <- function(x,
                       lp = 2) {
 
-  # Compute the distance/dissimilarity matrix
-  mat <- switch(class(x),
+  # Compute the distance/dissimilarity objects
+  dist_obj <- switch(class(x),
 
-                logical    = as.matrix(dist(x)),
+                logical    = dist(x),
                 #needed for split point search when split_type = 'coeff'
 
-                integer    = as.matrix(dist(x)),
+                integer    = dist(x),
                 #objects of class integer are not of class numeric
 
-                numeric    = as.matrix(dist(x)),
+                numeric    = dist(x),
 
-                factor     = as.matrix(cluster::daisy(as.data.frame(x))),
+                factor     = cluster::daisy(as.data.frame(x)),
 
-                fdata      = metric.lp(x, lp = lp),
+                fdata      = as.dist(metric.lp(x, lp = lp)),
 
                 list       = {
 
@@ -989,7 +988,7 @@ dist_comp <- function(x,
 
                     #d is obtained in the same way in the two cases:
                     d <- NetworkDistance::nd.edd(adj_data)
-                    return(as.matrix(d$D))
+                    return(d$D)
 
                     # Persistence diagrams
                   } else if (all(sapply(x, function(x) attributes(x)$names)
@@ -1004,11 +1003,11 @@ dist_comp <- function(x,
                 }
                 )
 
-  # Set row and column names
-  dimnames(mat) <- list(as.character(seq_len(dim(mat)[1])),
-                        as.character(seq_len(dim(mat)[2])))
+  # Set observations' names (needed for eforest())
+  dist_obj <- usedist::dist_setNames(dist_obj, seq_along(x))
+
   # Return
-  return(mat)
+  return(dist_obj)
 
 }
 
@@ -1044,6 +1043,8 @@ dist_comp_cl <- function(centroid,
              dist_centroid <- sapply(adj_data, function(i) {
                d <- NetworkDistance::nd.edd(list(i, adj_centroid))
                return(d$D)
+               #since the distances are computed pairwise, d$D is numeric (i.e.,
+               #not a 'dist' object anymore)
              })
              return(dist_centroid)
 
