@@ -729,7 +729,7 @@ split_opt <- function(resp,
            if (split_type == 'coeff') {
 
              # Drop non-informative (i.e. all-equal) columns
-             new_cov <- new_cov[, !as.logical(apply(new_cov, 2, zero_range))]
+             new_cov <- new_cov[, !as.logical(apply(new_cov, 2, .zero_range))]
 
              # Control if the df is now void; if so, return 'void'
              if (dim(new_cov)[2] == 0) {
@@ -1109,7 +1109,7 @@ graph_shell <- function(graph_list,
     # Update all_shell_df ignoring non-informative columns
     all_shell_df <- all_shell_df[, !as.logical(apply(all_shell_df,
                                                      2,
-                                                     zero_range))]
+                                                     .zero_range))]
   }
 
   # Return the final shell df
@@ -1119,7 +1119,7 @@ graph_shell <- function(graph_list,
 
 
 # Function to test if all elements of a given vector are equal for tol provided
-zero_range <- function(x, tol = .Machine$double.eps ^ 0.5) {
+.zero_range <- function(x, tol = .Machine$double.eps ^ 0.5) {
   # if only one obs, equality cannot be tested -> return FALSE
   if (length(x) == 1) {
     return(FALSE)
