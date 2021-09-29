@@ -969,7 +969,7 @@ dist_comp <- function(x,
 
                 factor     = cluster::daisy(as.data.frame(x)),
 
-                fdata      = as.dist(metric.lp(x, lp = lp)),
+                fdata      = as.dist(fda.usc::metric.lp(x, lp = lp)),
 
                 list       = {
 
@@ -1019,7 +1019,7 @@ dist_comp_cl <- function(centroid,
 
   switch(class(x),
 
-         fdata  = metric.lp(fdata1 = x, fdata2 = centroid, lp = lp),
+         fdata  = fda.usc::metric.lp(fdata1 = x, fdata2 = centroid, lp = lp),
 
          list   = {
 
