@@ -978,7 +978,7 @@ dist_comp <- function(x,
 
                     # Unweighted
                     if (all(sapply(x, function(i)
-                      is.null(edge.attributes(i)$weight)))) {
+                      is.null(igraph::edge.attributes(i)$weight)))) {
                       adj_data <- lapply(x, igraph::as_adjacency_matrix)
                       } else {  # Weighted
                       adj_data <- lapply(x, function(i) {
@@ -1028,7 +1028,7 @@ dist_comp_cl <- function(centroid,
 
              # Unweighted
              if (all(sapply(x, function(i)
-               is.null(edge.attributes(i)$weight)))) {
+               is.null(igraph::edge.attributes(i)$weight)))) {
                adj_data <- lapply(x, igraph::as_adjacency_matrix)
                adj_centroid <- igraph::as_adjacency_matrix(centroid)
              } else {  # Weighted
